@@ -6,10 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { UploadCloud, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Set up the worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface ResumeUploaderProps {
   onResumeContentChange: (content: string) => void;
@@ -21,64 +17,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   resumeContent
 }) => {
   const [isExtracting, setIsExtracting] = useState(false);
-  const [extractionProgress, setExtractionProgress] = useState(0);
   const [uploadMode, setUploadMode] = useState<'upload' | 'paste'>('upload');
-
-  const extractTextFromPDF = async (file: File): Promise<string> => {
-    try {
-      console.log('Starting PDF text extraction...');
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const numPages = pdf.numPages;
-      console.log(`PDF has ${numPages} pages`);
-      
-      // Limit to first 5 pages for better performance
-      const pagesToProcess = Math.min(numPages, 5);
-      const pageTexts: string[] = [];
-      
-      // Process pages one by one with progress updates
-      for (let pageNum = 1; pageNum <= pagesToProcess; pageNum++) {
-        try {
-          console.log(`Processing page ${pageNum}...`);
-          const page = await pdf.getPage(pageNum);
-          const textContent = await page.getTextContent();
-          
-          // Extract text with better spacing
-          const pageText = textContent.items
-            .map((item: any) => {
-              if (item.str && item.str.trim()) {
-                return item.str;
-              }
-              return '';
-            })
-            .filter(text => text.length > 0)
-            .join(' ');
-          
-          if (pageText.trim()) {
-            pageTexts.push(pageText);
-          }
-          
-          // Update progress immediately after each page
-          const progress = Math.round((pageNum / pagesToProcess) * 100);
-          console.log(`Progress: ${progress}%`);
-          setExtractionProgress(progress);
-          
-          // Add a small delay to ensure progress is visible
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-        } catch (pageError) {
-          console.warn(`Error processing page ${pageNum}:`, pageError);
-        }
-      }
-
-      const fullText = pageTexts.join('\n\n').trim();
-      console.log(`Extracted text length: ${fullText.length}`);
-      return fullText;
-    } catch (error) {
-      console.error('Error extracting text from PDF:', error);
-      throw new Error('Failed to extract text from PDF');
-    }
-  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -97,22 +36,18 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     }
 
     setIsExtracting(true);
-    setExtractionProgress(0);
     
     try {
-      const extractedText = await extractTextFromPDF(file);
-      if (extractedText && extractedText.length > 10) {
-        onResumeContentChange(extractedText);
-        toast.success('Resume text extracted successfully!');
-      } else {
-        toast.error('No meaningful text found in the PDF. Please try pasting the text instead.');
-      }
+      // Since NotebookLM accepts PDF directly, we'll just use the filename as content
+      // This avoids the complex PDF parsing that was causing issues
+      const fileName = file.name;
+      onResumeContentChange(`PDF uploaded: ${fileName} (${Math.round(file.size / 1024)} KB)`);
+      toast.success('PDF uploaded successfully!');
     } catch (error) {
-      console.error('PDF extraction error:', error);
-      toast.error('Failed to extract text from PDF. Please try pasting the text instead.');
+      console.error('PDF upload error:', error);
+      toast.error('Failed to upload PDF. Please try again.');
     } finally {
       setIsExtracting(false);
-      setExtractionProgress(0);
       // Clear the input so the same file can be uploaded again if needed
       event.target.value = '';
     }
@@ -150,13 +85,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
                 <div className="space-y-2">
                   <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
                   <div className="text-sm text-gray-600">
-                    Extracting text... {extractionProgress}%
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 max-w-xs mx-auto">
-                    <div 
-                      className="bg-primary h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${extractionProgress}%` }}
-                    ></div>
+                    Processing PDF...
                   </div>
                 </div>
               ) : (

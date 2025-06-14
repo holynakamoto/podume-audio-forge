@@ -16,8 +16,8 @@ import { Switch } from "@/components/ui/switch";
 import { ResumeUploader } from './ResumeUploader';
 
 const formSchema = z.object({
-  title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
-  resume_content: z.string().min(10, { message: 'Resume content must be at least 10 characters.' }),
+  title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
+  resume_content: z.string().min(5, { message: 'Resume content must be at least 5 characters.' }),
   package_type: z.enum(['core', 'upsell']),
   voice_clone: z.boolean().default(false),
   premium_assets: z.boolean().default(false),
@@ -37,6 +37,7 @@ export const PodcastCreationForm = () => {
       voice_clone: false,
       premium_assets: false,
       resume_content: '',
+      title: '',
     },
   });
 
@@ -47,8 +48,8 @@ export const PodcastCreationForm = () => {
     // Update form with current resume content
     const submitData = { ...values, resume_content: resumeContent };
     
-    if (submitData.resume_content.length < 10) {
-      toast.error('Resume content must be at least 10 characters.');
+    if (submitData.resume_content.length < 5) {
+      toast.error('Resume content must be at least 5 characters.');
       return;
     }
 
@@ -78,7 +79,9 @@ export const PodcastCreationForm = () => {
     }
   };
 
-  const canSubmit = resumeContent.length >= 10 && form.watch('title')?.length >= 5;
+  // Watch form values for validation
+  const titleValue = form.watch('title');
+  const canSubmit = resumeContent.length >= 5 && titleValue && titleValue.length >= 3;
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -98,8 +101,8 @@ export const PodcastCreationForm = () => {
             onResumeContentChange={setResumeContent}
             resumeContent={resumeContent}
           />
-          {resumeContent.length < 10 && resumeContent.length > 0 && (
-            <p className="text-red-500 text-sm">Resume content must be at least 10 characters.</p>
+          {resumeContent.length < 5 && resumeContent.length > 0 && (
+            <p className="text-red-500 text-sm">Resume content must be at least 5 characters.</p>
           )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -135,7 +138,7 @@ export const PodcastCreationForm = () => {
           
           {/* Debug info */}
           <div className="text-xs text-gray-500">
-            Resume content: {resumeContent.length} characters | Can submit: {canSubmit ? 'Yes' : 'No'}
+            Resume content: {resumeContent.length} characters | Title: {titleValue?.length || 0} characters | Can submit: {canSubmit ? 'Yes' : 'No'}
           </div>
         </form>
       </CardContent>
