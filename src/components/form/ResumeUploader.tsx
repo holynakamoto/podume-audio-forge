@@ -21,24 +21,57 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   resumeContent
 }) => {
   const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionProgress, setExtractionProgress] = useState(0);
   const [uploadMode, setUploadMode] = useState<'upload' | 'paste'>('upload');
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
     try {
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      let fullText = '';
+      const numPages = pdf.numPages;
+      
+      // Limit to first 10 pages for performance (most resumes are 1-3 pages)
+      const pagesToProcess = Math.min(numPages, 10);
+      
+      // Process pages in parallel for better performance
+      const pagePromises = Array.from({ length: pagesToProcess }, async (_, i) => {
+        const pageNum = i + 1;
+        try {
+          const page = await pdf.getPage(pageNum);
+          const textContent = await page.getTextContent();
+          
+          // More efficient text extraction with better spacing
+          const pageText = textContent.items
+            .map((item: any) => {
+              // Handle text items with proper spacing
+              if (item.str && item.str.trim()) {
+                return item.str;
+              }
+              return '';
+            })
+            .filter(text => text.length > 0)
+            .join(' ');
+          
+          // Update progress
+          setExtractionProgress(Math.round((pageNum / pagesToProcess) * 100));
+          
+          return pageText;
+        } catch (pageError) {
+          console.warn(`Error processing page ${pageNum}:`, pageError);
+          return '';
+        }
+      });
 
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + '\n';
-      }
+      // Wait for all pages to be processed
+      const pageTexts = await Promise.all(pagePromises);
+      
+      // Join pages with double newlines for better formatting
+      const fullText = pageTexts
+        .filter(text => text.trim().length > 0)
+        .join('\n\n')
+        .trim();
 
-      return fullText.trim();
+      return fullText;
     } catch (error) {
       console.error('Error extracting text from PDF:', error);
       throw new Error('Failed to extract text from PDF');
@@ -60,19 +93,22 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     }
 
     setIsExtracting(true);
+    setExtractionProgress(0);
+    
     try {
       const extractedText = await extractTextFromPDF(file);
-      if (extractedText) {
+      if (extractedText && extractedText.length > 50) {
         onResumeContentChange(extractedText);
         toast.success('Resume text extracted successfully!');
       } else {
-        toast.error('No text found in the PDF. Please try pasting the text instead.');
+        toast.error('No meaningful text found in the PDF. Please try pasting the text instead.');
       }
     } catch (error) {
       console.error('PDF extraction error:', error);
       toast.error('Failed to extract text from PDF. Please try pasting the text instead.');
     } finally {
       setIsExtracting(false);
+      setExtractionProgress(0);
       // Clear the input so the same file can be uploaded again if needed
       event.target.value = '';
     }
@@ -107,13 +143,18 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
           <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-10">
             <div className="text-center">
               {isExtracting ? (
-                <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
+                <div className="space-y-2">
+                  <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
+                  <div className="text-sm text-gray-600">
+                    Extracting text... {extractionProgress}%
+                  </div>
+                </div>
               ) : (
                 <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
               )}
               <div className="mt-4 flex text-sm leading-6 text-gray-400">
                 <label htmlFor="resume-upload" className="relative cursor-pointer rounded-md font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary/80">
-                  <span>{isExtracting ? 'Extracting text...' : 'Upload a PDF file'}</span>
+                  <span>{isExtracting ? 'Processing...' : 'Upload a PDF file'}</span>
                   <Input 
                     id="resume-upload" 
                     type="file" 
