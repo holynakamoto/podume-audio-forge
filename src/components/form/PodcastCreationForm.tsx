@@ -17,7 +17,7 @@ import { ResumeUploader } from './ResumeUploader';
 
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
-  resume_content: z.string().min(50, { message: 'Resume content must be at least 50 characters.' }),
+  resume_content: z.string().min(10, { message: 'Resume content must be at least 10 characters.' }),
   package_type: z.enum(['core', 'upsell']),
   voice_clone: z.boolean().default(false),
   premium_assets: z.boolean().default(false),
@@ -41,11 +41,14 @@ export const PodcastCreationForm = () => {
   });
 
   const onSubmit = async (values: FormValues) => {
+    console.log('Form submission started with values:', values);
+    console.log('Resume content length:', resumeContent.length);
+    
     // Update form with current resume content
     const submitData = { ...values, resume_content: resumeContent };
     
-    if (submitData.resume_content.length < 50) {
-      toast.error('Resume content must be at least 50 characters.');
+    if (submitData.resume_content.length < 10) {
+      toast.error('Resume content must be at least 10 characters.');
       return;
     }
 
@@ -53,6 +56,7 @@ export const PodcastCreationForm = () => {
     toast.info('Generating your podcast... This may take a moment.');
 
     try {
+      console.log('Calling generate-podcast function...');
       const { data, error } = await supabase.functions.invoke('generate-podcast', {
         body: submitData,
       });
@@ -62,6 +66,7 @@ export const PodcastCreationForm = () => {
         throw error;
       }
 
+      console.log('Podcast generated successfully:', data);
       toast.success('Your podcast has been created!');
       const newPodcastId = data.podcast.id;
       navigate(`/podcast/${newPodcastId}`);
@@ -72,6 +77,8 @@ export const PodcastCreationForm = () => {
       setIsLoading(false);
     }
   };
+
+  const canSubmit = resumeContent.length >= 10 && form.watch('title')?.length >= 5;
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -91,8 +98,8 @@ export const PodcastCreationForm = () => {
             onResumeContentChange={setResumeContent}
             resumeContent={resumeContent}
           />
-          {resumeContent.length < 50 && resumeContent.length > 0 && (
-            <p className="text-red-500 text-sm">Resume content must be at least 50 characters.</p>
+          {resumeContent.length < 10 && resumeContent.length > 0 && (
+            <p className="text-red-500 text-sm">Resume content must be at least 10 characters.</p>
           )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -121,10 +128,15 @@ export const PodcastCreationForm = () => {
               </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading || resumeContent.length < 50}>
+          <Button type="submit" className="w-full" disabled={isLoading || !canSubmit}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Generate Podcast
           </Button>
+          
+          {/* Debug info */}
+          <div className="text-xs text-gray-500">
+            Resume content: {resumeContent.length} characters | Can submit: {canSubmit ? 'Yes' : 'No'}
+          </div>
         </form>
       </CardContent>
     </Card>

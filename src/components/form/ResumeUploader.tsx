@@ -26,26 +26,26 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
     try {
+      console.log('Starting PDF text extraction...');
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       const numPages = pdf.numPages;
+      console.log(`PDF has ${numPages} pages`);
       
-      // Limit to first 10 pages for performance (most resumes are 1-3 pages)
-      const pagesToProcess = Math.min(numPages, 10);
-      let processedPages = 0;
-      
-      // Process pages sequentially to fix progress tracking
+      // Limit to first 5 pages for better performance
+      const pagesToProcess = Math.min(numPages, 5);
       const pageTexts: string[] = [];
       
+      // Process pages one by one with progress updates
       for (let pageNum = 1; pageNum <= pagesToProcess; pageNum++) {
         try {
+          console.log(`Processing page ${pageNum}...`);
           const page = await pdf.getPage(pageNum);
           const textContent = await page.getTextContent();
           
-          // More efficient text extraction with better spacing
+          // Extract text with better spacing
           const pageText = textContent.items
             .map((item: any) => {
-              // Handle text items with proper spacing
               if (item.str && item.str.trim()) {
                 return item.str;
               }
@@ -58,17 +58,21 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
             pageTexts.push(pageText);
           }
           
-          // Update progress correctly
-          processedPages++;
-          setExtractionProgress(Math.round((processedPages / pagesToProcess) * 100));
+          // Update progress immediately after each page
+          const progress = Math.round((pageNum / pagesToProcess) * 100);
+          console.log(`Progress: ${progress}%`);
+          setExtractionProgress(progress);
+          
+          // Add a small delay to ensure progress is visible
+          await new Promise(resolve => setTimeout(resolve, 100));
           
         } catch (pageError) {
           console.warn(`Error processing page ${pageNum}:`, pageError);
         }
       }
 
-      // Join pages with double newlines for better formatting
       const fullText = pageTexts.join('\n\n').trim();
+      console.log(`Extracted text length: ${fullText.length}`);
       return fullText;
     } catch (error) {
       console.error('Error extracting text from PDF:', error);
@@ -79,6 +83,8 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    console.log('File selected:', file.name, file.type, file.size);
 
     if (file.type !== 'application/pdf') {
       toast.error('Please upload a PDF file.');
@@ -95,7 +101,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     
     try {
       const extractedText = await extractTextFromPDF(file);
-      if (extractedText && extractedText.length > 20) {
+      if (extractedText && extractedText.length > 10) {
         onResumeContentChange(extractedText);
         toast.success('Resume text extracted successfully!');
       } else {
@@ -145,6 +151,12 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
                   <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
                   <div className="text-sm text-gray-600">
                     Extracting text... {extractionProgress}%
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 max-w-xs mx-auto">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all duration-300" 
+                      style={{ width: `${extractionProgress}%` }}
+                    ></div>
                   </div>
                 </div>
               ) : (
