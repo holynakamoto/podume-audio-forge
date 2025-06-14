@@ -9,6 +9,7 @@ import Create from "./pages/Create";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./auth/AuthProvider";
 import AuthPage from "./pages/Auth";
+import PodcastPage from "./pages/PodcastPage";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/create" element={<Create />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/podcast/:id" element={<PodcastPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '@/components/Logo';
-import { ResumeForm } from '@/components/form/ResumeForm';
+import { PodcastCreationForm } from '@/components/form/PodcastCreationForm';
 import { useAuth } from '@/auth/AuthProvider';
 import { Loader2 } from 'lucide-react';
 
@@ -33,7 +33,7 @@ const Create = () => {
                 </Link>
             </div>
             <div className="w-full">
-                <ResumeForm />
+                <PodcastCreationForm />
             </div>
         </div>
     );
