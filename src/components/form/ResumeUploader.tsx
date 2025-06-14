@@ -32,10 +32,12 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       
       // Limit to first 10 pages for performance (most resumes are 1-3 pages)
       const pagesToProcess = Math.min(numPages, 10);
+      let processedPages = 0;
       
-      // Process pages in parallel for better performance
-      const pagePromises = Array.from({ length: pagesToProcess }, async (_, i) => {
-        const pageNum = i + 1;
+      // Process pages sequentially to fix progress tracking
+      const pageTexts: string[] = [];
+      
+      for (let pageNum = 1; pageNum <= pagesToProcess; pageNum++) {
         try {
           const page = await pdf.getPage(pageNum);
           const textContent = await page.getTextContent();
@@ -52,25 +54,21 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
             .filter(text => text.length > 0)
             .join(' ');
           
-          // Update progress
-          setExtractionProgress(Math.round((pageNum / pagesToProcess) * 100));
+          if (pageText.trim()) {
+            pageTexts.push(pageText);
+          }
           
-          return pageText;
+          // Update progress correctly
+          processedPages++;
+          setExtractionProgress(Math.round((processedPages / pagesToProcess) * 100));
+          
         } catch (pageError) {
           console.warn(`Error processing page ${pageNum}:`, pageError);
-          return '';
         }
-      });
+      }
 
-      // Wait for all pages to be processed
-      const pageTexts = await Promise.all(pagePromises);
-      
       // Join pages with double newlines for better formatting
-      const fullText = pageTexts
-        .filter(text => text.trim().length > 0)
-        .join('\n\n')
-        .trim();
-
+      const fullText = pageTexts.join('\n\n').trim();
       return fullText;
     } catch (error) {
       console.error('Error extracting text from PDF:', error);
@@ -97,7 +95,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     
     try {
       const extractedText = await extractTextFromPDF(file);
-      if (extractedText && extractedText.length > 50) {
+      if (extractedText && extractedText.length > 20) {
         onResumeContentChange(extractedText);
         toast.success('Resume text extracted successfully!');
       } else {

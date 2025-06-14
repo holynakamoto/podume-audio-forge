@@ -17,7 +17,7 @@ import { ResumeUploader } from './ResumeUploader';
 
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
-  resume_content: z.string().min(100, { message: 'Resume content must be at least 100 characters.' }),
+  resume_content: z.string().min(50, { message: 'Resume content must be at least 50 characters.' }),
   package_type: z.enum(['core', 'upsell']),
   voice_clone: z.boolean().default(false),
   premium_assets: z.boolean().default(false),
@@ -44,8 +44,8 @@ export const PodcastCreationForm = () => {
     // Update form with current resume content
     const submitData = { ...values, resume_content: resumeContent };
     
-    if (submitData.resume_content.length < 100) {
-      toast.error('Resume content must be at least 100 characters.');
+    if (submitData.resume_content.length < 50) {
+      toast.error('Resume content must be at least 50 characters.');
       return;
     }
 
@@ -91,8 +91,8 @@ export const PodcastCreationForm = () => {
             onResumeContentChange={setResumeContent}
             resumeContent={resumeContent}
           />
-          {resumeContent.length < 100 && resumeContent.length > 0 && (
-            <p className="text-red-500 text-sm">Resume content must be at least 100 characters.</p>
+          {resumeContent.length < 50 && resumeContent.length > 0 && (
+            <p className="text-red-500 text-sm">Resume content must be at least 50 characters.</p>
           )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -121,7 +121,7 @@ export const PodcastCreationForm = () => {
               </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading || resumeContent.length < 100}>
+          <Button type="submit" className="w-full" disabled={isLoading || resumeContent.length < 50}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Generate Podcast
           </Button>
