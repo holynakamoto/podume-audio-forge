@@ -9,7 +9,6 @@ const corsHeaders = {
 };
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const openai = new OpenAI({ apiKey: openAIApiKey });
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -17,13 +16,27 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { resume_content, title, package_type, voice_clone, premium_assets } = await req.json();
-
-    const supabaseAdminClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    console.log('Generate podcast function called');
     
+    if (!openAIApiKey) {
+      console.error('OpenAI API key not found');
+      return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { resume_content, title, package_type, voice_clone, premium_assets } = await req.json();
+    console.log('Request data received:', { title, package_type, voice_clone, premium_assets });
+
+    if (!resume_content || !title) {
+      console.error('Missing required fields');
+      return new Response(JSON.stringify({ error: 'Missing required fields: resume_content and title' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -35,13 +48,17 @@ serve(async (req: Request) => {
     );
 
     const { data: { user } } = await supabaseClient.auth.getUser();
+    console.log('User authenticated:', user?.id);
 
     if (!user) {
+      console.error('User not authenticated');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const openai = new OpenAI({ apiKey: openAIApiKey });
 
     const prompt = `Based on the following resume text, please generate a short podcast script. The podcast should be an engaging summary of the person's career highlights and skills.
 
@@ -52,6 +69,7 @@ ${resume_content}
 
 Please return the output as a JSON object with the following structure: { "description": "A short, compelling summary for the podcast.", "transcript": "The full podcast script as a string." }`;
 
+    console.log('Calling OpenAI API...');
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -61,8 +79,20 @@ Please return the output as a JSON object with the following structure: { "descr
       response_format: { type: "json_object" },
     });
 
-    const { description, transcript } = JSON.parse(completion.choices[0].message.content || '{}');
+    console.log('OpenAI response received');
+    const content = completion.choices[0].message.content;
+    if (!content) {
+      throw new Error('No content received from OpenAI');
+    }
 
+    const { description, transcript } = JSON.parse(content);
+
+    const supabaseAdminClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    console.log('Inserting podcast data...');
     const { data: podcastData, error: insertError } = await supabaseAdminClient
       .from('podcasts')
       .insert({
@@ -70,8 +100,8 @@ Please return the output as a JSON object with the following structure: { "descr
         title,
         resume_content,
         package_type,
-        voice_clone,
-        premium_assets,
+        voice_clone: voice_clone || false,
+        premium_assets: premium_assets || false,
         description,
         transcript,
         status: 'completed',
@@ -80,16 +110,18 @@ Please return the output as a JSON object with the following structure: { "descr
       .single();
 
     if (insertError) {
+      console.error('Database insert error:', insertError);
       throw insertError;
     }
 
+    console.log('Podcast created successfully:', podcastData.id);
     return new Response(JSON.stringify({ podcast: podcastData }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
   } catch (error) {
-    console.error(error);
+    console.error('Error in generate-podcast function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

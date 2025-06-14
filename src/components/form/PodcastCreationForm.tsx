@@ -6,7 +6,6 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -14,6 +13,7 @@ import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ResumeUploader } from './ResumeUploader';
 
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -27,6 +27,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export const PodcastCreationForm = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [resumeContent, setResumeContent] = useState('');
   const navigate = useNavigate();
 
   const form = useForm<FormValues>({
@@ -35,24 +36,40 @@ export const PodcastCreationForm = () => {
       package_type: 'core',
       voice_clone: false,
       premium_assets: false,
+      resume_content: '',
     },
   });
 
   const onSubmit = async (values: FormValues) => {
+    // Update form with current resume content
+    const submitData = { ...values, resume_content: resumeContent };
+    
+    if (submitData.resume_content.length < 100) {
+      toast.error('Resume content must be at least 100 characters.');
+      return;
+    }
+
     setIsLoading(true);
     toast.info('Generating your podcast... This may take a moment.');
 
-    const { data, error } = await supabase.functions.invoke('generate-podcast', {
-      body: values,
-    });
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-podcast', {
+        body: submitData,
+      });
 
-    setIsLoading(false);
-    if (error) {
-      toast.error(`Failed to create podcast: ${error.message}`);
-    } else {
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
       toast.success('Your podcast has been created!');
       const newPodcastId = data.podcast.id;
       navigate(`/podcast/${newPodcastId}`);
+    } catch (error: any) {
+      console.error('Error creating podcast:', error);
+      toast.error(`Failed to create podcast: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -69,11 +86,14 @@ export const PodcastCreationForm = () => {
             <Input id="title" placeholder="e.g., John Doe's Career Journey" {...form.register('title')} />
             {form.formState.errors.title && <p className="text-red-500 text-sm">{form.formState.errors.title.message}</p>}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="resume_content">Paste Your Resume</Label>
-            <Textarea id="resume_content" placeholder="Paste your full resume text here..." {...form.register('resume_content')} className="min-h-[200px]" />
-            {form.formState.errors.resume_content && <p className="text-red-500 text-sm">{form.formState.errors.resume_content.message}</p>}
-          </div>
+          
+          <ResumeUploader 
+            onResumeContentChange={setResumeContent}
+            resumeContent={resumeContent}
+          />
+          {resumeContent.length < 100 && resumeContent.length > 0 && (
+            <p className="text-red-500 text-sm">Resume content must be at least 100 characters.</p>
+          )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -101,7 +121,7 @@ export const PodcastCreationForm = () => {
               </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading || resumeContent.length < 100}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Generate Podcast
           </Button>
