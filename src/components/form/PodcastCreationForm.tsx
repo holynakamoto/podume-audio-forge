@@ -44,6 +44,7 @@ export const PodcastCreationForm = () => {
   const onSubmit = async (values: FormValues) => {
     console.log('Form submission started with values:', values);
     console.log('Resume content length:', resumeContent.length);
+    console.log('Resume content:', resumeContent.substring(0, 100) + '...');
     
     // Update form with current resume content
     const submitData = { ...values, resume_content: resumeContent };
@@ -57,7 +58,7 @@ export const PodcastCreationForm = () => {
     toast.info('Generating your podcast... This may take a moment.');
 
     try {
-      console.log('Calling generate-podcast function...');
+      console.log('Calling generate-podcast function with data:', submitData);
       const { data, error } = await supabase.functions.invoke('generate-podcast', {
         body: submitData,
       });
@@ -82,6 +83,12 @@ export const PodcastCreationForm = () => {
   // Watch form values for validation
   const titleValue = form.watch('title');
   const canSubmit = resumeContent.length >= 5 && titleValue && titleValue.length >= 3;
+
+  console.log('Form state:', { 
+    resumeContentLength: resumeContent.length, 
+    titleLength: titleValue?.length || 0, 
+    canSubmit 
+  });
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -137,8 +144,11 @@ export const PodcastCreationForm = () => {
           </Button>
           
           {/* Debug info */}
-          <div className="text-xs text-gray-500">
-            Resume content: {resumeContent.length} characters | Title: {titleValue?.length || 0} characters | Can submit: {canSubmit ? 'Yes' : 'No'}
+          <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
+            <div>Resume content: {resumeContent.length} characters</div>
+            <div>Title: {titleValue?.length || 0} characters</div>
+            <div>Can submit: {canSubmit ? 'Yes' : 'No'}</div>
+            <div>Resume preview: {resumeContent.substring(0, 50)}...</div>
           </div>
         </form>
       </CardContent>

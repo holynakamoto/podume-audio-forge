@@ -18,6 +18,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
 }) => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [uploadMode, setUploadMode] = useState<'upload' | 'paste'>('upload');
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -36,18 +37,37 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     }
 
     setIsExtracting(true);
+    setUploadProgress(0);
     
     try {
+      // Simulate progress updates for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
       // Since NotebookLM accepts PDF directly, we'll just use the filename as content
-      // This avoids the complex PDF parsing that was causing issues
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing time
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
       const fileName = file.name;
-      onResumeContentChange(`PDF uploaded: ${fileName} (${Math.round(file.size / 1024)} KB)`);
+      const fileContent = `PDF uploaded: ${fileName} (${Math.round(file.size / 1024)} KB)`;
+      onResumeContentChange(fileContent);
+      
       toast.success('PDF uploaded successfully!');
     } catch (error) {
       console.error('PDF upload error:', error);
       toast.error('Failed to upload PDF. Please try again.');
     } finally {
       setIsExtracting(false);
+      setUploadProgress(0);
       // Clear the input so the same file can be uploaded again if needed
       event.target.value = '';
     }
@@ -85,7 +105,13 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
                 <div className="space-y-2">
                   <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
                   <div className="text-sm text-gray-600">
-                    Processing PDF...
+                    Processing PDF... {uploadProgress}%
+                  </div>
+                  <div className="w-32 bg-gray-200 rounded-full h-2 mx-auto">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all duration-300" 
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
                   </div>
                 </div>
               ) : (
