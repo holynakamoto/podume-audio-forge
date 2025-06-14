@@ -19,7 +19,7 @@
     --primary: 260 100% 70%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 180 95% 45%;
+    --secondary: 45 93% 47%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 217.2 32.6% 17.5%;
@@ -47,7 +47,7 @@
     --popover-foreground: 210 40% 98%;
     --primary: 260 100% 70%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 180 95% 45%;
+    --secondary: 45 93% 47%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
@@ -73,5 +73,23 @@
 
   html {
     scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .text-gold {
+    @apply text-yellow-400;
+  }
+  
+  .bg-gold {
+    @apply bg-yellow-400;
+  }
+  
+  .border-gold {
+    @apply border-yellow-400;
+  }
+  
+  .gradient-purple-gold {
+    background: linear-gradient(135deg, #8b5cf6 0%, #f59e0b 100%);
   }
 }
