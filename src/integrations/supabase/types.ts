@@ -9,7 +9,116 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      podcasts: {
+        Row: {
+          audio_url: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          package_type: string
+          premium_assets: boolean | null
+          resume_content: string | null
+          social_assets: Json | null
+          status: string | null
+          title: string
+          transcript: string | null
+          updated_at: string | null
+          user_id: string
+          voice_clone: boolean | null
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          package_type: string
+          premium_assets?: boolean | null
+          resume_content?: string | null
+          social_assets?: Json | null
+          status?: string | null
+          title: string
+          transcript?: string | null
+          updated_at?: string | null
+          user_id: string
+          voice_clone?: boolean | null
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          package_type?: string
+          premium_assets?: boolean | null
+          resume_content?: string | null
+          social_assets?: Json | null
+          status?: string | null
+          title?: string
+          transcript?: string | null
+          updated_at?: string | null
+          user_id?: string
+          voice_clone?: boolean | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      sharing_logs: {
+        Row: {
+          id: string
+          platform: string
+          podcast_id: string
+          share_url: string | null
+          shared_at: string | null
+        }
+        Insert: {
+          id?: string
+          platform: string
+          podcast_id: string
+          share_url?: string | null
+          shared_at?: string | null
+        }
+        Update: {
+          id?: string
+          platform?: string
+          podcast_id?: string
+          share_url?: string | null
+          shared_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sharing_logs_podcast_id_fkey"
+            columns: ["podcast_id"]
+            isOneToOne: false
+            referencedRelation: "podcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
