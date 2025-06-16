@@ -1,8 +1,8 @@
 
-import { pdfjs, getDocument } from 'react-pdf';
+import * as pdfjsLib from 'pdfjs-dist';
 
 // Set up the worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export interface ProgressCallback {
   (progress: number): void;
@@ -12,7 +12,7 @@ export const extractTextFromPDF = async (
   file: File, 
   onProgress?: ProgressCallback
 ): Promise<string> => {
-  console.log('=== PDF EXTRACTION START (react-pdf) ===');
+  console.log('=== PDF EXTRACTION START (pdfjs-dist) ===');
   console.log('File details:', {
     name: file.name,
     size: file.size,
@@ -29,9 +29,9 @@ export const extractTextFromPDF = async (
     
     onProgress?.(15);
     
-    // Create PDF document using react-pdf
-    console.log('Creating PDF document with react-pdf...');
-    const pdf = await getDocument({ data: arrayBuffer }).promise;
+    // Create PDF document using pdfjs-dist
+    console.log('Creating PDF document with pdfjs-dist...');
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     console.log('PDF loaded successfully:', {
       numPages: pdf.numPages
     });
