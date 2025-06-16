@@ -7,7 +7,7 @@ import { UploadModeSelector } from './UploadModeSelector';
 import { PDFUploadZone } from './PDFUploadZone';
 import { TextPasteArea } from './TextPasteArea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 
 interface ResumeUploaderProps {
   onResumeContentChange: (content: string) => void;
@@ -22,6 +22,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   const [uploadMode, setUploadMode] = useState<'upload' | 'paste'>('upload');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showPasteRecommendation, setShowPasteRecommendation] = useState(false);
+  const [usedFallbackMode, setUsedFallbackMode] = useState(false);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log('=== FILE UPLOAD HANDLER START ===');
@@ -53,6 +54,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     setIsExtracting(true);
     setUploadProgress(0);
     setShowPasteRecommendation(false);
+    setUsedFallbackMode(false);
     
     try {
       console.log('Calling extractTextFromPDF...');
@@ -71,25 +73,48 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       console.log('Text extraction successful, updating content');
       onResumeContentChange(extractedText);
       
-      toast.success('PDF text extracted successfully!');
+      // Check if fallback mode was used (simplified detection)
+      if (extractedText.length > 0 && extractedText.length < 2000) {
+        setUsedFallbackMode(true);
+        toast.success('PDF text extracted using simplified mode. For better results with complex PDFs, try pasting the text directly.');
+      } else {
+        toast.success('PDF text extracted successfully!');
+      }
+      
       console.log('=== FILE UPLOAD HANDLER SUCCESS ===');
     } catch (error) {
       console.error('=== FILE UPLOAD HANDLER ERROR ===');
       console.error('Error in handleFileUpload:', error);
       
-      const errorMessage = error instanceof Error ? error.message : 'Failed to extract text from PDF.';
+      let errorMessage = 'Failed to extract text from PDF.';
+      let shouldRecommendPaste = true;
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Check for specific error types that suggest paste mode
+        if (error.message.includes('Please try pasting') ||
+            error.message.includes('paste your text directly')) {
+          shouldRecommendPaste = true;
+        } else if (error.message.includes('Worker loading failure') ||
+                   error.message.includes('Setting up fake worker failed')) {
+          errorMessage = 'PDF processing encountered technical difficulties. Please try pasting your text directly for best results.';
+          shouldRecommendPaste = true;
+        }
+      }
+      
       toast.error(errorMessage);
       
-      // Show recommendation to use paste mode
-      setShowPasteRecommendation(true);
+      if (shouldRecommendPaste) {
+        setShowPasteRecommendation(true);
+      }
+      
       setUploadProgress(0);
     } finally {
       console.log('Cleaning up...');
       setIsExtracting(false);
-      // Clear the input so the same file can be uploaded again if needed
       event.target.value = '';
       
-      // Reset progress after a short delay
       setTimeout(() => {
         console.log('Resetting progress to 0');
         setUploadProgress(0);
@@ -114,6 +139,15 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             Having trouble with PDF upload? Try switching to "Paste Text" mode above for more reliable results.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {usedFallbackMode && uploadMode === 'upload' && resumeContent && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            PDF processed in simplified mode (limited to first 5 pages). For complex PDFs or better accuracy, consider using "Paste Text" mode.
           </AlertDescription>
         </Alert>
       )}
