@@ -25,23 +25,52 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let extractedText = '';
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      setUploadProgress((i / pdf.numPages) * 90); // Progress up to 90%
+    console.log('Starting PDF extraction for file:', file.name);
+    setUploadProgress(10); // Initial progress
+    
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      console.log('File read as array buffer, size:', arrayBuffer.byteLength);
+      setUploadProgress(20);
       
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      console.log('PDF loaded, pages:', pdf.numPages);
+      setUploadProgress(30);
       
-      extractedText += pageText + '\n';
+      let extractedText = '';
+      const totalPages = pdf.numPages;
+      
+      for (let i = 1; i <= totalPages; i++) {
+        console.log(`Processing page ${i}/${totalPages}`);
+        
+        try {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item: any) => item.str)
+            .join(' ');
+          
+          extractedText += pageText + '\n';
+          
+          // Update progress: 30% + (page progress * 60%)
+          const pageProgress = (i / totalPages) * 60;
+          setUploadProgress(30 + pageProgress);
+          
+          console.log(`Page ${i} processed, text length: ${pageText.length}`);
+        } catch (pageError) {
+          console.error(`Error processing page ${i}:`, pageError);
+          // Continue with other pages even if one fails
+        }
+      }
+      
+      setUploadProgress(95);
+      console.log('Total extracted text length:', extractedText.length);
+      
+      return extractedText.trim();
+    } catch (error) {
+      console.error('PDF extraction error:', error);
+      throw error;
     }
-
-    return extractedText.trim();
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,7 +99,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       setUploadProgress(100);
       
       if (extractedText.length < 10) {
-        toast.error('Could not extract text from PDF. Please try a different file or paste your resume text manually.');
+        toast.error('Could not extract readable text from this PDF. Please try a different file or paste your resume text manually.');
         return;
       }
 
@@ -81,11 +110,16 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     } catch (error) {
       console.error('PDF extraction error:', error);
       toast.error('Failed to extract text from PDF. Please try pasting your resume text instead.');
+      setUploadProgress(0);
     } finally {
       setIsExtracting(false);
-      setUploadProgress(0);
       // Clear the input so the same file can be uploaded again if needed
       event.target.value = '';
+      
+      // Reset progress after a short delay
+      setTimeout(() => {
+        setUploadProgress(0);
+      }, 2000);
     }
   };
 
@@ -121,7 +155,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
                 <div className="space-y-2">
                   <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
                   <div className="text-sm text-gray-600">
-                    Extracting text from PDF... {uploadProgress}%
+                    Extracting text from PDF... {Math.round(uploadProgress)}%
                   </div>
                   <div className="w-32 bg-gray-200 rounded-full h-2 mx-auto">
                     <div 
