@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -25,10 +24,23 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export const PodcastCreationForm = () => {
+interface PodcastCreationFormProps {
+  initialResumeContent?: string;
+}
+
+export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({ 
+  initialResumeContent = '' 
+}) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [resumeContent, setResumeContent] = useState('');
+  const [resumeContent, setResumeContent] = useState(initialResumeContent);
   const navigate = useNavigate();
+
+  // Update resume content when initial content changes
+  useEffect(() => {
+    if (initialResumeContent) {
+      setResumeContent(initialResumeContent);
+    }
+  }, [initialResumeContent]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
