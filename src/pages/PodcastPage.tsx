@@ -3,7 +3,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Twitter, Linkedin, Copy } from 'lucide-react';
+import { Loader2, Twitter, Linkedin, Copy, Play, Pause } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
@@ -24,6 +24,8 @@ const fetchPodcast = async (id: string) => {
 
 const PodcastPage = () => {
   const { id } = useParams<{ id: string }>();
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const audioRef = React.useRef<HTMLAudioElement>(null);
 
   const { data: podcast, isLoading, error } = useQuery({
     queryKey: ['podcast', id],
@@ -36,6 +38,17 @@ const PodcastPage = () => {
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
     toast.success('Link copied to clipboard!');
+  };
+
+  const togglePlayback = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
   };
 
   if (isLoading) {
@@ -73,19 +86,38 @@ const PodcastPage = () => {
           </CardHeader>
           <CardContent>
             {podcast.audio_url && (
-              <div className="my-4">
-                <audio controls className="w-full">
-                  <source src={podcast.audio_url} type="audio/mpeg" />
-                  Your browser does not support the audio element.
-                </audio>
+              <div className="my-6">
+                <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+                  <Button
+                    onClick={togglePlayback}
+                    size="lg"
+                    className="rounded-full w-12 h-12"
+                  >
+                    {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+                  </Button>
+                  <div className="flex-1">
+                    <p className="font-medium">Your Career Podcast</p>
+                    <p className="text-sm text-muted-foreground">Generated from your resume</p>
+                  </div>
+                </div>
+                <audio 
+                  ref={audioRef}
+                  src={podcast.audio_url}
+                  onEnded={() => setIsPlaying(false)}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  className="hidden"
+                />
               </div>
             )}
+            
             <div className="mt-6 space-y-4">
               <h3 className="font-semibold text-lg">Transcript</h3>
               <div className="prose prose-sm max-w-none text-muted-foreground bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
-                <p>{podcast.transcript}</p>
+                <p className="whitespace-pre-wrap">{podcast.transcript}</p>
               </div>
             </div>
+            
             <div className="mt-8">
               <h3 className="font-semibold text-lg mb-4">Share this Podcast</h3>
               <div className="flex flex-wrap gap-4 items-center">
