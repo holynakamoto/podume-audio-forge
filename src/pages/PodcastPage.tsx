@@ -126,6 +126,22 @@ const PodcastPage = () => {
                 )}
               </div>
             </div>
+
+            {podcast.audio_url && (
+              <div className="mt-8">
+                <h3 className="font-semibold text-lg mb-4">Test Audio Playback</h3>
+                <div className="flex justify-center">
+                  <Button
+                    onClick={togglePlayback}
+                    size="lg"
+                    className="flex items-center gap-3 px-8 py-3"
+                  >
+                    {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                    {isPlaying ? 'Pause Podcast' : 'Play Podcast'}
+                  </Button>
+                </div>
+              </div>
+            )}
             
             <div className="mt-8">
               <h3 className="font-semibold text-lg mb-4">Share this Podcast</h3>
