@@ -21,13 +21,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    // Include pdfjs-dist in dependency pre-bundling
     include: ['pdfjs-dist'],
-  },
-  worker: {
-    // Configure worker handling for PDF.js
-    format: 'es',
-    plugins: () => [react()]
   },
   assetsInclude: ['**/*.wasm', '**/*.mjs'],
 }));
