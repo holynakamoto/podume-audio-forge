@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -6,12 +7,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-
 const generateAudioWithGeminiTTS = async (text: string): Promise<string | null> => {
   console.log('Attempting to generate audio with Gemini TTS...');
   
+  const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
   if (!geminiApiKey) {
     console.log('Gemini API key not found, skipping TTS generation');
     return null;
@@ -157,7 +156,7 @@ serve(async (req: Request) => {
     }
     console.log('User authenticated:', user.id);
 
-    // Generate podcast script with OpenAI - Fixed headers
+    // Generate podcast script with OpenAI
     const prompt = `Based on the following resume text, please generate a compelling 2-3 minute podcast script that tells this person's career story in an engaging, conversational way. Focus on their key achievements, skills, and career progression. Make it sound natural and interesting, as if you're introducing this person to potential employers or collaborators.
 
 Resume:
@@ -171,17 +170,14 @@ Please return the output as a JSON object with the following structure: { "descr
     
     let openAIResult;
     try {
-      // Fix the headers - ensure all header values are strings
-      const requestHeaders = {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      };
-
-      console.log('Making OpenAI request with proper headers...');
+      console.log('Making OpenAI request...');
       
       const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
-        headers: requestHeaders,
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [
@@ -232,7 +228,7 @@ Please return the output as a JSON object with the following structure: { "descr
 
     console.log('Script generated successfully');
 
-    // Save to database (skip TTS for now to isolate the issue)
+    // Save to database
     console.log('Saving podcast to database...');
     const supabaseAdminClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
