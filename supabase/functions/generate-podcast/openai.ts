@@ -24,17 +24,18 @@ export async function generatePodcastScript(resumeContent: string): Promise<stri
   // Enhanced prompt for two-host conversation format
   const prompt = `Create a professional podcast script featuring TWO HOSTS having a natural conversation about this resume. The script should:
 
-1. Have Host 1 (Sarah) and Host 2 (Mike) naturally discussing the career journey
+1. Have alternating speakers in a natural conversation (do not use "Host 1:" or "Host 2:" labels)
 2. Include smooth transitions between topics
 3. Sound conversational and engaging, not like reading bullet points
 4. Highlight key achievements and skills naturally in conversation
 5. Be approximately 2-3 minutes when spoken
-6. End with closing remarks from both hosts
+6. Each paragraph should be spoken by a different person
+7. Start with a welcoming introduction and end with closing remarks
 
 Resume Content:
 ${resumeContent}
 
-Format the output as a natural conversation between two podcast hosts, with clear speaker labels.`;
+Format the output as alternating paragraphs where each paragraph is spoken by a different person. Do not include any speaker labels.`;
 
   console.log('Sending request to Hugging Face API...');
   console.log('Model endpoint: https://api-inference.huggingface.co/models/microsoft/DialoGPT-large');
@@ -142,26 +143,25 @@ function generateBasicScript(resumeContent: string): string {
   const summary = extractSummary(lines);
   const experience = extractExperience(lines);
   
-  // Create a conversational two-host script
-  let script = `Host 1: Welcome to Career Spotlight! Today we're featuring the professional journey of ${name}.\n\n`;
-  script += `Host 2: That's right! Let me take you through an inspiring career story that showcases dedication, growth, and expertise.\n\n`;
+  // Create a conversational two-host script without labels
+  let script = `Welcome to Career Spotlight! Today we're featuring the professional journey of ${name}.\n\n`;
+  script += `That's right! Let me take you through an inspiring career story that showcases dedication, growth, and expertise.\n\n`;
   
   if (summary) {
-    script += `Host 1: ${summary}\n\n`;
+    script += `${summary}\n\n`;
   }
   
   if (experience.length > 0) {
-    script += `Host 2: Looking at their professional experience, we can see some impressive achievements:\n\n`;
+    script += `Looking at their professional experience, we can see some impressive achievements:\n\n`;
     experience.slice(0, 3).forEach((exp, index) => {
-      const speaker = index % 2 === 0 ? "Host 1" : "Host 2";
-      script += `${speaker}: ${exp}\n\n`;
+      script += `${exp}\n\n`;
     });
   }
   
-  script += `Host 1: What stands out most is the consistent growth and adaptability throughout their career.\n\n`;
-  script += `Host 2: Absolutely! This is exactly the kind of professional development story that inspires others.\n\n`;
-  script += `Host 1: Thanks for joining us on Career Spotlight! Don't forget to subscribe for more inspiring career stories.\n\n`;
-  script += `Host 2: Until next time, keep growing and pursuing your professional goals!`;
+  script += `What stands out most is the consistent growth and adaptability throughout their career.\n\n`;
+  script += `Absolutely! This is exactly the kind of professional development story that inspires others.\n\n`;
+  script += `Thanks for joining us on Career Spotlight! Don't forget to subscribe for more inspiring career stories.\n\n`;
+  script += `Until next time, keep growing and pursuing your professional goals!`;
 
   console.log('Basic script generated successfully');
   return script;
