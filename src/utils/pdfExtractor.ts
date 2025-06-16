@@ -56,7 +56,7 @@ const extractTextSimple = async (
       useWorkerFetch: false,
       isEvalSupported: false,
       maxImageSize: 256 * 256, // Smaller images to reduce memory usage
-      standardFontDataUrl: '', // Disable font loading to avoid additional requests
+      // Remove standardFontDataUrl completely to avoid URL validation errors
     });
 
     const pdf: PDFDocumentProxy = await loadingTask.promise;
