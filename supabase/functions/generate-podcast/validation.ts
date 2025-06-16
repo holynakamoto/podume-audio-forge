@@ -2,19 +2,19 @@
 import { PodcastRequest } from './types.ts';
 
 export function validateEnvironment(): string | null {
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const huggingFaceApiKey = Deno.env.get('HUGGING_FACE_API_KEY');
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   
   console.log('=== Environment Validation ===');
-  console.log('OpenAI API key present:', !!openAIApiKey);
-  console.log('OpenAI API key prefix:', openAIApiKey ? openAIApiKey.substring(0, 7) + '...' : 'MISSING');
+  console.log('Hugging Face API key present:', !!huggingFaceApiKey);
+  console.log('Hugging Face API key prefix:', huggingFaceApiKey ? huggingFaceApiKey.substring(0, 7) + '...' : 'MISSING');
   console.log('Supabase URL present:', !!supabaseUrl);
   console.log('Supabase Service Role Key present:', !!supabaseServiceKey);
   
-  if (!openAIApiKey) {
-    console.error('OpenAI API key not found in environment variables');
-    return 'OpenAI API key not configured. Please check your Supabase secrets configuration';
+  if (!huggingFaceApiKey) {
+    console.error('Hugging Face API key not found in environment variables');
+    return 'Hugging Face API key not configured. Please check your Supabase secrets configuration';
   }
   
   if (!supabaseUrl) {
