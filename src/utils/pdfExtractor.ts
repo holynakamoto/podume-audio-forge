@@ -1,5 +1,6 @@
 
 import * as pdfjsLib from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 
 // Set up the worker with proper Vite configuration
 const setupWorker = () => {
@@ -51,13 +52,12 @@ const extractTextWithoutWorker = async (
       verbosity: 0,
       useWorkerFetch: false,
       isEvalSupported: false,
-      disableWorker: true, // Explicitly disable worker
       maxImageSize: 512 * 512, // Smaller image size for worker-less mode
     });
     
-    const pdf = await Promise.race([
+    const pdf: PDFDocumentProxy = await Promise.race([
       loadingTask.promise,
-      new Promise((_, reject) => 
+      new Promise<never>((_, reject) => 
         setTimeout(() => reject(new Error('PDF loading timeout')), 20000)
       )
     ]);
@@ -68,7 +68,7 @@ const extractTextWithoutWorker = async (
     const totalPages = Math.min(pdf.numPages, 5); // Limit pages in worker-less mode
     
     for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
+      const page: PDFPageProxy = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       
       const pageText = textContent.items
@@ -109,7 +109,7 @@ export const extractTextFromPDF = async (
     if (workerInitialized) {
       try {
         console.log('Attempting PDF processing with worker...');
-        const pdf = await pdfjsLib.getDocument({
+        const pdf: PDFDocumentProxy = await pdfjsLib.getDocument({
           data: arrayBuffer,
           verbosity: 0,
           useWorkerFetch: true, // Enable worker fetch for better compatibility
@@ -123,9 +123,9 @@ export const extractTextFromPDF = async (
         const totalPages = pdf.numPages;
         
         for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-          const page = await Promise.race([
+          const page: PDFPageProxy = await Promise.race([
             pdf.getPage(pageNum),
-            new Promise((_, reject) => 
+            new Promise<never>((_, reject) => 
               setTimeout(() => reject(new Error('Page load timeout')), 10000)
             )
           ]);
