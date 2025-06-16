@@ -11,41 +11,47 @@ const corsHeaders = {
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 
-const generateAudioWithGemini = async (text: string): Promise<string> => {
-  console.log('Generating audio with Gemini TTS...');
+const generateAudioWithGoogleTTS = async (text: string): Promise<string> => {
+  console.log('Generating audio with Google Cloud Text-to-Speech...');
   
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: `Convert this text to speech: ${text}`
-        }]
-      }],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
-      }
-    }),
-  });
+  try {
+    // Use Google Cloud Text-to-Speech API
+    const response = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${geminiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        input: { text },
+        voice: {
+          languageCode: 'en-US',
+          name: 'en-US-Journey-D', // Professional male voice
+          ssmlGender: 'MALE'
+        },
+        audioConfig: {
+          audioEncoding: 'MP3',
+          speakingRate: 1.0,
+          pitch: 0.0
+        }
+      }),
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Gemini API error:', errorText);
-    throw new Error(`Gemini API error: ${response.status}`);
+    if (!response.ok) {
+      console.error('Google TTS API error:', response.status, await response.text());
+      throw new Error(`Google TTS API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Google TTS response received');
+    
+    // Return the base64 audio data as a data URL
+    return `data:audio/mp3;base64,${result.audioContent}`;
+  } catch (error) {
+    console.error('TTS generation failed, using fallback:', error);
+    // Return null if TTS fails - we'll continue without audio
+    return null;
   }
-
-  const result = await response.json();
-  console.log('Gemini response received');
-  
-  // For now, we'll return a placeholder since Gemini doesn't have direct TTS
-  // In a real implementation, you'd use a proper TTS service
-  return `data:audio/mp3;base64,${btoa('placeholder-audio-data')}`;
 };
 
 serve(async (req: Request) => {
@@ -59,14 +65,6 @@ serve(async (req: Request) => {
     if (!openAIApiKey) {
       console.error('OpenAI API key not found');
       return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (!geminiApiKey) {
-      console.error('Gemini API key not found');
-      return new Response(JSON.stringify({ error: 'Gemini API key not configured' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -133,18 +131,19 @@ Please return the output as a JSON object with the following structure: { "descr
 
     const { description, transcript } = JSON.parse(content);
 
-    console.log('Generating audio with Gemini TTS...');
+    console.log('Generating audio with Google TTS...');
     let audioUrl = null;
     
-    try {
-      // For now, we'll use a simple text-to-speech approach
-      // In a real implementation, you'd integrate with Google Cloud TTS or similar
-      const audioData = await generateAudioWithGemini(transcript);
-      audioUrl = audioData;
-      console.log('Audio generated successfully');
-    } catch (audioError) {
-      console.error('Audio generation failed:', audioError);
-      // Continue without audio if generation fails
+    if (geminiApiKey) {
+      try {
+        audioUrl = await generateAudioWithGoogleTTS(transcript);
+        console.log('Audio generated successfully');
+      } catch (audioError) {
+        console.error('Audio generation failed:', audioError);
+        // Continue without audio if generation fails
+      }
+    } else {
+      console.log('Gemini API key not found, skipping audio generation');
     }
 
     const supabaseAdminClient = createClient(
