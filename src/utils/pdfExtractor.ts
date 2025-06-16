@@ -6,6 +6,12 @@ export interface ProgressCallback {
   (progress: number): void;
 }
 
+// Configure PDF.js to avoid worker issues
+if (typeof window !== 'undefined') {
+  // Disable worker globally to prevent setup issues
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+}
+
 // Main PDF text extraction function
 export const extractTextFromPDF = async (
   file: File,
@@ -18,14 +24,14 @@ export const extractTextFromPDF = async (
     const arrayBuffer = await file.arrayBuffer();
     onProgress?.(10);
 
-    // Configure PDF.js to disable worker entirely
+    // Configure PDF.js with minimal options to avoid worker issues
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
       verbosity: 0,
       useWorkerFetch: false, // Disable fetching of standard font data
       isEvalSupported: false, // Disable eval for security
       maxImageSize: 256 * 256, // Limit image size to prevent memory issues
-      disableWorker: true, // Explicitly disable worker to avoid setup issues
+      // Remove disableWorker as it's not a valid property
     });
 
     // Load PDF document
