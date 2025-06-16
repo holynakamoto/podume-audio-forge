@@ -78,11 +78,16 @@ serve(async (req: Request) => {
   try {
     console.log('=== Generate podcast function called ===');
     
-    // Validate API keys
+    // Validate API keys with detailed error messages
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    console.log('OpenAI API key check:', openAIApiKey ? 'Found' : 'NOT FOUND');
+    
     if (!openAIApiKey) {
-      console.error('OpenAI API key not found');
-      return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
+      console.error('OpenAI API key not found in environment variables');
+      return new Response(JSON.stringify({ 
+        error: 'OpenAI API key not configured',
+        details: 'Please check your Supabase secrets configuration'
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -167,6 +172,7 @@ ${resume_content}
 Please return the output as a JSON object with the following structure: { "description": "A short, compelling summary for the podcast.", "transcript": "The full podcast script as a string that should be 2-3 minutes when read aloud." }`;
 
     console.log('Calling OpenAI API for script generation...');
+    console.log('Using API key starting with:', openAIApiKey.substring(0, 7) + '...');
     
     let openAIResult;
     try {
@@ -188,17 +194,36 @@ Please return the output as a JSON object with the following structure: { "descr
         }),
       });
 
+      console.log('OpenAI response status:', openAIResponse.status);
+      
       if (!openAIResponse.ok) {
         const errorText = await openAIResponse.text();
-        console.error('OpenAI API error:', openAIResponse.status, errorText);
-        throw new Error(`OpenAI API error: ${openAIResponse.status} - ${errorText}`);
+        console.error('OpenAI API error details:', {
+          status: openAIResponse.status,
+          statusText: openAIResponse.statusText,
+          errorText
+        });
+        
+        // Handle specific error cases
+        if (openAIResponse.status === 401) {
+          throw new Error('OpenAI API authentication failed. Please check your API key.');
+        } else if (openAIResponse.status === 429) {
+          throw new Error('OpenAI API rate limit exceeded. Please try again later.');
+        } else if (openAIResponse.status === 402) {
+          throw new Error('OpenAI API quota exceeded. Please check your billing.');
+        } else {
+          throw new Error(`OpenAI API error: ${openAIResponse.status} - ${errorText}`);
+        }
       }
 
       openAIResult = await openAIResponse.json();
       console.log('OpenAI response received successfully');
     } catch (openAIError) {
       console.error('OpenAI API call failed:', openAIError);
-      return new Response(JSON.stringify({ error: `Failed to generate podcast script: ${openAIError.message}` }), {
+      return new Response(JSON.stringify({ 
+        error: `Failed to generate podcast script: ${openAIError.message}`,
+        details: 'Check the function logs for more information'
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
