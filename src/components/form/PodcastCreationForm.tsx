@@ -2,28 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { ResumeUploader } from './ResumeUploader';
-
-const formSchema = z.object({
-  title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
-  resume_content: z.string().min(5, { message: 'Resume content must be at least 5 characters.' }),
-  package_type: z.enum(['core', 'upsell']),
-  voice_clone: z.boolean().default(false),
-  premium_assets: z.boolean().default(false),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { PodcastTitleInput } from './PodcastTitleInput';
+import { PodcastSettings } from './PodcastSettings';
+import { PodcastSubmitButton } from './PodcastSubmitButton';
+import { formSchema, FormValues } from './schemas/podcastFormSchema';
 
 interface PodcastCreationFormProps {
   initialResumeContent?: string;
@@ -109,14 +96,12 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
 
   // Watch form values for validation
   const titleValue = form.watch('title');
-  const resumeContentValue = form.watch('resume_content');
   
   // Use the actual resumeContent state for validation, not just the form value
   const canSubmit = resumeContent.length >= 5 && titleValue && titleValue.length >= 3;
 
   console.log('Form state:', { 
     resumeContentLength: resumeContent.length, 
-    resumeContentValueLength: resumeContentValue?.length || 0,
     titleLength: titleValue?.length || 0, 
     canSubmit,
     isLoading
@@ -130,17 +115,7 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="title">Podcast Title</Label>
-            <Input 
-              id="title" 
-              placeholder="e.g., John Doe's Career Journey" 
-              {...form.register('title')} 
-            />
-            {form.formState.errors.title && (
-              <p className="text-red-500 text-sm">{form.formState.errors.title.message}</p>
-            )}
-          </div>
+          <PodcastTitleInput form={form} />
           
           <ResumeUploader 
             onResumeContentChange={setResumeContent}
@@ -150,49 +125,12 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
             <p className="text-red-500 text-sm">Resume content must be at least 5 characters.</p>
           )}
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="package_type">Package Type</Label>
-              <Select 
-                onValueChange={(value) => form.setValue('package_type', value as 'core' | 'upsell')} 
-                defaultValue="core"
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a package" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="core">Core</SelectItem>
-                  <SelectItem value="upsell">Upsell (Premium)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="voice_clone" 
-                onCheckedChange={(checked) => form.setValue('voice_clone', checked)} 
-              />
-              <Label htmlFor="voice_clone">Enable Voice Clone</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="premium_assets" 
-                onCheckedChange={(checked) => form.setValue('premium_assets', checked)} 
-              />
-              <Label htmlFor="premium_assets">Include Premium Assets</Label>
-            </div>
-          </div>
+          <PodcastSettings form={form} />
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isLoading || !canSubmit}
-          >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Generate Podcast
-          </Button>
+          <PodcastSubmitButton 
+            isLoading={isLoading} 
+            canSubmit={canSubmit} 
+          />
         </form>
       </CardContent>
     </Card>
