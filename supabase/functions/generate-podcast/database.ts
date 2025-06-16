@@ -1,7 +1,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { PodcastRequest } from './types.ts';
-import { generateAudioWithGeminiTTS } from './gemini-tts.ts';
+import { generateAudioWithOpenAITTS } from './openai-tts.ts';
 
 export async function savePodcastToDatabase(
   user: any,
@@ -42,10 +42,10 @@ export async function savePodcastToDatabase(
     }
     
     console.log('Podcast created successfully with ID:', data.id);
-    console.log('Starting TTS generation...');
+    console.log('Starting TTS generation with OpenAI...');
 
-    // Generate audio with Gemini TTS
-    const audioDataUrl = await generateAudioWithGeminiTTS(generatedScript);
+    // Generate audio with OpenAI TTS
+    const audioDataUrl = await generateAudioWithOpenAITTS(generatedScript);
     
     if (audioDataUrl) {
       console.log('TTS generation successful, updating podcast with audio URL');
