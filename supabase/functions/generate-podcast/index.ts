@@ -14,7 +14,7 @@ const generateAudioWithGeminiTTS = async (text: string): Promise<string | null> 
   console.log('Generating audio with Gemini TTS...');
   
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -81,7 +81,8 @@ serve(async (req: Request) => {
       });
     }
 
-    const { resume_content, title, package_type, voice_clone, premium_assets } = await req.json();
+    const body = await req.json();
+    const { resume_content, title, package_type, voice_clone, premium_assets } = body;
     console.log('Request data received:', { title, package_type, voice_clone, premium_assets });
 
     if (!resume_content || !title) {
@@ -124,7 +125,6 @@ Please return the output as a JSON object with the following structure: { "descr
 
     console.log('Calling OpenAI API...');
     
-    // Fixed OpenAI API call with proper headers
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
