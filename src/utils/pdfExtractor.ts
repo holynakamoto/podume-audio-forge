@@ -1,34 +1,15 @@
 
-import * as pdfjsLib from 'pdfjs-dist';
+import { getDocument } from 'react-pdf/dist/esm/entry.webpack5';
 
 export interface ProgressCallback {
   (progress: number): void;
 }
 
-// Initialize PDF.js worker with multiple fallbacks
-const initializePDFWorker = () => {
-  const workerUrls = [
-    // Try jsdelivr CDN first
-    `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`,
-    // Fallback to unpkg
-    `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`,
-    // Final fallback to cdnjs
-    `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
-  ];
-
-  // Try the first URL
-  pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrls[0];
-  console.log('PDF.js worker initialized with:', workerUrls[0]);
-};
-
-// Initialize worker immediately
-initializePDFWorker();
-
 export const extractTextFromPDF = async (
   file: File, 
   onProgress?: ProgressCallback
 ): Promise<string> => {
-  console.log('=== PDF EXTRACTION START ===');
+  console.log('=== PDF EXTRACTION START (react-pdf) ===');
   console.log('File details:', {
     name: file.name,
     size: file.size,
@@ -45,17 +26,11 @@ export const extractTextFromPDF = async (
     
     onProgress?.(15);
     
-    // Create PDF document
-    console.log('Creating PDF document...');
-    const loadingTask = pdfjsLib.getDocument({ 
-      data: arrayBuffer,
-      verbosity: 0 // Reduce console noise
-    });
-    
-    const pdf = await loadingTask.promise;
+    // Create PDF document using react-pdf
+    console.log('Creating PDF document with react-pdf...');
+    const pdf = await getDocument({ data: arrayBuffer }).promise;
     console.log('PDF loaded successfully:', {
-      numPages: pdf.numPages,
-      fingerprints: pdf.fingerprints
+      numPages: pdf.numPages
     });
     
     onProgress?.(25);
@@ -71,10 +46,7 @@ export const extractTextFromPDF = async (
       
       try {
         const page = await pdf.getPage(pageNum);
-        console.log(`Page ${pageNum} loaded, dimensions:`, {
-          width: page.view[2],
-          height: page.view[3]
-        });
+        console.log(`Page ${pageNum} loaded`);
         
         const textContent = await page.getTextContent();
         console.log(`Page ${pageNum} text items:`, textContent.items.length);
@@ -121,15 +93,13 @@ export const extractTextFromPDF = async (
     
     // Provide more helpful error messages
     if (error instanceof Error) {
-      if (error.message.includes('worker') || error.message.includes('Worker')) {
-        throw new Error('PDF processing failed due to worker initialization. Please try again or use the text paste option.');
-      } else if (error.message.includes('Invalid PDF')) {
+      if (error.message.includes('Invalid PDF')) {
         throw new Error('The uploaded file appears to be corrupted or is not a valid PDF.');
       } else if (error.message.includes('Password')) {
         throw new Error('This PDF is password protected. Please use an unprotected PDF or paste your text directly.');
       }
     }
     
-    throw error;
+    throw new Error('Failed to extract text from PDF. Please try pasting your resume text instead.');
   }
 };
