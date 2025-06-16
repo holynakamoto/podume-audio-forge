@@ -6,10 +6,10 @@ export interface ProgressCallback {
   (progress: number): void;
 }
 
-// Configure PDF.js to avoid worker issues
+// Configure PDF.js to avoid worker issues completely
 if (typeof window !== 'undefined') {
-  // Set workerSrc to null to disable worker completely
-  pdfjsLib.GlobalWorkerOptions.workerSrc = null as any;
+  // Set workerSrc to a data URL to avoid external fetching
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'data:application/javascript;base64,';
 }
 
 // Main PDF text extraction function
@@ -24,14 +24,15 @@ export const extractTextFromPDF = async (
     const arrayBuffer = await file.arrayBuffer();
     onProgress?.(10);
 
-    // Configure PDF.js with minimal options to avoid worker issues
+    // Configure PDF.js with options that avoid worker usage
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
       verbosity: 0,
-      useWorkerFetch: false, // Disable fetching of standard font data
-      isEvalSupported: false, // Disable eval for security
-      maxImageSize: 256 * 256, // Limit image size to prevent memory issues
-      // Don't use disableWorker as it's not supported in this version
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      maxImageSize: 256 * 256,
+      // Use standardFontDataUrl: null to prevent font fetching
+      standardFontDataUrl: null,
     });
 
     // Load PDF document
@@ -47,10 +48,10 @@ export const extractTextFromPDF = async (
       const textContent = await page.getTextContent();
       const pageText = textContent.items
         .map((item) => ('str' in item ? item.str : ''))
-        .filter((str) => str.trim().length > 0) // Remove empty strings
+        .filter((str) => str.trim().length > 0)
         .join(' ');
       textContents.push(pageText);
-      onProgress?.(30 + (pageNum / numPages) * 60); // Progress from 30% to 90%
+      onProgress?.(30 + (pageNum / numPages) * 60);
     }
 
     // Clean up resources
@@ -69,9 +70,8 @@ export const extractTextFromPDF = async (
     console.error('PDF extraction failed:', error);
     let userMessage = 'Could not process PDF. Please try pasting your text directly.';
 
-    // Differentiate error types for better user feedback
     if (error instanceof Error) {
-      if (error.message.includes('worker')) {
+      if (error.message.includes('worker') || error.message.includes('fetch')) {
         userMessage = 'PDF processing failed due to internal configuration issues. Please paste your text directly.';
       } else if (error.message.includes('invalid')) {
         userMessage = 'Invalid PDF file. Please upload a valid PDF or paste the text directly.';
