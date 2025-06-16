@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,7 +34,7 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
 
   useEffect(() => {
     if (user && podcastId) {
-      const baseUrl = `${supabase.supabaseUrl}/functions/v1/generate-rss`;
+      const baseUrl = 'https://pudwgzutzoidxbvozhnk.supabase.co/functions/v1/generate-rss';
       const url = `${baseUrl}?podcast_id=${podcastId}`;
       setGeneratedRssUrl(url);
     }
