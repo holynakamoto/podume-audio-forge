@@ -52,7 +52,7 @@ const SampleSection = () => {
           </div>
         </div>
 
-        {/* Enhanced Podcast Player */}
+        {/* Spotify Embed Player */}
         <div className="max-w-2xl mx-auto relative">
           <div className="absolute inset-0 bg-gradient-to-r from-purple-600/30 via-primary/30 to-yellow-400/30 rounded-xl blur-2xl"></div>
           <div className="relative bg-gradient-to-br from-card/90 to-purple-900/20 border border-purple-500/50 rounded-xl p-8 shadow-2xl shadow-purple-500/20 backdrop-blur-sm">
@@ -74,36 +74,23 @@ const SampleSection = () => {
                 <p className="text-muted-foreground">Carmi Harris's Career Journey</p>
                 <div className="flex items-center gap-2 mt-2">
                   <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-yellow-400 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-muted-foreground">Premium Quality</span>
+                  <span className="text-sm text-muted-foreground">Now Playing on Spotify</span>
                 </div>
               </div>
             </div>
             
-            <div className="mb-6">
-              <div className="w-full bg-gradient-to-r from-purple-900/50 to-yellow-900/50 rounded-full h-3 p-1">
-                <div className="bg-gradient-to-r from-purple-400 to-yellow-400 h-full rounded-full w-1/3 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                </div>
-              </div>
-              <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                <span>1:34</span>
-                <span>5:22</span>
-              </div>
-            </div>
-            
-            <div className="flex justify-center items-center gap-4">
-              <Button variant="ghost" size="icon" className="hover:bg-purple-500/20 hover:text-purple-400">
-                <Rewind className="h-6 w-6" />
-              </Button>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-yellow-400 rounded-full blur-lg opacity-50"></div>
-                <Button variant="default" size="lg" className="relative rounded-full w-16 h-16 bg-gradient-to-r from-purple-600 to-yellow-400 hover:from-purple-500 hover:to-yellow-300 shadow-lg shadow-purple-500/30">
-                  <Play className="h-8 w-8 text-white fill-white" />
-                </Button>
-              </div>
-              <Button variant="ghost" size="icon" className="hover:bg-yellow-500/20 hover:text-yellow-400">
-                <FastForward className="h-6 w-6" />
-              </Button>
+            {/* Spotify Embed */}
+            <div className="rounded-xl overflow-hidden">
+              <iframe 
+                style={{borderRadius: '12px'}} 
+                src="https://open.spotify.com/embed/episode/5XtZm7VPfWolx8MaPupbsI?utm_source=generator" 
+                width="100%" 
+                height="352" 
+                frameBorder="0" 
+                allowFullScreen={true}
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                loading="lazy"
+              />
             </div>
           </div>
         </div>
