@@ -8,8 +8,8 @@ export interface ProgressCallback {
 
 // Configure PDF.js to avoid worker issues completely
 if (typeof window !== 'undefined') {
-  // Set workerSrc to a data URL to avoid external fetching
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'data:application/javascript;base64,';
+  // Disable worker entirely by setting to false
+  pdfjsLib.GlobalWorkerOptions.workerSrc = false as any;
 }
 
 // Main PDF text extraction function
@@ -17,51 +17,75 @@ export const extractTextFromPDF = async (
   file: File,
   onProgress?: ProgressCallback
 ): Promise<string> => {
-  console.log('Starting PDF text extraction...');
+  console.log('Starting PDF text extraction...', { fileName: file.name, fileSize: file.size });
   onProgress?.(5);
 
   try {
+    console.log('Converting file to array buffer...');
     const arrayBuffer = await file.arrayBuffer();
-    onProgress?.(10);
+    console.log('Array buffer created, size:', arrayBuffer.byteLength);
+    onProgress?.(15);
 
-    // Configure PDF.js with options that avoid worker usage
+    console.log('Configuring PDF.js document loader...');
+    // Use minimal configuration to avoid any worker or external resource issues
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
       verbosity: 0,
+      // Disable all external fetching and workers
       useWorkerFetch: false,
       isEvalSupported: false,
-      maxImageSize: 256 * 256,
-      // Use standardFontDataUrl: null to prevent font fetching
+      // Set very conservative limits
+      maxImageSize: 64 * 64,
+      cMapPacked: false,
+      // Disable font loading completely
       standardFontDataUrl: null,
+      useSystemFonts: false,
     });
 
-    // Load PDF document
+    console.log('Loading PDF document...');
     const pdf: PDFDocumentProxy = await loadingTask.promise;
-    onProgress?.(30);
+    console.log('PDF loaded successfully, pages:', pdf.numPages);
+    onProgress?.(35);
 
-    // Extract text from all pages
-    const numPages = pdf.numPages;
+    // Extract text from all pages (limit to first 5 pages for performance)
+    const numPages = Math.min(pdf.numPages, 5);
     const textContents: string[] = [];
 
+    console.log(`Processing ${numPages} pages...`);
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      const page: PDFPageProxy = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item) => ('str' in item ? item.str : ''))
-        .filter((str) => str.trim().length > 0)
-        .join(' ');
-      textContents.push(pageText);
-      onProgress?.(30 + (pageNum / numPages) * 60);
+      console.log(`Processing page ${pageNum}...`);
+      try {
+        const page: PDFPageProxy = await pdf.getPage(pageNum);
+        console.log(`Page ${pageNum} loaded, extracting text...`);
+        
+        const textContent = await page.getTextContent();
+        console.log(`Page ${pageNum} text items:`, textContent.items.length);
+        
+        const pageText = textContent.items
+          .map((item) => ('str' in item ? item.str : ''))
+          .filter((str) => str.trim().length > 0)
+          .join(' ');
+        
+        textContents.push(pageText);
+        console.log(`Page ${pageNum} processed, text length:`, pageText.length);
+        onProgress?.(35 + (pageNum / numPages) * 55);
+      } catch (pageError) {
+        console.error(`Error processing page ${pageNum}:`, pageError);
+        // Continue with other pages
+      }
     }
 
     // Clean up resources
+    console.log('Cleaning up PDF resources...');
     await pdf.cleanup();
     loadingTask.destroy();
     onProgress?.(100);
 
     const extractedText = textContents.join('\n');
+    console.log('PDF extraction completed. Total text length:', extractedText.length);
     
     if (extractedText.length < 50) {
+      console.warn('Very little text extracted from PDF');
       throw new Error('Insufficient text extracted from PDF');
     }
 
@@ -71,10 +95,14 @@ export const extractTextFromPDF = async (
     let userMessage = 'Could not process PDF. Please try pasting your text directly.';
 
     if (error instanceof Error) {
-      if (error.message.includes('worker') || error.message.includes('fetch')) {
+      console.error('Error details:', { message: error.message, stack: error.stack });
+      
+      if (error.message.includes('worker') || error.message.includes('fetch') || error.message.includes('Setting up fake worker failed')) {
         userMessage = 'PDF processing failed due to internal configuration issues. Please paste your text directly.';
-      } else if (error.message.includes('invalid')) {
+      } else if (error.message.includes('invalid') || error.message.includes('Invalid PDF')) {
         userMessage = 'Invalid PDF file. Please upload a valid PDF or paste the text directly.';
+      } else if (error.message.includes('Insufficient text')) {
+        userMessage = 'Could not extract readable text from this PDF. Please try pasting your resume text instead.';
       }
     }
 
