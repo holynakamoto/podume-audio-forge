@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { UploadCloud, FileText, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import * as pdfjsLib from 'pdfjs-dist';
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+import React, { useState } from 'react';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { extractTextFromPDF } from '@/utils/pdfExtractor';
+import { UploadModeSelector } from './UploadModeSelector';
+import { PDFUploadZone } from './PDFUploadZone';
+import { TextPasteArea } from './TextPasteArea';
 
 interface ResumeUploaderProps {
   onResumeContentChange: (content: string) => void;
@@ -22,83 +19,6 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   const [isExtracting, setIsExtracting] = useState(false);
   const [uploadMode, setUploadMode] = useState<'upload' | 'paste'>('upload');
   const [uploadProgress, setUploadProgress] = useState(0);
-
-  const extractTextFromPDF = async (file: File): Promise<string> => {
-    console.log('=== PDF EXTRACTION START ===');
-    console.log('File name:', file.name);
-    console.log('File size:', file.size);
-    console.log('File type:', file.type);
-    
-    setUploadProgress(5);
-    console.log('Progress set to 5%');
-    
-    try {
-      console.log('Reading file as array buffer...');
-      const arrayBuffer = await file.arrayBuffer();
-      console.log('Array buffer created, size:', arrayBuffer.byteLength);
-      setUploadProgress(15);
-      console.log('Progress set to 15%');
-      
-      console.log('Loading PDF document...');
-      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-      console.log('Loading task created');
-      
-      const pdf = await loadingTask.promise;
-      console.log('PDF loaded successfully, pages:', pdf.numPages);
-      setUploadProgress(25);
-      console.log('Progress set to 25%');
-      
-      let extractedText = '';
-      const totalPages = pdf.numPages;
-      
-      console.log(`Starting to process ${totalPages} pages...`);
-      
-      for (let i = 1; i <= totalPages; i++) {
-        console.log(`=== Processing page ${i}/${totalPages} ===`);
-        
-        try {
-          console.log(`Getting page ${i}...`);
-          const page = await pdf.getPage(i);
-          console.log(`Page ${i} loaded`);
-          
-          console.log(`Getting text content for page ${i}...`);
-          const textContent = await page.getTextContent();
-          console.log(`Text content loaded for page ${i}, items:`, textContent.items.length);
-          
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(' ');
-          
-          console.log(`Page ${i} text extracted, length: ${pageText.length}`);
-          extractedText += pageText + '\n';
-          
-          // Update progress: 25% + (page progress * 65%)
-          const pageProgress = (i / totalPages) * 65;
-          const newProgress = 25 + pageProgress;
-          setUploadProgress(newProgress);
-          console.log(`Progress updated to ${newProgress}% after page ${i}`);
-          
-        } catch (pageError) {
-          console.error(`ERROR processing page ${i}:`, pageError);
-          // Continue with other pages even if one fails
-        }
-      }
-      
-      setUploadProgress(95);
-      console.log('All pages processed, setting progress to 95%');
-      console.log('Total extracted text length:', extractedText.length);
-      console.log('First 100 chars:', extractedText.substring(0, 100));
-      console.log('=== PDF EXTRACTION COMPLETE ===');
-      
-      return extractedText.trim();
-    } catch (error) {
-      console.error('=== PDF EXTRACTION ERROR ===');
-      console.error('Error type:', error.constructor.name);
-      console.error('Error message:', error.message);
-      console.error('Full error:', error);
-      throw error;
-    }
-  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log('=== FILE UPLOAD HANDLER START ===');
@@ -133,7 +53,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     
     try {
       console.log('Calling extractTextFromPDF...');
-      const extractedText = await extractTextFromPDF(file);
+      const extractedText = await extractTextFromPDF(file, setUploadProgress);
       
       console.log('PDF extraction completed successfully');
       setUploadProgress(100);
@@ -170,77 +90,25 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 mb-4">
-        <Button
-          type="button"
-          variant={uploadMode === 'upload' ? 'default' : 'outline'}
-          onClick={() => setUploadMode('upload')}
-          size="sm"
-        >
-          <UploadCloud className="w-4 h-4 mr-2" />
-          Upload PDF
-        </Button>
-        <Button
-          type="button"
-          variant={uploadMode === 'paste' ? 'default' : 'outline'}
-          onClick={() => setUploadMode('paste')}
-          size="sm"
-        >
-          <FileText className="w-4 h-4 mr-2" />
-          Paste Text
-        </Button>
-      </div>
+      <UploadModeSelector 
+        uploadMode={uploadMode} 
+        onModeChange={setUploadMode} 
+      />
 
       {uploadMode === 'upload' ? (
         <div>
           <Label htmlFor="resume-upload" className="font-semibold">Upload Your Resume (PDF)</Label>
-          <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-10">
-            <div className="text-center">
-              {isExtracting ? (
-                <div className="space-y-2">
-                  <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
-                  <div className="text-sm text-gray-600">
-                    Extracting text from PDF... {Math.round(uploadProgress)}%
-                  </div>
-                  <div className="w-32 bg-gray-200 rounded-full h-2 mx-auto">
-                    <div 
-                      className="bg-primary h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ) : (
-                <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
-              )}
-              <div className="mt-4 flex text-sm leading-6 text-gray-400">
-                <label htmlFor="resume-upload" className="relative cursor-pointer rounded-md font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary/80">
-                  <span>{isExtracting ? 'Extracting text...' : 'Upload a PDF file'}</span>
-                  <Input 
-                    id="resume-upload" 
-                    type="file" 
-                    className="sr-only" 
-                    onChange={handleFileUpload}
-                    accept=".pdf"
-                    disabled={isExtracting}
-                  />
-                </label>
-                <p className="pl-1">or drag and drop</p>
-              </div>
-              <p className="text-xs leading-5 text-gray-400">PDF up to 10MB</p>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div>
-          <Label htmlFor="resume-content" className="font-semibold">Paste Your Resume Text</Label>
-          <Textarea
-            id="resume-content"
-            placeholder="Copy and paste your full resume text here..."
-            value={resumeContent}
-            onChange={(e) => onResumeContentChange(e.target.value)}
-            className="min-h-[200px] mt-2"
+          <PDFUploadZone 
+            onFileUpload={handleFileUpload}
+            isExtracting={isExtracting}
+            uploadProgress={uploadProgress}
           />
         </div>
+      ) : (
+        <TextPasteArea 
+          resumeContent={resumeContent}
+          onResumeContentChange={onResumeContentChange}
+        />
       )}
     </div>
   );
