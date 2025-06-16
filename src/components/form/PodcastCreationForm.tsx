@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -35,13 +36,6 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
   const [resumeContent, setResumeContent] = useState(initialResumeContent);
   const navigate = useNavigate();
 
-  // Update resume content when initial content changes
-  useEffect(() => {
-    if (initialResumeContent) {
-      setResumeContent(initialResumeContent);
-    }
-  }, [initialResumeContent]);
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -53,16 +47,37 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
     },
   });
 
+  // Update resume content when initial content changes
+  useEffect(() => {
+    if (initialResumeContent) {
+      setResumeContent(initialResumeContent);
+      form.setValue('resume_content', initialResumeContent);
+    }
+  }, [initialResumeContent, form]);
+
+  // Update form whenever resumeContent changes
+  useEffect(() => {
+    form.setValue('resume_content', resumeContent);
+  }, [resumeContent, form]);
+
   const onSubmit = async (values: FormValues) => {
     console.log('Form submission started with values:', values);
     console.log('Resume content length:', resumeContent.length);
-    console.log('Resume content:', resumeContent.substring(0, 100) + '...');
+    console.log('Resume content preview:', resumeContent.substring(0, 100) + '...');
     
-    // Update form with current resume content
-    const submitData = { ...values, resume_content: resumeContent };
+    // Ensure we use the current resume content
+    const submitData = { 
+      ...values, 
+      resume_content: resumeContent 
+    };
     
     if (submitData.resume_content.length < 5) {
       toast.error('Resume content must be at least 5 characters.');
+      return;
+    }
+
+    if (submitData.title.length < 3) {
+      toast.error('Title must be at least 3 characters.');
       return;
     }
 
@@ -94,12 +109,17 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
 
   // Watch form values for validation
   const titleValue = form.watch('title');
+  const resumeContentValue = form.watch('resume_content');
+  
+  // Use the actual resumeContent state for validation, not just the form value
   const canSubmit = resumeContent.length >= 5 && titleValue && titleValue.length >= 3;
 
   console.log('Form state:', { 
     resumeContentLength: resumeContent.length, 
+    resumeContentValueLength: resumeContentValue?.length || 0,
     titleLength: titleValue?.length || 0, 
-    canSubmit 
+    canSubmit,
+    isLoading
   });
 
   return (
@@ -112,8 +132,14 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="title">Podcast Title</Label>
-            <Input id="title" placeholder="e.g., John Doe's Career Journey" {...form.register('title')} />
-            {form.formState.errors.title && <p className="text-red-500 text-sm">{form.formState.errors.title.message}</p>}
+            <Input 
+              id="title" 
+              placeholder="e.g., John Doe's Career Journey" 
+              {...form.register('title')} 
+            />
+            {form.formState.errors.title && (
+              <p className="text-red-500 text-sm">{form.formState.errors.title.message}</p>
+            )}
           </div>
           
           <ResumeUploader 
@@ -127,7 +153,10 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="package_type">Package Type</Label>
-              <Select onValueChange={(value) => form.setValue('package_type', value as 'core' | 'upsell')} defaultValue="core">
+              <Select 
+                onValueChange={(value) => form.setValue('package_type', value as 'core' | 'upsell')} 
+                defaultValue="core"
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a package" />
                 </SelectTrigger>
@@ -140,17 +169,27 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
           </div>
           
           <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Switch id="voice_clone" onCheckedChange={(checked) => form.setValue('voice_clone', checked)} />
-                <Label htmlFor="voice_clone">Enable Voice Clone</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="premium_assets" onCheckedChange={(checked) => form.setValue('premium_assets', checked)} />
-                <Label htmlFor="premium_assets">Include Premium Assets</Label>
-              </div>
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="voice_clone" 
+                onCheckedChange={(checked) => form.setValue('voice_clone', checked)} 
+              />
+              <Label htmlFor="voice_clone">Enable Voice Clone</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="premium_assets" 
+                onCheckedChange={(checked) => form.setValue('premium_assets', checked)} 
+              />
+              <Label htmlFor="premium_assets">Include Premium Assets</Label>
+            </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading || !canSubmit}>
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={isLoading || !canSubmit}
+          >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Generate Podcast
           </Button>
