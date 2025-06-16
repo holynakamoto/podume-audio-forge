@@ -6,11 +6,6 @@ export interface ProgressCallback {
   (progress: number): void;
 }
 
-// Configure PDF.js worker properly - use false to disable worker entirely
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = false;
-}
-
 // Main PDF text extraction function
 export const extractTextFromPDF = async (
   file: File,
