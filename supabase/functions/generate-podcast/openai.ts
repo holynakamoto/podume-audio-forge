@@ -1,4 +1,3 @@
-
 import { OpenAI } from "https://deno.land/x/openai@1.2.1/mod.ts";
 
 interface PodcastData {
@@ -11,171 +10,125 @@ interface PodcastData {
 export async function generatePodcastScript(resumeContent: string): Promise<string> {
   console.log('=== Starting Hugging Face podcast script generation ===');
   console.log('Resume content length:', resumeContent.length);
-  console.log('Resume content preview:', resumeContent.substring(0, 200) + '...');
+  console.log('Resume content preview:', resumeContent.substring(0, 150) + '...');
 
-  const huggingFaceApiKey = Deno.env.get('HUGGING_FACE_API_KEY');
-  if (!huggingFaceApiKey) {
-    console.error('Hugging Face API key not found');
-    throw new Error('Hugging Face API key not configured. Please check your Supabase secrets configuration');
+  const hfApiKey = Deno.env.get('HUGGING_FACE_API_KEY');
+  if (!hfApiKey) {
+    console.log('Hugging Face API key not found, using basic script generation');
+    return generateBasicScript(resumeContent);
   }
 
   console.log('Hugging Face API key found, proceeding with generation...');
 
-  // Use a more accessible model that should work with standard API keys
-  const modelEndpoint = 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-large';
-  
-  const prompt = `You are a professional podcast scriptwriter. Convert the following resume content into an engaging, conversational podcast script for a single host presenting this person's career story. 
+  // Enhanced prompt for two-host conversation format
+  const prompt = `Create a professional podcast script featuring TWO HOSTS having a natural conversation about this resume. The script should:
 
-Make it sound natural and engaging, as if the host is telling the story of this person's professional journey to an audience. Include:
-- An engaging introduction
-- Key career highlights and achievements
-- Skills and expertise in a conversational way
-- A compelling conclusion
+1. Have Host 1 (Sarah) and Host 2 (Mike) naturally discussing the career journey
+2. Include smooth transitions between topics
+3. Sound conversational and engaging, not like reading bullet points
+4. Highlight key achievements and skills naturally in conversation
+5. Be approximately 2-3 minutes when spoken
+6. End with closing remarks from both hosts
 
-Keep the tone professional yet conversational, suitable for a career-focused podcast. The script should be about 3-5 minutes when read aloud.
-
-Resume content:
+Resume Content:
 ${resumeContent}
 
-Generate a complete podcast script:`;
+Format the output as a natural conversation between two podcast hosts, with clear speaker labels.`;
 
   console.log('Sending request to Hugging Face API...');
-  console.log('Model endpoint:', modelEndpoint);
+  console.log('Model endpoint: https://api-inference.huggingface.co/models/microsoft/DialoGPT-large');
   console.log('Prompt length:', prompt.length);
 
   try {
-    const response = await fetch(modelEndpoint, {
+    const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-large', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${huggingFaceApiKey}`,
+        'Authorization': `Bearer ${hfApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         inputs: prompt,
         parameters: {
-          max_new_tokens: 1000,
+          max_new_tokens: 800,
           temperature: 0.7,
           top_p: 0.9,
           do_sample: true,
           return_full_text: false
-        }
       }),
     });
 
     console.log('Hugging Face API response status:', response.status);
-    console.log('Hugging Face API response headers:', Object.fromEntries(response.headers.entries()));
+    console.log('Hugging Face API response headers:', JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2));
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Hugging Face API error response:', errorText);
       
-      if (response.status === 503) {
-        // Try a fallback model if the first one is loading
-        console.log('Model loading, trying fallback model...');
-        return await tryFallbackModel(resumeContent, huggingFaceApiKey);
-      } else if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again later.');
-      } else if (response.status === 401 || response.status === 403) {
+      if (response.status === 403) {
         console.error('Authentication/permission error. Trying fallback approach...');
-        return await tryFallbackModel(resumeContent, huggingFaceApiKey);
-      } else {
-        throw new Error(`Hugging Face API error (${response.status}): ${errorText}`);
+        return await tryFallbackModel(resumeContent, hfApiKey);
       }
+      
+      throw new Error(`Hugging Face API error: ${response.status} ${errorText}`);
     }
 
-    const data = await response.json();
-    console.log('Hugging Face API response received');
-    console.log('Response data structure:', Object.keys(data));
+    const result = await response.json();
+    console.log('Hugging Face API response:', JSON.stringify(result, null, 2));
 
-    let generatedText: string;
-    
-    // Handle different response formats from Hugging Face
-    if (Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-      generatedText = data[0].generated_text;
-    } else if (data.generated_text) {
-      generatedText = data.generated_text;
+    let generatedText = '';
+    if (Array.isArray(result) && result[0]?.generated_text) {
+      generatedText = result[0].generated_text;
+    } else if (result.generated_text) {
+      generatedText = result.generated_text;
+    }
+
+    if (generatedText && generatedText.length > 50) {
+      console.log('Successfully generated script with Hugging Face');
+      return generatedText;
     } else {
-      console.error('Unexpected response format from Hugging Face:', data);
-      throw new Error('Unexpected response format from Hugging Face API');
+      console.log('Generated text too short or empty, using fallback');
+      return generateBasicScript(resumeContent);
     }
-
-    console.log('Generated text length:', generatedText.length);
-    console.log('Generated text preview:', generatedText.substring(0, 200) + '...');
-
-    if (!generatedText || generatedText.trim().length < 50) {
-      throw new Error('Generated script is too short or empty. Please try again.');
-    }
-
-    console.log('=== Hugging Face podcast script generation completed successfully ===');
-    return generatedText.trim();
 
   } catch (error) {
-    console.error('=== Hugging Face API Error ===');
-    console.error('Error type:', error.constructor.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Network error connecting to Hugging Face API. Please check your internet connection.');
-    }
-    
-    throw error;
+    console.error('Hugging Face API request failed:', error.message);
+    return generateBasicScript(resumeContent);
   }
 }
 
 async function tryFallbackModel(resumeContent: string, apiKey: string): Promise<string> {
   console.log('=== Trying fallback model ===');
   
-  // Use a simpler, more accessible model
-  const fallbackEndpoint = 'https://api-inference.huggingface.co/models/gpt2';
-  
-  const simplePrompt = `Professional career summary: ${resumeContent.substring(0, 500)}...
-
-Convert this into an engaging podcast script:`;
-
   try {
-    const response = await fetch(fallbackEndpoint, {
+    const response = await fetch('https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: simplePrompt,
+        inputs: `Create a professional podcast conversation about this career: ${resumeContent.substring(0, 1000)}`,
         parameters: {
-          max_new_tokens: 800,
-          temperature: 0.8,
-          do_sample: true
+          max_length: 500,
+          temperature: 0.7
         }
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Fallback model also failed:', errorText);
-      
-      // If both models fail, generate a basic script manually
-      return generateBasicScript(resumeContent);
-    }
-
-    const data = await response.json();
-    let generatedText: string;
-    
-    if (Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-      generatedText = data[0].generated_text;
-    } else if (data.generated_text) {
-      generatedText = data.generated_text;
+    if (response.ok) {
+      const result = await response.json();
+      if (result[0]?.generated_text) {
+        console.log('Fallback model successful');
+        return result[0].generated_text;
+      }
     } else {
-      return generateBasicScript(resumeContent);
+      console.error('Fallback model also failed:', await response.text());
     }
-
-    console.log('Fallback model succeeded');
-    return generatedText.trim();
-
   } catch (error) {
-    console.error('Fallback model error:', error);
-    return generateBasicScript(resumeContent);
+    console.error('Fallback model error:', error.message);
   }
+
+  return generateBasicScript(resumeContent);
 }
 
 function generateBasicScript(resumeContent: string): string {
@@ -183,51 +136,75 @@ function generateBasicScript(resumeContent: string): string {
   
   // Extract key information from resume
   const lines = resumeContent.split('\n').filter(line => line.trim().length > 0);
-  const name = lines[0] || 'Professional';
+  const name = extractName(lines);
+  const summary = extractSummary(lines);
+  const experience = extractExperience(lines);
   
-  // Find experience section
-  const experienceStart = lines.findIndex(line => 
-    line.toLowerCase().includes('experience') || 
-    line.toLowerCase().includes('work') ||
-    line.toLowerCase().includes('employment')
-  );
+  // Create a conversational two-host script
+  let script = `Host 1: Welcome to Career Spotlight! Today we're featuring the professional journey of ${name}.\n\n`;
+  script += `Host 2: That's right! Let me take you through an inspiring career story that showcases dedication, growth, and expertise.\n\n`;
   
-  // Find education section
-  const educationStart = lines.findIndex(line => 
-    line.toLowerCase().includes('education') || 
-    line.toLowerCase().includes('degree')
-  );
+  if (summary) {
+    script += `Host 1: ${summary}\n\n`;
+  }
   
-  // Find skills section
-  const skillsStart = lines.findIndex(line => 
-    line.toLowerCase().includes('skills') || 
-    line.toLowerCase().includes('technical')
-  );
+  if (experience.length > 0) {
+    script += `Host 2: Looking at their professional experience, we can see some impressive achievements:\n\n`;
+    experience.slice(0, 3).forEach((exp, index) => {
+      const speaker = index % 2 === 0 ? "Host 1" : "Host 2";
+      script += `${speaker}: ${exp}\n\n`;
+    });
+  }
+  
+  script += `Host 1: What stands out most is the consistent growth and adaptability throughout their career.\n\n`;
+  script += `Host 2: Absolutely! This is exactly the kind of professional development story that inspires others.\n\n`;
+  script += `Host 1: Thanks for joining us on Career Spotlight! Don't forget to subscribe for more inspiring career stories.\n\n`;
+  script += `Host 2: Until next time, keep growing and pursuing your professional goals!`;
 
-  let script = `Welcome to Career Spotlight! Today we're featuring the professional journey of ${name}.\n\n`;
-  
-  script += `Let me take you through an inspiring career story that showcases dedication, growth, and expertise.\n\n`;
-  
-  if (experienceStart > -1) {
-    script += `Starting with their professional experience, ${name} has built an impressive career path. `;
-    const experienceSection = lines.slice(experienceStart + 1, educationStart > -1 ? educationStart : lines.length)
-      .slice(0, 3) // Take first few lines
-      .join(' ');
-    script += experienceSection.substring(0, 200) + '...\n\n';
-  }
-  
-  if (skillsStart > -1) {
-    script += `What really stands out are their technical capabilities. `;
-    const skillsSection = lines.slice(skillsStart + 1, lines.length)
-      .slice(0, 2) // Take first few lines
-      .join(' ');
-    script += skillsSection.substring(0, 150) + '...\n\n';
-  }
-  
-  script += `This professional journey demonstrates continuous learning and adaptation in today's dynamic work environment. `;
-  script += `${name} represents the kind of forward-thinking professional that drives innovation and success.\n\n`;
-  script += `That's a wrap on today's Career Spotlight. Thank you for joining us!`;
-  
   console.log('Basic script generated successfully');
   return script;
+}
+
+function extractName(lines: string[]): string {
+  const firstLine = lines[0]?.trim() || '';
+  if (firstLine.length > 0 && firstLine.length < 50 && !firstLine.includes('@') && !firstLine.includes('http')) {
+    return firstLine;
+  }
+  return 'this professional';
+}
+
+function extractSummary(lines: string[]): string {
+  const summaryKeywords = ['summary', 'profile', 'about', 'overview'];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].toLowerCase();
+    if (summaryKeywords.some(keyword => line.includes(keyword))) {
+      const nextLines = lines.slice(i + 1, i + 4);
+      const summary = nextLines.filter(line => line.trim().length > 20).join(' ');
+      if (summary.length > 50) {
+        return summary.substring(0, 200) + (summary.length > 200 ? '...' : '');
+      }
+    }
+  }
+  return '';
+}
+
+function extractExperience(lines: string[]): string[] {
+  const experience: string[] = [];
+  const experienceKeywords = ['experience', 'work', 'employment', 'career', 'position', 'role'];
+  
+  let foundExperience = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].toLowerCase();
+    if (experienceKeywords.some(keyword => line.includes(keyword))) {
+      foundExperience = true;
+      continue;
+    }
+    
+    if (foundExperience && lines[i].trim().length > 30) {
+      experience.push(lines[i].trim());
+      if (experience.length >= 5) break;
+    }
+  }
+  
+  return experience;
 }

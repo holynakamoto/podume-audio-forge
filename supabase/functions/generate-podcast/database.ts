@@ -1,6 +1,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { PodcastRequest } from './types.ts';
+import { generateAudioWithGeminiTTS } from './gemini-tts.ts';
 
 export async function savePodcastToDatabase(
   user: any,
@@ -17,6 +18,7 @@ export async function savePodcastToDatabase(
   );
 
   try {
+    // First create the podcast entry without audio
     const { data, error: insertError } = await supabaseAdminClient
       .from('podcasts')
       .insert({
@@ -27,9 +29,9 @@ export async function savePodcastToDatabase(
         voice_clone: request.voice_clone || false,
         premium_assets: request.premium_assets || false,
         description: `Professional podcast generated from resume - ${request.title}`,
-        transcript: generatedScript, // Store the generated script as transcript
-        audio_url: null, // Skip TTS for now
-        status: 'completed',
+        transcript: generatedScript,
+        audio_url: null,
+        status: 'processing',
       })
       .select()
       .single();
@@ -40,7 +42,40 @@ export async function savePodcastToDatabase(
     }
     
     console.log('Podcast created successfully with ID:', data.id);
-    console.log('Stored transcript length:', data.transcript?.length || 0);
+    console.log('Starting TTS generation...');
+
+    // Generate audio with Gemini TTS
+    const audioDataUrl = await generateAudioWithGeminiTTS(generatedScript);
+    
+    if (audioDataUrl) {
+      console.log('TTS generation successful, updating podcast with audio URL');
+      
+      // Update the podcast with the audio URL
+      const { error: updateError } = await supabaseAdminClient
+        .from('podcasts')
+        .update({
+          audio_url: audioDataUrl,
+          status: 'completed',
+        })
+        .eq('id', data.id);
+
+      if (updateError) {
+        console.error('Failed to update podcast with audio URL:', updateError);
+      } else {
+        console.log('Podcast updated with audio URL successfully');
+        data.audio_url = audioDataUrl;
+        data.status = 'completed';
+      }
+    } else {
+      console.log('TTS generation failed, keeping podcast without audio');
+      // Update status to completed even without audio
+      await supabaseAdminClient
+        .from('podcasts')
+        .update({ status: 'completed' })
+        .eq('id', data.id);
+      data.status = 'completed';
+    }
+    
     return data;
   } catch (dbError) {
     console.error('Database operation failed:', dbError);
