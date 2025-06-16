@@ -11,44 +11,56 @@ const corsHeaders = {
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
 
-const generateAudioWithGoogleTTS = async (text: string): Promise<string> => {
-  console.log('Generating audio with Google Cloud Text-to-Speech...');
+const generateAudioWithGeminiTTS = async (text: string): Promise<string | null> => {
+  console.log('Generating audio with Gemini TTS...');
   
   try {
-    // Use Google Cloud Text-to-Speech API
-    const response = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${geminiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        input: { text },
-        voice: {
-          languageCode: 'en-US',
-          name: 'en-US-Journey-D', // Professional male voice
-          ssmlGender: 'MALE'
+        contents: [{
+          parts: [{
+            text: `Say this in a professional, engaging podcast voice: "${text}"`
+          }]
+        }],
+        generationConfig: {
+          responseMimeType: "audio/wav",
+          responseModalities: ["Audio"]
         },
-        audioConfig: {
-          audioEncoding: 'MP3',
-          speakingRate: 1.0,
-          pitch: 0.0
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {
+              voiceName: "Zephyr" // Professional male voice
+            }
+          }
         }
       }),
     });
 
     if (!response.ok) {
-      console.error('Google TTS API error:', response.status, await response.text());
-      throw new Error(`Google TTS API error: ${response.status}`);
+      console.error('Gemini TTS API error:', response.status, await response.text());
+      throw new Error(`Gemini TTS API error: ${response.status}`);
     }
 
     const result = await response.json();
-    console.log('Google TTS response received');
+    console.log('Gemini TTS response received');
     
-    // Return the base64 audio data as a data URL
-    return `data:audio/mp3;base64,${result.audioContent}`;
+    // Extract the audio data from the response
+    if (result.candidates && result.candidates[0] && result.candidates[0].content && result.candidates[0].content.parts[0] && result.candidates[0].content.parts[0].inlineData) {
+      const audioData = result.candidates[0].content.parts[0].inlineData.data;
+      const mimeType = result.candidates[0].content.parts[0].inlineData.mimeType || 'audio/wav';
+      
+      // Return the audio as a data URL
+      return `data:${mimeType};base64,${audioData}`;
+    } else {
+      console.error('Unexpected Gemini TTS response structure:', result);
+      return null;
+    }
   } catch (error) {
-    console.error('TTS generation failed, using fallback:', error);
+    console.error('TTS generation failed:', error);
     // Return null if TTS fails - we'll continue without audio
     return null;
   }
@@ -131,12 +143,12 @@ Please return the output as a JSON object with the following structure: { "descr
 
     const { description, transcript } = JSON.parse(content);
 
-    console.log('Generating audio with Google TTS...');
+    console.log('Generating audio with Gemini TTS...');
     let audioUrl = null;
     
     if (geminiApiKey) {
       try {
-        audioUrl = await generateAudioWithGoogleTTS(transcript);
+        audioUrl = await generateAudioWithGeminiTTS(transcript);
         console.log('Audio generated successfully');
       } catch (audioError) {
         console.error('Audio generation failed:', audioError);
