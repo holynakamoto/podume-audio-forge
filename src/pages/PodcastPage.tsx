@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -55,6 +54,13 @@ const PodcastPage = () => {
       setIsPlaying(!isPlaying);
     }
   };
+
+  React.useEffect(() => {
+    if (podcast) {
+      console.log('Podcast data:', podcast);
+      console.log('Audio URL:', podcast.audio_url);
+    }
+  }, [podcast]);
 
   if (isLoading) {
     return (
@@ -127,21 +133,24 @@ const PodcastPage = () => {
               </div>
             </div>
 
-            {podcast.audio_url && (
-              <div className="mt-8">
-                <h3 className="font-semibold text-lg mb-4">Test Audio Playback</h3>
-                <div className="flex justify-center">
-                  <Button
-                    onClick={togglePlayback}
-                    size="lg"
-                    className="flex items-center gap-3 px-8 py-3"
-                  >
-                    {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                    {isPlaying ? 'Pause Podcast' : 'Play Podcast'}
-                  </Button>
-                </div>
+            {/* Large Test Play Button - Always visible for debugging */}
+            <div className="mt-8 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg">
+              <h3 className="font-semibold text-lg mb-4 text-center">🎵 Test Audio Playback</h3>
+              <div className="flex flex-col items-center space-y-4">
+                <p className="text-sm text-muted-foreground text-center">
+                  Audio URL: {podcast.audio_url ? '✅ Available' : '❌ Missing'}
+                </p>
+                <Button
+                  onClick={togglePlayback}
+                  size="lg"
+                  className="flex items-center gap-3 px-12 py-4 text-lg"
+                  disabled={!podcast.audio_url}
+                >
+                  {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+                  {isPlaying ? 'Pause Podcast' : 'Play Podcast'}
+                </Button>
               </div>
-            )}
+            </div>
             
             <div className="mt-8">
               <h3 className="font-semibold text-lg mb-4">Share this Podcast</h3>
