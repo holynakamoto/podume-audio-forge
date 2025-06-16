@@ -142,14 +142,6 @@ export const PodcastCreationForm = () => {
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Generate Podcast
           </Button>
-          
-          {/* Debug info */}
-          <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded">
-            <div>Resume content: {resumeContent.length} characters</div>
-            <div>Title: {titleValue?.length || 0} characters</div>
-            <div>Can submit: {canSubmit ? 'Yes' : 'No'}</div>
-            <div>Resume preview: {resumeContent.substring(0, 50)}...</div>
-          </div>
         </form>
       </CardContent>
     </Card>
