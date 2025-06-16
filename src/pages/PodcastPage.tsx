@@ -14,11 +14,16 @@ const fetchPodcast = async (id: string) => {
     .from('podcasts')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (error) {
     throw new Error(error.message);
   }
+  
+  if (!data) {
+    throw new Error('Podcast not found');
+  }
+  
   return data;
 };
 
@@ -82,7 +87,7 @@ const PodcastPage = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-3xl">{podcast.title}</CardTitle>
-            <CardDescription>{podcast.description}</CardDescription>
+            <CardDescription>{podcast.description || 'Your professional podcast generated from your resume'}</CardDescription>
           </CardHeader>
           <CardContent>
             {podcast.audio_url && (
@@ -114,7 +119,11 @@ const PodcastPage = () => {
             <div className="mt-6 space-y-4">
               <h3 className="font-semibold text-lg">Transcript</h3>
               <div className="prose prose-sm max-w-none text-muted-foreground bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
-                <p className="whitespace-pre-wrap">{podcast.transcript}</p>
+                {podcast.transcript ? (
+                  <p className="whitespace-pre-wrap">{podcast.transcript}</p>
+                ) : (
+                  <p className="text-muted-foreground italic">Transcript will be available once the podcast is fully processed.</p>
+                )}
               </div>
             </div>
             
@@ -124,7 +133,7 @@ const PodcastPage = () => {
                 <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(podcast.title)}`} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline"><Twitter className="mr-2 h-4 w-4" /> Twitter</Button>
                 </a>
-                <a href={`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(podcast.title)}&summary=${encodeURIComponent(podcast.description || '')}`} target="_blank" rel="noopener noreferrer">
+                <a href={`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(podcast.title)}&summary=${encodeURIComponent(podcast.description || 'Check out this professional podcast')}`} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline"><Linkedin className="mr-2 h-4 w-4" /> LinkedIn</Button>
                 </a>
                 <Button variant="outline" onClick={handleCopy}><Copy className="mr-2 h-4 w-4" /> Copy Link</Button>
