@@ -1,3 +1,4 @@
+
 export async function generateAudioWithElevenLabsTTS(text: string): Promise<string | null> {
   console.log('Attempting to generate audio with ElevenLabs TTS...');
   
@@ -52,11 +53,25 @@ export async function generateAudioWithElevenLabsTTS(text: string): Promise<stri
       return null;
     }
 
-    // Convert the audio response to base64
+    // Convert the audio response to base64 using a more memory-efficient approach
     const arrayBuffer = await response.arrayBuffer();
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    console.log('Audio buffer size:', uint8Array.length, 'bytes');
+    
+    // Convert to base64 in chunks to avoid stack overflow
+    let binaryString = '';
+    const chunkSize = 8192; // Process 8KB at a time
+    
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize);
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    
+    const base64Audio = btoa(binaryString);
     
     console.log('Successfully generated audio with ElevenLabs TTS');
+    console.log('Base64 audio length:', base64Audio.length);
     return `data:audio/mp3;base64,${base64Audio}`;
     
   } catch (error) {
