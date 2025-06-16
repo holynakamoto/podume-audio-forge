@@ -6,6 +6,8 @@ import { extractTextFromPDF } from '@/utils/pdfExtractor';
 import { UploadModeSelector } from './UploadModeSelector';
 import { PDFUploadZone } from './PDFUploadZone';
 import { TextPasteArea } from './TextPasteArea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 interface ResumeUploaderProps {
   onResumeContentChange: (content: string) => void;
@@ -19,6 +21,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   const [isExtracting, setIsExtracting] = useState(false);
   const [uploadMode, setUploadMode] = useState<'upload' | 'paste'>('upload');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showPasteRecommendation, setShowPasteRecommendation] = useState(false);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     console.log('=== FILE UPLOAD HANDLER START ===');
@@ -31,8 +34,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     console.log('File selected for upload:', {
       name: file.name,
       type: file.type,
-      size: file.size,
-      lastModified: file.lastModified
+      size: file.size
     });
 
     if (file.type !== 'application/pdf') {
@@ -50,6 +52,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     console.log('File validation passed, starting extraction...');
     setIsExtracting(true);
     setUploadProgress(0);
+    setShowPasteRecommendation(false);
     
     try {
       console.log('Calling extractTextFromPDF...');
@@ -58,9 +61,10 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       console.log('PDF extraction completed successfully');
       setUploadProgress(100);
       
-      if (extractedText.length < 10) {
+      if (extractedText.length < 50) {
         console.log('Extracted text too short:', extractedText.length);
-        toast.error('Could not extract readable text from this PDF. Please try a different file or paste your resume text manually.');
+        toast.error('Could not extract readable text from this PDF. Please try pasting your resume text instead.');
+        setShowPasteRecommendation(true);
         return;
       }
 
@@ -72,7 +76,12 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     } catch (error) {
       console.error('=== FILE UPLOAD HANDLER ERROR ===');
       console.error('Error in handleFileUpload:', error);
-      toast.error('Failed to extract text from PDF. Please try pasting your resume text instead.');
+      
+      const errorMessage = error instanceof Error ? error.message : 'Failed to extract text from PDF.';
+      toast.error(errorMessage);
+      
+      // Show recommendation to use paste mode
+      setShowPasteRecommendation(true);
       setUploadProgress(0);
     } finally {
       console.log('Cleaning up...');
@@ -92,8 +101,22 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     <div className="space-y-4">
       <UploadModeSelector 
         uploadMode={uploadMode} 
-        onModeChange={setUploadMode} 
+        onModeChange={(mode) => {
+          setUploadMode(mode);
+          if (mode === 'paste') {
+            setShowPasteRecommendation(false);
+          }
+        }} 
       />
+
+      {showPasteRecommendation && uploadMode === 'upload' && (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Having trouble with PDF upload? Try switching to "Paste Text" mode above for more reliable results.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {uploadMode === 'upload' ? (
         <div>

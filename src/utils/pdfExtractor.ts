@@ -1,12 +1,33 @@
 
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Set up the worker with better error handling
+// Try to set up the worker with local fallback
+const setupWorker = () => {
+  try {
+    // First try to use a local worker (this will work better in most environments)
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.js',
+      import.meta.url
+    ).toString();
+    console.log('Worker source set to local:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+  } catch (localError) {
+    console.warn('Local worker setup failed, trying CDN:', localError);
+    try {
+      // Fallback to CDN without version in path
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+      console.log('Worker source set to CDN:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+    } catch (cdnError) {
+      console.error('Both local and CDN worker setup failed:', cdnError);
+      throw new Error('Failed to setup PDF worker');
+    }
+  }
+};
+
+// Initialize worker
 try {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
-  console.log('Worker source set to:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+  setupWorker();
 } catch (workerError) {
-  console.error('Failed to set PDF.js worker:', workerError);
+  console.error('Worker initialization failed:', workerError);
 }
 
 export interface ProgressCallback {
@@ -17,71 +38,65 @@ export const extractTextFromPDF = async (
   file: File, 
   onProgress?: ProgressCallback
 ): Promise<string> => {
-  console.log('=== PDF EXTRACTION START (pdfjs-dist) ===');
-  console.log('PDF.js version:', pdfjsLib.version);
-  console.log('Worker source:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+  console.log('=== PDF EXTRACTION START ===');
   console.log('File details:', {
     name: file.name,
     size: file.size,
-    type: file.type,
-    lastModified: new Date(file.lastModified).toISOString()
+    type: file.type
   });
   
   onProgress?.(5);
   
   try {
-    // Convert file to array buffer with error handling
+    // Convert file to array buffer
     console.log('Converting file to array buffer...');
-    let arrayBuffer: ArrayBuffer;
-    try {
-      arrayBuffer = await file.arrayBuffer();
-      console.log('Array buffer created successfully, size:', arrayBuffer.byteLength);
-    } catch (bufferError) {
-      console.error('Failed to create array buffer:', bufferError);
-      throw new Error(`Failed to read file: ${bufferError instanceof Error ? bufferError.message : 'Unknown error'}`);
-    }
+    const arrayBuffer = await file.arrayBuffer();
+    console.log('Array buffer created successfully, size:', arrayBuffer.byteLength);
     
     onProgress?.(15);
     
-    // Create PDF document using pdfjs-dist with detailed error handling
-    console.log('Creating PDF document with pdfjs-dist...');
+    // Create PDF document with better error handling
+    console.log('Creating PDF document...');
     let pdf: any;
+    
     try {
-      const loadingTask = pdfjsLib.getDocument({ 
+      const loadingTask = pdfjsLib.getDocument({
         data: arrayBuffer,
-        verbosity: 1 // Enable verbose logging
+        verbosity: 0, // Reduce verbosity to avoid console spam
+        // Disable worker if it failed to load
+        useWorkerFetch: false,
+        isEvalSupported: false,
+        // Add timeout
+        maxImageSize: 1024 * 1024, // 1MB max image size
       });
       
-      // Add progress listener for loading
-      loadingTask.onProgress = (progress: any) => {
-        console.log('PDF loading progress:', progress);
-      };
+      pdf = await Promise.race([
+        loadingTask.promise,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('PDF loading timeout after 30 seconds')), 30000)
+        )
+      ]);
       
-      pdf = await loadingTask.promise;
       console.log('PDF loaded successfully:', {
-        numPages: pdf.numPages,
-        fingerprints: pdf.fingerprints,
-        info: 'PDF document created'
+        numPages: pdf.numPages
       });
     } catch (pdfError) {
-      console.error('Failed to load PDF document:', pdfError);
-      console.error('PDF error details:', {
-        name: pdfError instanceof Error ? pdfError.name : 'Unknown',
-        message: pdfError instanceof Error ? pdfError.message : 'Unknown error',
-        stack: pdfError instanceof Error ? pdfError.stack : 'No stack trace'
-      });
+      console.error('PDF loading failed:', pdfError);
       
+      // Provide specific error messages
       if (pdfError instanceof Error) {
         if (pdfError.message.includes('Invalid PDF')) {
-          throw new Error('The uploaded file appears to be corrupted or is not a valid PDF.');
+          throw new Error('This file appears to be corrupted or is not a valid PDF. Please try a different file or paste your text directly.');
         } else if (pdfError.message.includes('password')) {
-          throw new Error('This PDF is password protected. Please use an unprotected PDF.');
+          throw new Error('This PDF is password protected. Please use an unprotected PDF or paste your text directly.');
+        } else if (pdfError.message.includes('timeout')) {
+          throw new Error('PDF processing timed out. The file may be too complex. Please try a simpler PDF or paste your text directly.');
         } else if (pdfError.message.includes('worker')) {
-          throw new Error('PDF worker failed to load. Please try again or paste your text directly.');
+          throw new Error('PDF processing failed. Please try pasting your text directly instead.');
         }
       }
       
-      throw new Error(`Failed to load PDF: ${pdfError instanceof Error ? pdfError.message : 'Unknown error'}`);
+      throw new Error('Failed to process PDF. Please try pasting your resume text directly instead.');
     }
     
     onProgress?.(25);
@@ -89,51 +104,35 @@ export const extractTextFromPDF = async (
     let extractedText = '';
     const totalPages = pdf.numPages;
     
-    console.log(`Starting text extraction from ${totalPages} pages...`);
+    console.log(`Extracting text from ${totalPages} pages...`);
     
-    // Extract text from each page with detailed error handling
+    // Extract text from each page
     for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-      console.log(`Processing page ${pageNum}/${totalPages}...`);
-      
       try {
-        // Get page with timeout
+        console.log(`Processing page ${pageNum}/${totalPages}...`);
+        
         const page = await Promise.race([
           pdf.getPage(pageNum),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Page load timeout')), 10000)
+            setTimeout(() => reject(new Error('Page load timeout')), 15000)
           )
         ]);
-        console.log(`Page ${pageNum} loaded successfully`);
         
-        // Get text content with timeout
         const textContent = await Promise.race([
           page.getTextContent(),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Text extraction timeout')), 10000)
+            setTimeout(() => reject(new Error('Text extraction timeout')), 15000)
           )
         ]);
         
-        console.log(`Page ${pageNum} text extraction completed:`, {
-          itemCount: textContent.items.length,
-          hasItems: textContent.items.length > 0
-        });
-        
-        // Extract and process text from all items
         const pageText = textContent.items
-          .filter((item: any) => {
-            const hasStr = item.str && typeof item.str === 'string';
-            const hasTrimmedStr = hasStr && item.str.trim().length > 0;
-            return hasTrimmedStr;
-          })
+          .filter((item: any) => item.str && typeof item.str === 'string' && item.str.trim().length > 0)
           .map((item: any) => item.str.trim())
           .join(' ');
         
         if (pageText.length > 0) {
           extractedText += pageText + '\n\n';
-          console.log(`Page ${pageNum} text extracted: ${pageText.length} characters`);
-          console.log(`Page ${pageNum} text preview:`, pageText.substring(0, 100) + '...');
-        } else {
-          console.log(`Page ${pageNum} contained no readable text`);
+          console.log(`Page ${pageNum}: ${pageText.length} characters extracted`);
         }
         
         // Update progress
@@ -141,15 +140,8 @@ export const extractTextFromPDF = async (
         onProgress?.(Math.round(progress));
         
       } catch (pageError) {
-        console.error(`Error processing page ${pageNum}:`, {
-          error: pageError,
-          name: pageError instanceof Error ? pageError.name : 'Unknown',
-          message: pageError instanceof Error ? pageError.message : 'Unknown error',
-          stack: pageError instanceof Error ? pageError.stack : 'No stack trace'
-        });
-        
-        // Continue with other pages even if one fails
-        console.log(`Continuing with remaining pages despite error on page ${pageNum}`);
+        console.error(`Error on page ${pageNum}:`, pageError);
+        // Continue with other pages
       }
     }
     
@@ -157,54 +149,30 @@ export const extractTextFromPDF = async (
     
     const finalText = extractedText.trim();
     console.log('=== PDF EXTRACTION COMPLETE ===');
-    console.log('Final extraction results:', {
+    console.log('Results:', {
       textLength: finalText.length,
-      pageCount: totalPages,
-      hasContent: finalText.length > 0
+      pageCount: totalPages
     });
-    console.log('Text preview (first 300 chars):', finalText.substring(0, 300) + '...');
     
-    if (finalText.length < 10) {
-      console.error('Extracted text too short:', {
-        length: finalText.length,
-        content: finalText
-      });
-      throw new Error('Extracted text is too short. The PDF may contain images, be scanned, or have unreadable text.');
+    if (finalText.length < 50) {
+      throw new Error('Could not extract enough readable text from this PDF. This may be a scanned document or contain mostly images. Please try pasting your resume text directly instead.');
     }
     
     return finalText;
     
   } catch (error) {
     console.error('=== PDF EXTRACTION ERROR ===');
-    console.error('Complete error details:', {
-      error: error,
-      name: error instanceof Error ? error.name : 'Unknown',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace',
-      type: typeof error
-    });
+    console.error('Error details:', error);
     
-    // Provide more helpful error messages based on error type
-    if (error instanceof Error) {
-      if (error.message.includes('Invalid PDF') || error.message.includes('corrupted')) {
-        throw new Error('The uploaded file appears to be corrupted or is not a valid PDF.');
-      } else if (error.message.includes('password') || error.message.includes('Password')) {
-        throw new Error('This PDF is password protected. Please use an unprotected PDF or paste your text directly.');
-      } else if (error.message.includes('worker') || error.message.includes('Worker')) {
-        throw new Error('PDF processing failed due to worker issues. Please try again or paste your text directly.');
-      } else if (error.message.includes('timeout')) {
-        throw new Error('PDF processing timed out. The file may be too complex. Please try a simpler PDF or paste your text directly.');
-      } else if (error.message.includes('fetch') || error.message.includes('network')) {
-        throw new Error('Network error while processing PDF. Please check your connection and try again.');
-      }
-      
-      // If it's already a user-friendly error, re-throw it
-      if (error.message.includes('Please try') || error.message.includes('paste your text')) {
-        throw error;
-      }
+    // If it's already a user-friendly error, re-throw it
+    if (error instanceof Error && (
+      error.message.includes('Please try pasting') ||
+      error.message.includes('paste your text directly')
+    )) {
+      throw error;
     }
     
-    // Fallback error message
-    throw new Error(`Failed to extract text from PDF: ${error instanceof Error ? error.message : 'Unknown error'}. Please try pasting your resume text instead.`);
+    // Generic fallback error
+    throw new Error('Unable to process this PDF file. Please copy and paste your resume text directly instead.');
   }
 };
