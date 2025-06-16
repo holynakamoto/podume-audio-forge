@@ -1,13 +1,15 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { PodcastRequest, PodcastContent } from './types.ts';
+import { PodcastRequest } from './types.ts';
 
 export async function savePodcastToDatabase(
   user: any,
   request: PodcastRequest,
-  content: PodcastContent
+  generatedScript: string
 ) {
   console.log('Saving podcast to database...');
+  console.log('Generated script length:', generatedScript.length);
+  console.log('Generated script preview:', generatedScript.substring(0, 200) + '...');
   
   const supabaseAdminClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -24,8 +26,8 @@ export async function savePodcastToDatabase(
         package_type: request.package_type || 'core',
         voice_clone: request.voice_clone || false,
         premium_assets: request.premium_assets || false,
-        description: content.description || '',
-        transcript: content.transcript || '',
+        description: `Professional podcast generated from resume - ${request.title}`,
+        transcript: generatedScript, // Store the generated script as transcript
         audio_url: null, // Skip TTS for now
         status: 'completed',
       })
@@ -38,6 +40,7 @@ export async function savePodcastToDatabase(
     }
     
     console.log('Podcast created successfully with ID:', data.id);
+    console.log('Stored transcript length:', data.transcript?.length || 0);
     return data;
   } catch (dbError) {
     console.error('Database operation failed:', dbError);

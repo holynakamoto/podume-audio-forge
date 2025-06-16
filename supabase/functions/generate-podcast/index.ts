@@ -80,11 +80,12 @@ serve(async (req: Request) => {
     }
 
     // Generate podcast script
-    let content;
+    let generatedScript;
     try {
       console.log('Starting podcast script generation...');
-      content = await generatePodcastScript(validation.data!.resume_content);
-      console.log('Script generated successfully');
+      generatedScript = await generatePodcastScript(validation.data!.resume_content);
+      console.log('Script generated successfully, length:', generatedScript.length);
+      console.log('Script preview:', generatedScript.substring(0, 150) + '...');
     } catch (scriptError) {
       console.error('Script generation failed:', scriptError);
       console.error('Script error stack:', scriptError.stack);
@@ -103,8 +104,9 @@ serve(async (req: Request) => {
     let podcastData;
     try {
       console.log('Saving podcast to database...');
-      podcastData = await savePodcastToDatabase(user, validation.data!, content);
+      podcastData = await savePodcastToDatabase(user, validation.data!, generatedScript);
       console.log('Podcast saved successfully with ID:', podcastData.id);
+      console.log('Final transcript length in database:', podcastData.transcript?.length || 0);
     } catch (dbError) {
       console.error('Database save failed:', dbError);
       console.error('Database error stack:', dbError.stack);

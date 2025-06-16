@@ -14,8 +14,3 @@ export interface OpenAIResponse {
     };
   }>;
 }
-
-export interface PodcastContent {
-  description: string;
-  transcript: string;
-}
