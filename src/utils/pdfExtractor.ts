@@ -2,24 +2,30 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 
+export interface ProgressCallback {
+  (progress: number): void;
+}
+
 // Set up the worker with proper Vite configuration
 const setupWorker = () => {
   try {
     // Use the ES module version of the worker for Vite compatibility
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    const workerUrl = new URL(
       'pdfjs-dist/build/pdf.worker.min.mjs',
       import.meta.url
     ).toString();
-    console.log('Worker source set to local:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+    console.log('Worker source set to local:', workerUrl);
   } catch (localError) {
     console.warn('Local worker setup failed, trying CDN:', localError);
     try {
-      // Fallback to CDN with mjs extension
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-      console.log('Worker source set to CDN:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+      // Fallback to CDN with mjs extension, using a pinned version for reliability
+      const cdnUrl = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = cdnUrl;
+      console.log('Worker source set to CDN:', cdnUrl);
     } catch (cdnError) {
       console.error('Both local and CDN worker setup failed:', cdnError);
-      throw new Error('Failed to setup PDF worker');
+      throw new Error('Failed to set up PDF worker');
     }
   }
 };
@@ -34,10 +40,6 @@ try {
   workerInitialized = false;
 }
 
-export interface ProgressCallback {
-  (progress: number): void;
-}
-
 // Worker-less PDF processing fallback
 const extractTextWithoutWorker = async (
   arrayBuffer: ArrayBuffer,
@@ -45,54 +47,46 @@ const extractTextWithoutWorker = async (
 ): Promise<string> => {
   console.log('Attempting worker-less PDF processing...');
   onProgress?.(10);
-  
+
   try {
-    // Completely disable worker for this processing
-    const originalWorkerSrc = pdfjsLib.GlobalWorkerOptions.workerSrc;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = null;
-    
+    // Load the PDF document with worker disabled
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
       verbosity: 0,
       useWorkerFetch: false,
       isEvalSupported: false,
-      maxImageSize: 512 * 512, // Smaller image size for worker-less mode
+      maxImageSize: 512 * 512,
+      disableWorker: true, // Explicitly disable worker instead of setting workerSrc to null
     });
-    
-    const pdf: PDFDocumentProxy = await Promise.race([
-      loadingTask.promise,
-      new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('PDF loading timeout')), 20000)
-      )
-    ]);
-    
+
+    const pdf: PDFDocumentProxy = await loadingTask.promise;
     onProgress?.(30);
-    
-    let extractedText = '';
-    const totalPages = Math.min(pdf.numPages, 5); // Limit pages in worker-less mode
-    
-    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+
+    // Extract text from all pages
+    const numPages = pdf.numPages;
+    const textContents: string[] = [];
+
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const page: PDFPageProxy = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
-      
       const pageText = textContent.items
-        .filter((item: any) => item.str && typeof item.str === 'string')
-        .map((item: any) => item.str.trim())
+        .map((item) => ('str' in item ? item.str : ''))
         .join(' ');
-      
-      if (pageText.length > 0) {
-        extractedText += pageText + '\n\n';
-      }
-      
-      onProgress?.(30 + ((pageNum / totalPages) * 60));
+      textContents.push(pageText);
+
+      onProgress?.(30 + ((pageNum / numPages) * 60));
+    }
+
+    onProgress?.(100);
+    const extractedText = textContents.join('\n\n').trim();
+    
+    if (extractedText.length < 50) {
+      throw new Error('Insufficient text extracted');
     }
     
-    // Restore original worker source
-    pdfjsLib.GlobalWorkerOptions.workerSrc = originalWorkerSrc;
-    
-    onProgress?.(100);
-    return extractedText.trim();
-    
+    console.log('Worker-less PDF extraction successful');
+    return extractedText;
+
   } catch (error) {
     console.error('Worker-less processing failed:', error);
     throw new Error('Could not process PDF without worker. Please try pasting your text directly.');
@@ -119,7 +113,7 @@ export const extractTextFromPDF = async (
         const pdf: PDFDocumentProxy = await pdfjsLib.getDocument({
           data: arrayBuffer,
           verbosity: 0,
-          useWorkerFetch: true, // Enable worker fetch for better compatibility
+          useWorkerFetch: true,
           isEvalSupported: false,
           maxImageSize: 1024 * 1024,
         }).promise;
@@ -162,13 +156,6 @@ export const extractTextFromPDF = async (
         
       } catch (workerError) {
         console.warn('Worker-based extraction failed, trying fallback:', workerError);
-        
-        // Check for specific worker errors
-        if (workerError instanceof Error && 
-            (workerError.message.includes('Failed to fetch dynamically imported module') ||
-             workerError.message.includes('Setting up fake worker failed'))) {
-          console.log('Detected worker loading failure, switching to fallback mode');
-        }
         
         // Try worker-less fallback
         return await extractTextWithoutWorker(arrayBuffer, onProgress);
