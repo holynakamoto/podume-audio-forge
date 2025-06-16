@@ -10,25 +10,30 @@ export function generateBasicScript(resumeContent: string): string {
   const summary = extractSummary(lines);
   const experience = extractExperience(lines);
   
-  // Create a conversational two-host script without labels
-  let script = `Welcome to Career Spotlight! Today we're featuring the professional journey of ${name}.\n\n`;
-  script += `That's right! Let me take you through an inspiring career story that showcases dedication, growth, and expertise.\n\n`;
+  // Create a conversational two-host script with clear sentence breaks for alternating voices
+  let script = `Welcome to Career Spotlight! Today we're featuring the professional journey of ${name}.`;
+  script += ` That's right! Let me take you through an inspiring career story that showcases dedication, growth, and expertise.`;
   
   if (summary) {
-    script += `${summary}\n\n`;
+    script += ` ${summary}`;
+    script += ` What immediately stands out is the depth of experience and professional growth.`;
   }
   
   if (experience.length > 0) {
-    script += `Looking at their professional experience, we can see some impressive achievements:\n\n`;
+    script += ` Looking at their professional experience, we can see some impressive achievements.`;
     experience.slice(0, 3).forEach((exp, index) => {
-      script += `${exp}\n\n`;
+      script += ` ${exp}`;
+      if (index < 2) {
+        script += ` This demonstrates their commitment to excellence and continuous learning.`;
+      }
     });
   }
   
-  script += `What stands out most is the consistent growth and adaptability throughout their career.\n\n`;
-  script += `Absolutely! This is exactly the kind of professional development story that inspires others.\n\n`;
-  script += `Thanks for joining us on Career Spotlight! Don't forget to subscribe for more inspiring career stories.\n\n`;
-  script += `Until next time, keep growing and pursuing your professional goals!`;
+  script += ` What stands out most is the consistent growth and adaptability throughout their career.`;
+  script += ` Absolutely! This is exactly the kind of professional development story that inspires others.`;
+  script += ` The combination of technical skills and leadership experience is particularly impressive.`;
+  script += ` Thanks for joining us on Career Spotlight! Don't forget to subscribe for more inspiring career stories.`;
+  script += ` Until next time, keep growing and pursuing your professional goals!`;
 
   console.log('Basic script generated successfully');
   return script;

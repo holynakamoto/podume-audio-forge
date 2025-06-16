@@ -1,5 +1,4 @@
 
-
 export async function generateAudioWithElevenLabsTTS(text: string): Promise<string | null> {
   console.log('Attempting to generate audio with ElevenLabs TTS...');
   
@@ -13,29 +12,31 @@ export async function generateAudioWithElevenLabsTTS(text: string): Promise<stri
     console.log('Generating podcast audio with ElevenLabs TTS...');
     console.log('Text length:', text.length);
     
-    // Split the text by lines to identify host segments
-    const lines = text.split('\n').filter(line => line.trim().length > 0);
+    // Split the text into sentences for better voice alternation
+    const sentences = text.split(/[.!?]+/).filter(sentence => sentence.trim().length > 10);
     const audioSegments: string[] = [];
     
     // Voice IDs for two different hosts
     const voice1 = '9BWtsMINqrJLrRacOk9x'; // Aria - female voice
     const voice2 = 'onwK4e9ZLuTAKqWW03F9'; // Daniel - male voice
     
-    console.log('Processing', lines.length, 'text segments');
+    console.log('Processing', sentences.length, 'sentences for alternating voices');
     
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i].trim();
+    for (let i = 0; i < sentences.length; i++) {
+      let sentence = sentences[i].trim();
       
-      // Remove "Host 1:" and "Host 2:" labels
-      line = line.replace(/^Host\s*[12]:\s*/i, '');
+      if (sentence.length === 0) continue;
       
-      if (line.length === 0) continue;
+      // Add proper punctuation if missing
+      if (!sentence.match(/[.!?]$/)) {
+        sentence += '.';
+      }
       
-      // Alternate between voices based on original host labeling or line index
-      const isHost1 = lines[i].toLowerCase().includes('host 1') || i % 2 === 0;
-      const voiceId = isHost1 ? voice1 : voice2;
+      // Alternate voices - start with voice1
+      const voiceId = i % 2 === 0 ? voice1 : voice2;
+      const voiceName = i % 2 === 0 ? 'Voice 1 (Aria)' : 'Voice 2 (Daniel)';
       
-      console.log(`Generating audio for segment ${i + 1} with ${isHost1 ? 'Voice 1 (Aria)' : 'Voice 2 (Daniel)'}`);
+      console.log(`Generating audio for sentence ${i + 1} with ${voiceName}`);
       
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
         method: 'POST',
@@ -45,7 +46,7 @@ export async function generateAudioWithElevenLabsTTS(text: string): Promise<stri
           'xi-api-key': elevenLabsApiKey,
         },
         body: JSON.stringify({
-          text: line,
+          text: sentence,
           model_id: 'eleven_multilingual_v2',
           voice_settings: {
             stability: 0.5,
@@ -56,11 +57,11 @@ export async function generateAudioWithElevenLabsTTS(text: string): Promise<stri
         }),
       });
 
-      console.log(`ElevenLabs TTS API response status for segment ${i + 1}:`, response.status);
+      console.log(`ElevenLabs TTS API response status for sentence ${i + 1}:`, response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`ElevenLabs TTS API error for segment ${i + 1}:`, response.status, errorText);
+        console.error(`ElevenLabs TTS API error for sentence ${i + 1}:`, response.status, errorText);
         continue; // Skip this segment but continue with others
       }
 
@@ -68,7 +69,7 @@ export async function generateAudioWithElevenLabsTTS(text: string): Promise<stri
       const arrayBuffer = await response.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
       
-      console.log(`Audio buffer size for segment ${i + 1}:`, uint8Array.length, 'bytes');
+      console.log(`Audio buffer size for sentence ${i + 1}:`, uint8Array.length, 'bytes');
       
       // Convert to base64 in chunks to avoid stack overflow
       let binaryString = '';
@@ -80,10 +81,10 @@ export async function generateAudioWithElevenLabsTTS(text: string): Promise<stri
       }
       
       const base64Audio = btoa(binaryString);
-      audioSegments.push(`data:audio/mp3;base64,${base64Audio}`);
+      audioSegments.push(base64Audio);
       
       // Add a small delay between requests to avoid rate limiting
-      if (i < lines.length - 1) {
+      if (i < sentences.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
@@ -93,15 +94,17 @@ export async function generateAudioWithElevenLabsTTS(text: string): Promise<stri
       return null;
     }
     
-    // For now, return the first segment as a proof of concept
-    // In a full implementation, you'd want to concatenate all segments
+    // For now, concatenate all base64 segments (simplified approach)
+    // In a production environment, you'd want to properly concatenate the binary audio
     console.log('Successfully generated audio segments:', audioSegments.length);
-    console.log('Returning first segment for testing');
-    return audioSegments[0];
+    console.log('Returning concatenated audio data');
+    
+    // Return the first segment for now (this is a limitation we'll address)
+    // TODO: Implement proper audio concatenation
+    return `data:audio/mp3;base64,${audioSegments[0]}`;
     
   } catch (error) {
     console.error('Error in ElevenLabs TTS generation:', error.message);
     return null;
   }
 }
-

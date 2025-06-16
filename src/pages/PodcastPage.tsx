@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -6,6 +7,7 @@ import { Loader2, Twitter, Linkedin, Copy, Play, Pause } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
+import PodcastDistribution from '@/components/PodcastDistribution';
 import { toast } from 'sonner';
 
 const fetchPodcast = async (id: string) => {
@@ -132,25 +134,6 @@ const PodcastPage = () => {
                 )}
               </div>
             </div>
-
-            {/* Large Test Play Button - Always visible for debugging */}
-            <div className="mt-8 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg">
-              <h3 className="font-semibold text-lg mb-4 text-center">🎵 Test Audio Playback</h3>
-              <div className="flex flex-col items-center space-y-4">
-                <p className="text-sm text-muted-foreground text-center">
-                  Audio URL: {podcast.audio_url ? '✅ Available' : '❌ Missing'}
-                </p>
-                <Button
-                  onClick={togglePlayback}
-                  size="lg"
-                  className="flex items-center gap-3 px-12 py-4 text-lg"
-                  disabled={!podcast.audio_url}
-                >
-                  {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
-                  {isPlaying ? 'Pause Podcast' : 'Play Podcast'}
-                </Button>
-              </div>
-            </div>
             
             <div className="mt-8">
               <h3 className="font-semibold text-lg mb-4">Share this Podcast</h3>
@@ -166,10 +149,17 @@ const PodcastPage = () => {
             </div>
           </CardContent>
         </Card>
-         <div className="text-center mt-6">
-            <Link to="/create">
-                <Button>Create another podcast</Button>
-            </Link>
+
+        <PodcastDistribution 
+          podcastId={podcast.id}
+          podcastTitle={podcast.title}
+          audioUrl={podcast.audio_url}
+        />
+        
+        <div className="text-center mt-6">
+          <Link to="/create">
+            <Button>Create another podcast</Button>
+          </Link>
         </div>
       </div>
     </div>
