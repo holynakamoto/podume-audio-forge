@@ -49,43 +49,54 @@ const extractTextWithoutWorker = async (
   onProgress?.(10);
 
   try {
-    // Load the PDF document with worker disabled
-    const loadingTask = pdfjsLib.getDocument({
-      data: arrayBuffer,
-      verbosity: 0,
-      useWorkerFetch: false,
-      isEvalSupported: false,
-      maxImageSize: 512 * 512,
-      disableWorker: true, // Explicitly disable worker instead of setting workerSrc to null
-    });
-
-    const pdf: PDFDocumentProxy = await loadingTask.promise;
-    onProgress?.(30);
-
-    // Extract text from all pages
-    const numPages = pdf.numPages;
-    const textContents: string[] = [];
-
-    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-      const page: PDFPageProxy = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item) => ('str' in item ? item.str : ''))
-        .join(' ');
-      textContents.push(pageText);
-
-      onProgress?.(30 + ((pageNum / numPages) * 60));
-    }
-
-    onProgress?.(100);
-    const extractedText = textContents.join('\n\n').trim();
+    // Store original worker source and temporarily disable it
+    const originalWorkerSrc = pdfjsLib.GlobalWorkerOptions.workerSrc;
     
-    if (extractedText.length < 50) {
-      throw new Error('Insufficient text extracted');
-    }
+    // Set a fake worker to prevent actual worker loading
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'data:application/javascript;base64,';
     
-    console.log('Worker-less PDF extraction successful');
-    return extractedText;
+    try {
+      // Load the PDF document with minimal worker usage
+      const loadingTask = pdfjsLib.getDocument({
+        data: arrayBuffer,
+        verbosity: 0,
+        useWorkerFetch: false,
+        isEvalSupported: false,
+        maxImageSize: 512 * 512,
+      });
+
+      const pdf: PDFDocumentProxy = await loadingTask.promise;
+      onProgress?.(30);
+
+      // Extract text from all pages
+      const numPages = pdf.numPages;
+      const textContents: string[] = [];
+
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        const page: PDFPageProxy = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item) => ('str' in item ? item.str : ''))
+          .join(' ');
+        textContents.push(pageText);
+
+        onProgress?.(30 + ((pageNum / numPages) * 60));
+      }
+
+      onProgress?.(100);
+      const extractedText = textContents.join('\n\n').trim();
+      
+      if (extractedText.length < 50) {
+        throw new Error('Insufficient text extracted');
+      }
+      
+      console.log('Worker-less PDF extraction successful');
+      return extractedText;
+
+    } finally {
+      // Restore original worker source
+      pdfjsLib.GlobalWorkerOptions.workerSrc = originalWorkerSrc;
+    }
 
   } catch (error) {
     console.error('Worker-less processing failed:', error);
