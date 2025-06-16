@@ -15,7 +15,7 @@ export async function generateAudioWithGeminiTTS(text: string): Promise<string |
     const conversationScript = convertToTwoSpeakerFormat(text);
     console.log('Converted script for two speakers:', conversationScript.substring(0, 200) + '...');
     
-    console.log('Making request to Gemini TTS API...');
+    console.log('Making request to Gemini API for audio generation...');
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
@@ -24,48 +24,40 @@ export async function generateAudioWithGeminiTTS(text: string): Promise<string |
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Generate a natural, professional podcast-style audio conversation between two hosts discussing this content. Use distinct voices for each speaker: "${conversationScript}"`
+            text: `Please generate natural, professional podcast-style audio conversation between two distinct hosts discussing this content. Use clear, engaging voices that sound like real podcast hosts: "${conversationScript}"`
           }]
         }],
         generationConfig: {
-          responseMimeType: "audio/wav",
-          responseModalities: ["Audio"]
-        },
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {
-              voiceName: "Journey"
-            }
-          }
+          responseMimeType: "audio/wav"
         }
       }),
     });
 
-    console.log('Gemini TTS response status:', response.status);
+    console.log('Gemini API response status:', response.status);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Gemini TTS API error:', response.status, errorText);
+      console.error('Gemini API error:', response.status, errorText);
       
-      // Try with alternative voice
-      return await generateWithAlternativeVoice(conversationScript, geminiApiKey);
+      // Try with a simpler approach
+      return await generateWithSimpleApproach(conversationScript, geminiApiKey);
     }
 
     const result = await response.json();
-    console.log('Gemini TTS response structure:', JSON.stringify(result, null, 2));
+    console.log('Gemini API response structure:', JSON.stringify(result, null, 2));
     
-    // Extract audio data with more flexible response handling
+    // Extract audio data with flexible response handling
     if (result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
       const audioData = result.candidates[0].content.parts[0].inlineData.data;
       const mimeType = result.candidates[0].content.parts[0].inlineData.mimeType || 'audio/wav';
-      console.log('Successfully extracted audio data from Gemini TTS');
+      console.log('Successfully extracted audio data from Gemini');
       return `data:${mimeType};base64,${audioData}`;
     } else {
-      console.log('No audio data found in Gemini TTS response, trying alternative approach');
-      return await generateWithAlternativeVoice(conversationScript, geminiApiKey);
+      console.log('No audio data found in Gemini response, trying alternative approach');
+      return await generateWithSimpleApproach(conversationScript, geminiApiKey);
     }
   } catch (error) {
-    console.error('Error in Gemini TTS generation:', error.message);
+    console.error('Error in Gemini audio generation:', error.message);
     return null;
   }
 }
@@ -92,11 +84,11 @@ function convertToTwoSpeakerFormat(originalScript: string): string {
   return conversation;
 }
 
-async function generateWithAlternativeVoice(text: string, apiKey: string): Promise<string | null> {
+async function generateWithSimpleApproach(text: string, apiKey: string): Promise<string | null> {
   try {
-    console.log('Trying alternative Gemini TTS voice...');
+    console.log('Trying simplified Gemini approach...');
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -104,40 +96,30 @@ async function generateWithAlternativeVoice(text: string, apiKey: string): Promi
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Create a professional podcast audio from this script with two distinct voices: "${text}"`
+            text: `Convert this podcast script into a professional audio description that could be used for text-to-speech generation: "${text}"`
           }]
-        }],
-        generationConfig: {
-          responseMimeType: "audio/wav",
-          responseModalities: ["Audio"]
-        },
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {
-              voiceName: "Puck"
-            }
-          }
-        }
+        }]
       }),
     });
 
     if (!response.ok) {
-      console.error('Alternative voice also failed:', await response.text());
+      console.error('Simplified approach also failed:', await response.text());
       return null;
     }
 
     const result = await response.json();
     
-    if (result.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
-      const audioData = result.candidates[0].content.parts[0].inlineData.data;
-      const mimeType = result.candidates[0].content.parts[0].inlineData.mimeType || 'audio/wav';
-      console.log('Successfully generated audio with alternative voice');
-      return `data:${mimeType};base64,${audioData}`;
+    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+      const generatedText = result.candidates[0].content.parts[0].text;
+      console.log('Generated enhanced script for future TTS processing');
+      // For now, return null since we don't have direct audio generation
+      // This could be enhanced to use other TTS services
+      return null;
     }
     
     return null;
   } catch (error) {
-    console.error('Alternative voice generation failed:', error);
+    console.error('Simplified approach error:', error);
     return null;
   }
 }
