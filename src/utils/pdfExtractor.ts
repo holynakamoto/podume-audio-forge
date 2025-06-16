@@ -1,5 +1,8 @@
 
-import { getDocument } from 'react-pdf/dist/esm/entry.webpack5';
+import { pdfjs, getDocument } from 'react-pdf';
+
+// Set up the worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export interface ProgressCallback {
   (progress: number): void;
