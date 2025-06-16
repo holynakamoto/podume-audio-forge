@@ -6,6 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { UploadCloud, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface ResumeUploaderProps {
   onResumeContentChange: (content: string) => void;
@@ -19,6 +23,26 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   const [isExtracting, setIsExtracting] = useState(false);
   const [uploadMode, setUploadMode] = useState<'upload' | 'paste'>('upload');
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const extractTextFromPDF = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let extractedText = '';
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      setUploadProgress((i / pdf.numPages) * 90); // Progress up to 90%
+      
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      
+      extractedText += pageText + '\n';
+    }
+
+    return extractedText.trim();
+  };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -40,31 +64,23 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
     setUploadProgress(0);
     
     try {
-      // Simulate progress updates for better UX
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + 10;
-        });
-      }, 200);
-
-      // Since NotebookLM accepts PDF directly, we'll just use the filename as content
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing time
+      console.log('Starting PDF text extraction...');
+      const extractedText = await extractTextFromPDF(file);
       
-      clearInterval(progressInterval);
       setUploadProgress(100);
       
-      const fileName = file.name;
-      const fileContent = `PDF uploaded: ${fileName} (${Math.round(file.size / 1024)} KB)`;
-      onResumeContentChange(fileContent);
+      if (extractedText.length < 10) {
+        toast.error('Could not extract text from PDF. Please try a different file or paste your resume text manually.');
+        return;
+      }
+
+      console.log('PDF text extracted successfully, length:', extractedText.length);
+      onResumeContentChange(extractedText);
       
-      toast.success('PDF uploaded successfully!');
+      toast.success('PDF text extracted successfully!');
     } catch (error) {
-      console.error('PDF upload error:', error);
-      toast.error('Failed to upload PDF. Please try again.');
+      console.error('PDF extraction error:', error);
+      toast.error('Failed to extract text from PDF. Please try pasting your resume text instead.');
     } finally {
       setIsExtracting(false);
       setUploadProgress(0);
@@ -105,7 +121,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
                 <div className="space-y-2">
                   <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
                   <div className="text-sm text-gray-600">
-                    Processing PDF... {uploadProgress}%
+                    Extracting text from PDF... {uploadProgress}%
                   </div>
                   <div className="w-32 bg-gray-200 rounded-full h-2 mx-auto">
                     <div 
@@ -119,7 +135,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
               )}
               <div className="mt-4 flex text-sm leading-6 text-gray-400">
                 <label htmlFor="resume-upload" className="relative cursor-pointer rounded-md font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary/80">
-                  <span>{isExtracting ? 'Processing...' : 'Upload a PDF file'}</span>
+                  <span>{isExtracting ? 'Extracting text...' : 'Upload a PDF file'}</span>
                   <Input 
                     id="resume-upload" 
                     type="file" 
