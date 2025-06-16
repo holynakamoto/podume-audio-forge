@@ -69,9 +69,9 @@ const SampleSection = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-yellow-400 bg-clip-text">
-                  From Barista to Marketing Pro
+                  Disney Actress to Entertainment Pro
                 </h3>
-                <p className="text-muted-foreground">John Doe's Career Journey</p>
+                <p className="text-muted-foreground">Carmi Harris's Career Journey</p>
                 <div className="flex items-center gap-2 mt-2">
                   <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-yellow-400 rounded-full animate-pulse"></div>
                   <span className="text-sm text-muted-foreground">Premium Quality</span>
