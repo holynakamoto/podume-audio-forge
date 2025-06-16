@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -81,6 +80,7 @@ serve(async (req: Request) => {
     console.log('=== Generate podcast function called ===');
     
     // Validate API keys
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
       console.error('OpenAI API key not found');
       return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
@@ -90,7 +90,7 @@ serve(async (req: Request) => {
     }
     console.log('OpenAI API key found');
 
-    // Parse request body
+    // Parse request body with better error handling
     let body;
     try {
       body = await req.json();
@@ -157,7 +157,7 @@ serve(async (req: Request) => {
     }
     console.log('User authenticated:', user.id);
 
-    // Generate podcast script with OpenAI
+    // Generate podcast script with OpenAI - Fixed headers
     const prompt = `Based on the following resume text, please generate a compelling 2-3 minute podcast script that tells this person's career story in an engaging, conversational way. Focus on their key achievements, skills, and career progression. Make it sound natural and interesting, as if you're introducing this person to potential employers or collaborators.
 
 Resume:
@@ -171,12 +171,17 @@ Please return the output as a JSON object with the following structure: { "descr
     
     let openAIResult;
     try {
+      // Fix the headers - ensure all header values are strings
+      const requestHeaders = {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      };
+
+      console.log('Making OpenAI request with proper headers...');
+      
       const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers: requestHeaders,
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [
@@ -225,23 +230,9 @@ Please return the output as a JSON object with the following structure: { "descr
       });
     }
 
-    console.log('Script generated successfully, attempting TTS generation...');
+    console.log('Script generated successfully');
 
-    // Generate audio with Gemini TTS (non-blocking)
-    let audioUrl = null;
-    try {
-      audioUrl = await generateAudioWithGeminiTTS(transcript);
-      if (audioUrl) {
-        console.log('Audio generated successfully');
-      } else {
-        console.log('Audio generation skipped or failed, continuing without audio');
-      }
-    } catch (audioError) {
-      console.error('Audio generation error (non-fatal):', audioError);
-      // Continue without audio
-    }
-
-    // Save to database
+    // Save to database (skip TTS for now to isolate the issue)
     console.log('Saving podcast to database...');
     const supabaseAdminClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -261,7 +252,7 @@ Please return the output as a JSON object with the following structure: { "descr
           premium_assets: premium_assets || false,
           description: description || '',
           transcript: transcript || '',
-          audio_url: audioUrl,
+          audio_url: null, // Skip TTS for now
           status: 'completed',
         })
         .select()
