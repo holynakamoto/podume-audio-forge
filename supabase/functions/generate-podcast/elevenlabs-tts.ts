@@ -14,7 +14,7 @@ export async function generateAudioWithElevenLabsTTS(text: string): Promise<stri
     
     // Split the text into sentences for better voice alternation
     const sentences = text.split(/[.!?]+/).filter(sentence => sentence.trim().length > 10);
-    const audioSegments: string[] = [];
+    const audioBuffers: ArrayBuffer[] = [];
     
     // Voice IDs for two different hosts
     const voice1 = '9BWtsMINqrJLrRacOk9x'; // Aria - female voice
@@ -65,23 +65,11 @@ export async function generateAudioWithElevenLabsTTS(text: string): Promise<stri
         continue; // Skip this segment but continue with others
       }
 
-      // Convert the audio response to base64
+      // Store the audio buffer
       const arrayBuffer = await response.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
+      audioBuffers.push(arrayBuffer);
       
-      console.log(`Audio buffer size for sentence ${i + 1}:`, uint8Array.length, 'bytes');
-      
-      // Convert to base64 in chunks to avoid stack overflow
-      let binaryString = '';
-      const chunkSize = 8192; // Process 8KB at a time
-      
-      for (let j = 0; j < uint8Array.length; j += chunkSize) {
-        const chunk = uint8Array.slice(j, j + chunkSize);
-        binaryString += String.fromCharCode.apply(null, Array.from(chunk));
-      }
-      
-      const base64Audio = btoa(binaryString);
-      audioSegments.push(base64Audio);
+      console.log(`Audio buffer size for sentence ${i + 1}:`, arrayBuffer.byteLength, 'bytes');
       
       // Add a small delay between requests to avoid rate limiting
       if (i < sentences.length - 1) {
@@ -89,19 +77,38 @@ export async function generateAudioWithElevenLabsTTS(text: string): Promise<stri
       }
     }
     
-    if (audioSegments.length === 0) {
+    if (audioBuffers.length === 0) {
       console.log('No audio segments generated');
       return null;
     }
     
-    // For now, concatenate all base64 segments (simplified approach)
-    // In a production environment, you'd want to properly concatenate the binary audio
-    console.log('Successfully generated audio segments:', audioSegments.length);
-    console.log('Returning concatenated audio data');
+    console.log('Successfully generated audio segments:', audioBuffers.length);
     
-    // Return the first segment for now (this is a limitation we'll address)
-    // TODO: Implement proper audio concatenation
-    return `data:audio/mp3;base64,${audioSegments[0]}`;
+    // Concatenate all audio buffers
+    const totalLength = audioBuffers.reduce((acc, buffer) => acc + buffer.byteLength, 0);
+    const concatenatedBuffer = new Uint8Array(totalLength);
+    let offset = 0;
+    
+    for (const buffer of audioBuffers) {
+      concatenatedBuffer.set(new Uint8Array(buffer), offset);
+      offset += buffer.byteLength;
+    }
+    
+    console.log('Total concatenated audio size:', concatenatedBuffer.length, 'bytes');
+    
+    // Convert to base64 in chunks to avoid stack overflow
+    let binaryString = '';
+    const chunkSize = 8192; // Process 8KB at a time
+    
+    for (let j = 0; j < concatenatedBuffer.length; j += chunkSize) {
+      const chunk = concatenatedBuffer.slice(j, j + chunkSize);
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    
+    const base64Audio = btoa(binaryString);
+    console.log('Returning concatenated audio data, base64 length:', base64Audio.length);
+    
+    return `data:audio/mp3;base64,${base64Audio}`;
     
   } catch (error) {
     console.error('Error in ElevenLabs TTS generation:', error.message);
