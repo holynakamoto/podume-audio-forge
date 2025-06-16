@@ -40,67 +40,65 @@ try {
   workerInitialized = false;
 }
 
-// Worker-less PDF processing fallback
-const extractTextWithoutWorker = async (
+// Simplified PDF processing without worker complications
+const extractTextSimple = async (
   arrayBuffer: ArrayBuffer,
   onProgress?: ProgressCallback
 ): Promise<string> => {
-  console.log('Attempting worker-less PDF processing...');
+  console.log('Attempting simplified PDF processing...');
   onProgress?.(10);
 
   try {
-    // Store original worker source and temporarily disable it
-    const originalWorkerSrc = pdfjsLib.GlobalWorkerOptions.workerSrc;
-    
-    // Set a fake worker to prevent actual worker loading
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'data:application/javascript;base64,';
-    
-    try {
-      // Load the PDF document with minimal worker usage
-      const loadingTask = pdfjsLib.getDocument({
-        data: arrayBuffer,
-        verbosity: 0,
-        useWorkerFetch: false,
-        isEvalSupported: false,
-        maxImageSize: 512 * 512,
-      });
+    // Use PDF.js with minimal configuration to avoid worker issues
+    const loadingTask = pdfjsLib.getDocument({
+      data: arrayBuffer,
+      verbosity: 0,
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      maxImageSize: 256 * 256, // Smaller images to reduce memory usage
+      standardFontDataUrl: '', // Disable font loading to avoid additional requests
+    });
 
-      const pdf: PDFDocumentProxy = await loadingTask.promise;
-      onProgress?.(30);
+    const pdf: PDFDocumentProxy = await loadingTask.promise;
+    onProgress?.(30);
 
-      // Extract text from all pages
-      const numPages = pdf.numPages;
-      const textContents: string[] = [];
+    // Extract text from all pages (limit to first 5 pages for reliability)
+    const numPages = Math.min(pdf.numPages, 5);
+    const textContents: string[] = [];
 
-      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      try {
         const page: PDFPageProxy = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
         const pageText = textContent.items
-          .map((item) => ('str' in item ? item.str : ''))
+          .filter((item: any) => item.str && typeof item.str === 'string')
+          .map((item: any) => item.str.trim())
           .join(' ');
-        textContents.push(pageText);
-
+        
+        if (pageText.length > 0) {
+          textContents.push(pageText);
+        }
+        
         onProgress?.(30 + ((pageNum / numPages) * 60));
+      } catch (pageError) {
+        console.warn(`Failed to extract text from page ${pageNum}:`, pageError);
+        // Continue with other pages
       }
-
-      onProgress?.(100);
-      const extractedText = textContents.join('\n\n').trim();
-      
-      if (extractedText.length < 50) {
-        throw new Error('Insufficient text extracted');
-      }
-      
-      console.log('Worker-less PDF extraction successful');
-      return extractedText;
-
-    } finally {
-      // Restore original worker source
-      pdfjsLib.GlobalWorkerOptions.workerSrc = originalWorkerSrc;
     }
 
+    onProgress?.(100);
+    const extractedText = textContents.join('\n\n').trim();
+    
+    if (extractedText.length < 50) {
+      throw new Error('Insufficient text extracted from PDF');
+    }
+    
+    console.log('Simplified PDF extraction successful');
+    return extractedText;
+
   } catch (error) {
-    console.error('Worker-less processing failed:', error);
-    throw new Error('Could not process PDF without worker. Please try pasting your text directly.');
+    console.error('Simplified processing failed:', error);
+    throw new Error('Could not process PDF. Please try pasting your text directly.');
   }
 };
 
@@ -166,15 +164,15 @@ export const extractTextFromPDF = async (
         return finalText;
         
       } catch (workerError) {
-        console.warn('Worker-based extraction failed, trying fallback:', workerError);
+        console.warn('Worker-based extraction failed, trying simplified approach:', workerError);
         
-        // Try worker-less fallback
-        return await extractTextWithoutWorker(arrayBuffer, onProgress);
+        // Try simplified fallback
+        return await extractTextSimple(arrayBuffer, onProgress);
       }
     } else {
-      // Worker not available, use fallback directly
-      console.log('Worker not initialized, using fallback mode');
-      return await extractTextWithoutWorker(arrayBuffer, onProgress);
+      // Worker not available, use simplified approach directly
+      console.log('Worker not initialized, using simplified mode');
+      return await extractTextSimple(arrayBuffer, onProgress);
     }
     
   } catch (error) {
