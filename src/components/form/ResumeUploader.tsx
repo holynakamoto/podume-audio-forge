@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,99 +24,145 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
-    console.log('Starting PDF extraction for file:', file.name);
-    setUploadProgress(10); // Initial progress
+    console.log('=== PDF EXTRACTION START ===');
+    console.log('File name:', file.name);
+    console.log('File size:', file.size);
+    console.log('File type:', file.type);
+    
+    setUploadProgress(5);
+    console.log('Progress set to 5%');
     
     try {
+      console.log('Reading file as array buffer...');
       const arrayBuffer = await file.arrayBuffer();
-      console.log('File read as array buffer, size:', arrayBuffer.byteLength);
-      setUploadProgress(20);
+      console.log('Array buffer created, size:', arrayBuffer.byteLength);
+      setUploadProgress(15);
+      console.log('Progress set to 15%');
       
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      console.log('PDF loaded, pages:', pdf.numPages);
-      setUploadProgress(30);
+      console.log('Loading PDF document...');
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      console.log('Loading task created');
+      
+      const pdf = await loadingTask.promise;
+      console.log('PDF loaded successfully, pages:', pdf.numPages);
+      setUploadProgress(25);
+      console.log('Progress set to 25%');
       
       let extractedText = '';
       const totalPages = pdf.numPages;
       
+      console.log(`Starting to process ${totalPages} pages...`);
+      
       for (let i = 1; i <= totalPages; i++) {
-        console.log(`Processing page ${i}/${totalPages}`);
+        console.log(`=== Processing page ${i}/${totalPages} ===`);
         
         try {
+          console.log(`Getting page ${i}...`);
           const page = await pdf.getPage(i);
+          console.log(`Page ${i} loaded`);
+          
+          console.log(`Getting text content for page ${i}...`);
           const textContent = await page.getTextContent();
+          console.log(`Text content loaded for page ${i}, items:`, textContent.items.length);
+          
           const pageText = textContent.items
             .map((item: any) => item.str)
             .join(' ');
           
+          console.log(`Page ${i} text extracted, length: ${pageText.length}`);
           extractedText += pageText + '\n';
           
-          // Update progress: 30% + (page progress * 60%)
-          const pageProgress = (i / totalPages) * 60;
-          setUploadProgress(30 + pageProgress);
+          // Update progress: 25% + (page progress * 65%)
+          const pageProgress = (i / totalPages) * 65;
+          const newProgress = 25 + pageProgress;
+          setUploadProgress(newProgress);
+          console.log(`Progress updated to ${newProgress}% after page ${i}`);
           
-          console.log(`Page ${i} processed, text length: ${pageText.length}`);
         } catch (pageError) {
-          console.error(`Error processing page ${i}:`, pageError);
+          console.error(`ERROR processing page ${i}:`, pageError);
           // Continue with other pages even if one fails
         }
       }
       
       setUploadProgress(95);
+      console.log('All pages processed, setting progress to 95%');
       console.log('Total extracted text length:', extractedText.length);
+      console.log('First 100 chars:', extractedText.substring(0, 100));
+      console.log('=== PDF EXTRACTION COMPLETE ===');
       
       return extractedText.trim();
     } catch (error) {
-      console.error('PDF extraction error:', error);
+      console.error('=== PDF EXTRACTION ERROR ===');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Full error:', error);
       throw error;
     }
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('=== FILE UPLOAD HANDLER START ===');
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
 
-    console.log('File selected:', file.name, file.type, file.size);
+    console.log('File selected for upload:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified
+    });
 
     if (file.type !== 'application/pdf') {
+      console.log('Invalid file type:', file.type);
       toast.error('Please upload a PDF file.');
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
+      console.log('File too large:', file.size);
       toast.error('File size must be less than 10MB.');
       return;
     }
 
+    console.log('File validation passed, starting extraction...');
     setIsExtracting(true);
     setUploadProgress(0);
     
     try {
-      console.log('Starting PDF text extraction...');
+      console.log('Calling extractTextFromPDF...');
       const extractedText = await extractTextFromPDF(file);
       
+      console.log('PDF extraction completed successfully');
       setUploadProgress(100);
       
       if (extractedText.length < 10) {
+        console.log('Extracted text too short:', extractedText.length);
         toast.error('Could not extract readable text from this PDF. Please try a different file or paste your resume text manually.');
         return;
       }
 
-      console.log('PDF text extracted successfully, length:', extractedText.length);
+      console.log('Text extraction successful, updating content');
       onResumeContentChange(extractedText);
       
       toast.success('PDF text extracted successfully!');
+      console.log('=== FILE UPLOAD HANDLER SUCCESS ===');
     } catch (error) {
-      console.error('PDF extraction error:', error);
+      console.error('=== FILE UPLOAD HANDLER ERROR ===');
+      console.error('Error in handleFileUpload:', error);
       toast.error('Failed to extract text from PDF. Please try pasting your resume text instead.');
       setUploadProgress(0);
     } finally {
+      console.log('Cleaning up...');
       setIsExtracting(false);
       // Clear the input so the same file can be uploaded again if needed
       event.target.value = '';
       
       // Reset progress after a short delay
       setTimeout(() => {
+        console.log('Resetting progress to 0');
         setUploadProgress(0);
       }, 2000);
     }
