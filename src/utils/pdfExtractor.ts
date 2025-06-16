@@ -1,8 +1,14 @@
 
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configure PDF.js worker - use a more reliable approach for development
+if (typeof window !== 'undefined') {
+  // For browser environment, use the bundled worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).toString();
+}
 
 export interface ProgressCallback {
   (progress: number): void;
@@ -28,7 +34,13 @@ export const extractTextFromPDF = async (
     console.log('Progress set to 15%');
     
     console.log('Loading PDF document...');
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const loadingTask = pdfjsLib.getDocument({ 
+      data: arrayBuffer,
+      // Disable worker for more reliable loading in dev
+      disableWorker: false,
+      // Add more robust options
+      verbosity: 0
+    });
     console.log('Loading task created');
     
     const pdf = await loadingTask.promise;
