@@ -47,6 +47,10 @@ const extractTextWithoutWorker = async (
   onProgress?.(10);
   
   try {
+    // Completely disable worker for this processing
+    const originalWorkerSrc = pdfjsLib.GlobalWorkerOptions.workerSrc;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = null;
+    
     const loadingTask = pdfjsLib.getDocument({
       data: arrayBuffer,
       verbosity: 0,
@@ -82,6 +86,9 @@ const extractTextWithoutWorker = async (
       
       onProgress?.(30 + ((pageNum / totalPages) * 60));
     }
+    
+    // Restore original worker source
+    pdfjsLib.GlobalWorkerOptions.workerSrc = originalWorkerSrc;
     
     onProgress?.(100);
     return extractedText.trim();
