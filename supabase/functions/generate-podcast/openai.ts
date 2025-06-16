@@ -1,3 +1,4 @@
+
 import { OpenAI } from "https://deno.land/x/openai@1.2.1/mod.ts";
 
 interface PodcastData {
@@ -54,6 +55,7 @@ Format the output as a natural conversation between two podcast hosts, with clea
           top_p: 0.9,
           do_sample: true,
           return_full_text: false
+        }
       }),
     });
 
