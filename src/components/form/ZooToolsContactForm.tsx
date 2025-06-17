@@ -9,11 +9,20 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { sanitizeText, secureStorage } from '@/utils/security';
 
 const contactSchema = z.object({
-  email: z.string().email({ message: 'Invalid email address.' }),
-  firstName: z.string().min(1, { message: 'First name is required.' }),
-  lastName: z.string().min(1, { message: 'Last name is required.' }),
+  email: z.string()
+    .email({ message: 'Invalid email address.' })
+    .max(254, { message: 'Email too long.' }),
+  firstName: z.string()
+    .min(1, { message: 'First name is required.' })
+    .max(50, { message: 'First name too long.' })
+    .regex(/^[a-zA-Z\s-']+$/, { message: 'First name contains invalid characters.' }),
+  lastName: z.string()
+    .min(1, { message: 'Last name is required.' })
+    .max(50, { message: 'Last name too long.' })
+    .regex(/^[a-zA-Z\s-']+$/, { message: 'Last name contains invalid characters.' }),
 });
 
 type ContactFormValues = z.infer<typeof contactSchema>;
@@ -25,7 +34,9 @@ interface ZooToolsContactFormProps {
 
 const ZooToolsContactForm = ({ apiKey, onSuccess }: ZooToolsContactFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [localApiKey, setLocalApiKey] = useState(apiKey || '');
+  const [localApiKey, setLocalApiKey] = useState(() => {
+    return apiKey || secureStorage.getItem('zootools_api_key') || '';
+  });
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
@@ -35,6 +46,16 @@ const ZooToolsContactForm = ({ apiKey, onSuccess }: ZooToolsContactFormProps) =>
       lastName: '',
     },
   });
+
+  const handleApiKeyChange = (value: string) => {
+    const sanitizedKey = sanitizeText(value);
+    setLocalApiKey(sanitizedKey);
+    if (sanitizedKey) {
+      secureStorage.setItem('zootools_api_key', sanitizedKey);
+    } else {
+      secureStorage.removeItem('zootools_api_key');
+    }
+  };
 
   const handleSubmit = async (values: ContactFormValues) => {
     if (!localApiKey) {
@@ -46,6 +67,13 @@ const ZooToolsContactForm = ({ apiKey, onSuccess }: ZooToolsContactFormProps) =>
     console.log('Submitting contact to ZooTools:', values);
 
     try {
+      // Sanitize input data
+      const sanitizedData = {
+        email: sanitizeText(values.email),
+        firstName: sanitizeText(values.firstName),
+        lastName: sanitizeText(values.lastName),
+      };
+
       const response = await fetch('https://api.zootools.co/v1/contacts', {
         method: 'POST',
         headers: {
@@ -53,11 +81,7 @@ const ZooToolsContactForm = ({ apiKey, onSuccess }: ZooToolsContactFormProps) =>
           'Authorization': `Bearer ${localApiKey}`,
         },
         body: JSON.stringify({
-          properties: {
-            email: values.email,
-            firstName: values.firstName,
-            lastName: values.lastName,
-          },
+          properties: sanitizedData,
         }),
       });
 
@@ -101,8 +125,12 @@ const ZooToolsContactForm = ({ apiKey, onSuccess }: ZooToolsContactFormProps) =>
               type="password"
               placeholder="Enter your ZooTools API key"
               value={localApiKey}
-              onChange={(e) => setLocalApiKey(e.target.value)}
+              onChange={(e) => handleApiKeyChange(e.target.value)}
+              maxLength={100}
             />
+            <p className="text-xs text-muted-foreground">
+              API key is stored securely in session storage
+            </p>
           </div>
         )}
         
@@ -113,6 +141,7 @@ const ZooToolsContactForm = ({ apiKey, onSuccess }: ZooToolsContactFormProps) =>
               id="email"
               type="email"
               placeholder="contact@example.com"
+              maxLength={254}
               {...form.register('email')}
             />
             {form.formState.errors.email && (
@@ -125,6 +154,7 @@ const ZooToolsContactForm = ({ apiKey, onSuccess }: ZooToolsContactFormProps) =>
             <Input
               id="firstName"
               placeholder="John"
+              maxLength={50}
               {...form.register('firstName')}
             />
             {form.formState.errors.firstName && (
@@ -137,6 +167,7 @@ const ZooToolsContactForm = ({ apiKey, onSuccess }: ZooToolsContactFormProps) =>
             <Input
               id="lastName"
               placeholder="Doe"
+              maxLength={50}
               {...form.register('lastName')}
             />
             {form.formState.errors.lastName && (

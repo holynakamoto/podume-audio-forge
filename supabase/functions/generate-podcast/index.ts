@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders, handleCORS } from './cors.ts';
+import { corsHeaders, handleCORS, checkRateLimit } from './cors.ts';
 import { validateEnvironment, validateRequest } from './validation.ts';
 import { authenticateUser } from './auth.ts';
 import { generatePodcastScript } from './openai.ts';
@@ -15,6 +15,19 @@ serve(async (req: Request) => {
     console.log('Request method:', req.method);
     console.log('Request headers:', Object.fromEntries(req.headers.entries()));
     
+    // Rate limiting check
+    const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    if (!checkRateLimit(clientIp, 5, 60000)) {
+      console.log('Rate limit exceeded for client:', clientIp);
+      return new Response(JSON.stringify({ 
+        error: 'Rate limit exceeded',
+        details: 'Too many requests. Please try again later.'
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Validate environment
     const envError = validateEnvironment();
     if (envError) {

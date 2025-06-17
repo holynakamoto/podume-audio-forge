@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
 import PodcastDistribution from '@/components/PodcastDistribution';
 import { toast } from 'sonner';
+import { sanitizeHtml, sanitizeText } from '@/utils/security';
 
 const fetchPodcast = async (id: string) => {
   const { data, error } = await supabase
@@ -84,6 +85,11 @@ const PodcastPage = () => {
     );
   }
 
+  // Sanitize content for security
+  const sanitizedTitle = sanitizeText(podcast.title);
+  const sanitizedDescription = podcast.description ? sanitizeText(podcast.description) : 'Your professional podcast generated from your resume';
+  const sanitizedTranscript = podcast.transcript ? sanitizeHtml(podcast.transcript) : '';
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center p-4 sm:p-6 lg:p-8">
       <div className="absolute top-8 left-8">
@@ -94,8 +100,8 @@ const PodcastPage = () => {
       <div className="w-full max-w-3xl mx-auto mt-24">
         <Card>
           <CardHeader>
-            <CardTitle className="text-3xl">{podcast.title}</CardTitle>
-            <CardDescription>{podcast.description || 'Your professional podcast generated from your resume'}</CardDescription>
+            <CardTitle className="text-3xl">{sanitizedTitle}</CardTitle>
+            <CardDescription>{sanitizedDescription}</CardDescription>
           </CardHeader>
           <CardContent>
             {podcast.audio_url && (
@@ -127,8 +133,11 @@ const PodcastPage = () => {
             <div className="mt-6 space-y-4">
               <h3 className="font-semibold text-lg">Transcript</h3>
               <div className="prose prose-sm max-w-none text-muted-foreground bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
-                {podcast.transcript ? (
-                  <p className="whitespace-pre-wrap">{podcast.transcript}</p>
+                {sanitizedTranscript ? (
+                  <div 
+                    className="whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: sanitizedTranscript }}
+                  />
                 ) : (
                   <p className="text-muted-foreground italic">Transcript will be available once the podcast is fully processed.</p>
                 )}
@@ -138,10 +147,10 @@ const PodcastPage = () => {
             <div className="mt-8">
               <h3 className="font-semibold text-lg mb-4">Share this Podcast</h3>
               <div className="flex flex-wrap gap-4 items-center">
-                <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(podcast.title)}`} target="_blank" rel="noopener noreferrer">
+                <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(sanitizedTitle)}`} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline"><Twitter className="mr-2 h-4 w-4" /> Twitter</Button>
                 </a>
-                <a href={`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(podcast.title)}&summary=${encodeURIComponent(podcast.description || 'Check out this professional podcast')}`} target="_blank" rel="noopener noreferrer">
+                <a href={`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(sanitizedTitle)}&summary=${encodeURIComponent(sanitizedDescription)}`} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline"><Linkedin className="mr-2 h-4 w-4" /> LinkedIn</Button>
                 </a>
                 <Button variant="outline" onClick={handleCopy}><Copy className="mr-2 h-4 w-4" /> Copy Link</Button>
@@ -152,7 +161,7 @@ const PodcastPage = () => {
 
         <PodcastDistribution 
           podcastId={podcast.id}
-          podcastTitle={podcast.title}
+          podcastTitle={sanitizedTitle}
           audioUrl={podcast.audio_url}
         />
         
