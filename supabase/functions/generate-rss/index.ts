@@ -7,9 +7,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const securityHeaders = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
+};
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: { ...corsHeaders, ...securityHeaders } });
   }
 
   try {
@@ -20,7 +26,7 @@ serve(async (req: Request) => {
     if (!podcastId && !userId) {
       return new Response('Either podcast_id or user_id is required', { 
         status: 400, 
-        headers: corsHeaders 
+        headers: { ...corsHeaders, ...securityHeaders }
       });
     }
 
@@ -35,9 +41,11 @@ serve(async (req: Request) => {
       .eq('status', 'completed');
 
     if (podcastId) {
+      // For single podcast, allow both public and private access through RSS
       query = query.eq('id', podcastId);
     } else if (userId) {
-      query = query.eq('user_id', userId);
+      // For user feeds, only include public podcasts
+      query = query.eq('user_id', userId).eq('is_public', true);
     }
 
     const { data: podcasts, error } = await query;
@@ -46,14 +54,14 @@ serve(async (req: Request) => {
       console.error('Error fetching podcasts:', error);
       return new Response('Error fetching podcasts', { 
         status: 500, 
-        headers: corsHeaders 
+        headers: { ...corsHeaders, ...securityHeaders }
       });
     }
 
     if (!podcasts || podcasts.length === 0) {
       return new Response('No podcasts found', { 
         status: 404, 
-        headers: corsHeaders 
+        headers: { ...corsHeaders, ...securityHeaders }
       });
     }
 
@@ -64,6 +72,7 @@ serve(async (req: Request) => {
     return new Response(rssXml, {
       headers: {
         ...corsHeaders,
+        ...securityHeaders,
         'Content-Type': 'application/rss+xml; charset=utf-8',
       },
     });
@@ -72,7 +81,7 @@ serve(async (req: Request) => {
     console.error('Error generating RSS:', error);
     return new Response('Internal server error', { 
       status: 500, 
-      headers: corsHeaders 
+      headers: { ...corsHeaders, ...securityHeaders }
     });
   }
 });
@@ -87,14 +96,18 @@ function generateRSSXML(podcasts: any[], baseUrl: string, userId?: string): stri
     const pubDate = new Date(podcast.created_at).toUTCString();
     const audioUrl = podcast.audio_url || '';
     
+    // Sanitize content for XML
+    const sanitizedTitle = podcast.title.replace(/[<>&"']/g, '');
+    const sanitizedDescription = (podcast.description || 'Professional podcast generated from resume').replace(/[<>&"']/g, '');
+    
     return `
     <item>
-      <title><![CDATA[${podcast.title}]]></title>
-      <description><![CDATA[${podcast.description || 'Professional podcast generated from resume'}]]></description>
+      <title><![CDATA[${sanitizedTitle}]]></title>
+      <description><![CDATA[${sanitizedDescription}]]></description>
       <pubDate>${pubDate}</pubDate>
       <guid isPermaLink="false">${podcast.id}</guid>
       ${audioUrl ? `<enclosure url="${audioUrl}" type="audio/mpeg" />` : ''}
-      <itunes:summary><![CDATA[${podcast.description || 'Professional podcast generated from resume'}]]></itunes:summary>
+      <itunes:summary><![CDATA[${sanitizedDescription}]]></itunes:summary>
       <itunes:duration>00:05:00</itunes:duration>
       <itunes:explicit>false</itunes:explicit>
     </item>`;

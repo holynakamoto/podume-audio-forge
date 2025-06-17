@@ -8,8 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/Logo';
 import PodcastDistribution from '@/components/PodcastDistribution';
+import { PodcastSharingControls } from '@/components/PodcastSharingControls';
 import { toast } from 'sonner';
 import { sanitizeHtml, sanitizeText } from '@/utils/security';
+import { useAuth } from '@/auth/AuthProvider';
 
 const fetchPodcast = async (id: string) => {
   const { data, error } = await supabase
@@ -31,16 +33,19 @@ const fetchPodcast = async (id: string) => {
 
 const PodcastPage = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isPublic, setIsPublic] = React.useState(false);
   const audioRef = React.useRef<HTMLAudioElement>(null);
 
-  const { data: podcast, isLoading, error } = useQuery({
+  const { data: podcast, isLoading, error, refetch } = useQuery({
     queryKey: ['podcast', id],
     queryFn: () => fetchPodcast(id!),
     enabled: !!id,
   });
 
   const shareUrl = window.location.href;
+  const isOwner = user && podcast && user.id === podcast.user_id;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -58,10 +63,16 @@ const PodcastPage = () => {
     }
   };
 
+  const handleSharingChange = (newIsPublic: boolean) => {
+    setIsPublic(newIsPublic);
+    refetch(); // Refresh podcast data
+  };
+
   React.useEffect(() => {
     if (podcast) {
       console.log('Podcast data:', podcast);
       console.log('Audio URL:', podcast.audio_url);
+      setIsPublic(podcast.is_public || false);
     }
   }, [podcast]);
 
@@ -158,6 +169,14 @@ const PodcastPage = () => {
             </div>
           </CardContent>
         </Card>
+
+        {isOwner && (
+          <PodcastSharingControls
+            podcastId={podcast.id}
+            isPublic={isPublic}
+            onSharingChange={handleSharingChange}
+          />
+        )}
 
         <PodcastDistribution 
           podcastId={podcast.id}

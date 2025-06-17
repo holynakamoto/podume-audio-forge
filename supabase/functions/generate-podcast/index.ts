@@ -6,6 +6,15 @@ import { authenticateUser } from './auth.ts';
 import { generatePodcastScript } from './openai.ts';
 import { savePodcastToDatabase } from './database.ts';
 
+// Security headers
+const securityHeaders = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:;",
+};
+
 serve(async (req: Request) => {
   const corsResponse = handleCORS(req);
   if (corsResponse) return corsResponse;
@@ -24,7 +33,7 @@ serve(async (req: Request) => {
         details: 'Too many requests. Please try again later.'
       }), {
         status: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -37,7 +46,7 @@ serve(async (req: Request) => {
         details: 'Please check your Supabase secrets configuration'
       }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -59,7 +68,7 @@ serve(async (req: Request) => {
         details: parseError.message 
       }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -71,7 +80,7 @@ serve(async (req: Request) => {
         details: 'Request validation failed'
       }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -88,7 +97,7 @@ serve(async (req: Request) => {
         details: 'User authentication failed'
       }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -109,7 +118,7 @@ serve(async (req: Request) => {
         errorType: scriptError.constructor.name
       }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -130,13 +139,13 @@ serve(async (req: Request) => {
         errorType: dbError.constructor.name
       }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     console.log('Function completed successfully');
     return new Response(JSON.stringify({ podcast: podcastData }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
@@ -153,7 +162,7 @@ serve(async (req: Request) => {
       errorType: error.constructor.name,
       stack: error.stack
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
   }

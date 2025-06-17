@@ -15,6 +15,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          is_public: boolean | null
           package_type: string
           premium_assets: boolean | null
           resume_content: string | null
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_public?: boolean | null
           package_type: string
           premium_assets?: boolean | null
           resume_content?: string | null
@@ -47,6 +49,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_public?: boolean | null
           package_type?: string
           premium_assets?: boolean | null
           resume_content?: string | null
