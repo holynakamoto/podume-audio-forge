@@ -1,13 +1,31 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from '../generate-podcast/cors.ts';
+
+// CORS headers for this function
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+// Security headers
+const securityHeaders = {
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';",
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
+  'X-XSS-Protection': '1; mode=block'
+};
 
 const ZOOTOOLS_API_KEY = Deno.env.get('ZOOTOOLS_API_KEY');
 
 serve(async (req: Request) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: { ...corsHeaders, ...securityHeaders } 
+    });
   }
 
   try {
@@ -22,10 +40,8 @@ serve(async (req: Request) => {
         status: 500,
         headers: { 
           ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'X-Content-Type-Options': 'nosniff',
-          'X-Frame-Options': 'DENY',
-          'X-XSS-Protection': '1; mode=block'
+          ...securityHeaders,
+          'Content-Type': 'application/json'
         },
       });
     }
@@ -43,10 +59,8 @@ serve(async (req: Request) => {
         status: 400,
         headers: { 
           ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'X-Content-Type-Options': 'nosniff',
-          'X-Frame-Options': 'DENY',
-          'X-XSS-Protection': '1; mode=block'
+          ...securityHeaders,
+          'Content-Type': 'application/json'
         },
       });
     }
@@ -61,10 +75,8 @@ serve(async (req: Request) => {
         status: 400,
         headers: { 
           ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'X-Content-Type-Options': 'nosniff',
-          'X-Frame-Options': 'DENY',
-          'X-XSS-Protection': '1; mode=block'
+          ...securityHeaders,
+          'Content-Type': 'application/json'
         },
       });
     }
@@ -95,10 +107,8 @@ serve(async (req: Request) => {
         status: 500,
         headers: { 
           ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'X-Content-Type-Options': 'nosniff',
-          'X-Frame-Options': 'DENY',
-          'X-XSS-Protection': '1; mode=block'
+          ...securityHeaders,
+          'Content-Type': 'application/json'
         },
       });
     }
@@ -112,10 +122,8 @@ serve(async (req: Request) => {
     }), {
       headers: { 
         ...corsHeaders, 
-        'Content-Type': 'application/json',
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block'
+        ...securityHeaders,
+        'Content-Type': 'application/json'
       },
     });
 
@@ -128,10 +136,8 @@ serve(async (req: Request) => {
       status: 500,
       headers: { 
         ...corsHeaders, 
-        'Content-Type': 'application/json',
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'DENY',
-        'X-XSS-Protection': '1; mode=block'
+        ...securityHeaders,
+        'Content-Type': 'application/json'
       },
     });
   }

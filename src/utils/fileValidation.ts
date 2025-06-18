@@ -4,7 +4,7 @@ import { validateFileType, validateFileSize } from './security';
 const ALLOWED_PDF_TYPES = ['application/pdf'];
 const MAX_PDF_SIZE_MB = 10;
 
-export const validatePDFUpload = (file: File): { isValid: boolean; error?: string } => {
+export const validatePDFUpload = async (file: File): Promise<{ isValid: boolean; error?: string }> => {
   // Check file type
   if (!validateFileType(file, ALLOWED_PDF_TYPES)) {
     return {
