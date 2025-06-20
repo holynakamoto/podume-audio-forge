@@ -41,51 +41,84 @@ const AuthPage = () => {
 
   const handleSignUp = async (values: SignUpFormValues) => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: values.email,
-      password: values.password,
-      options: {
-        data: {
-          full_name: values.fullName,
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          data: {
+            full_name: values.fullName,
+          },
+          emailRedirectTo: `${window.location.origin}/`,
         },
-        emailRedirectTo: `${window.location.origin}/`,
-      },
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success('Check your email for the confirmation link!');
+      });
+      
+      if (error) {
+        console.error('Sign up error:', error);
+        toast.error(error.message);
+      } else {
+        toast.success('Check your email for the confirmation link!');
+      }
+    } catch (error) {
+      console.error('Unexpected sign up error:', error);
+      toast.error('An unexpected error occurred during sign up');
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleSignIn = async (values: SignInFormValues) => {
     setIsLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: values.email,
-      password: values.password,
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success('Signed in successfully!');
-      navigate(redirectUrl);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        toast.error(error.message);
+      } else {
+        toast.success('Signed in successfully!');
+        navigate(redirectUrl);
+      }
+    } catch (error) {
+      console.error('Unexpected sign in error:', error);
+      toast.error('An unexpected error occurred during sign in');
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleSocialSignIn = async (provider: 'google' | 'apple') => {
     setIsSocialLoading(provider);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}${redirectUrl}`,
-      },
-    });
-    if (error) {
-      toast.error(error.message);
+    try {
+      console.log(`Attempting ${provider} sign in...`);
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}${redirectUrl}`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+      
+      if (error) {
+        console.error(`${provider} SSO error:`, error);
+        toast.error(`Failed to sign in with ${provider}: ${error.message}`);
+      } else {
+        console.log(`${provider} sign in initiated successfully`);
+        // Don't show success toast here as the redirect will handle it
+      }
+    } catch (error) {
+      console.error(`Unexpected ${provider} SSO error:`, error);
+      toast.error(`An unexpected error occurred with ${provider} sign in`);
+    } finally {
+      setIsSocialLoading(null);
     }
-    setIsSocialLoading(null);
   };
 
   const SocialLoginButtons = () => (
@@ -120,6 +153,7 @@ const AuthPage = () => {
         )}
         Continue with Google
       </Button>
+      
       <Button
         variant="outline"
         className="w-full"
@@ -135,6 +169,7 @@ const AuthPage = () => {
         )}
         Continue with Apple
       </Button>
+      
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <Separator className="w-full" />
