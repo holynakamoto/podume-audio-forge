@@ -4,6 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+const logSecurityEvent = async (eventType: string, eventData: any) => {
+  try {
+    await supabase.from('security_audit_log').insert({
+      event_type: eventType,
+      event_data: eventData,
+      created_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Failed to log security event:', error);
+  }
+};
+
 export const useAuth = (redirectUrl: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -11,12 +23,28 @@ export const useAuth = (redirectUrl: string) => {
   const handleSignUp = async (values: { email: string; password: string; fullName: string }) => {
     setIsLoading(true);
     try {
+      // Input validation
+      if (!values.email || !values.password || !values.fullName) {
+        toast.error('All fields are required');
+        return;
+      }
+
+      if (values.password.length < 8) {
+        toast.error('Password must be at least 8 characters long');
+        return;
+      }
+
+      if (values.fullName.length > 100) {
+        toast.error('Full name cannot exceed 100 characters');
+        return;
+      }
+
       const { error } = await supabase.auth.signUp({
-        email: values.email,
+        email: values.email.trim().toLowerCase(),
         password: values.password,
         options: {
           data: {
-            full_name: values.fullName,
+            full_name: values.fullName.trim(),
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
@@ -24,12 +52,23 @@ export const useAuth = (redirectUrl: string) => {
       
       if (error) {
         console.error('Sign up error:', error);
+        await logSecurityEvent('auth_signup_failed', { 
+          email: values.email.trim().toLowerCase(), 
+          error: error.message 
+        });
         toast.error(error.message);
       } else {
+        await logSecurityEvent('auth_signup_success', { 
+          email: values.email.trim().toLowerCase() 
+        });
         toast.success('Check your email for the confirmation link!');
       }
     } catch (error) {
       console.error('Unexpected sign up error:', error);
+      await logSecurityEvent('auth_signup_error', { 
+        email: values.email.trim().toLowerCase(), 
+        error: 'Unexpected error' 
+      });
       toast.error('An unexpected error occurred during sign up');
     } finally {
       setIsLoading(false);
@@ -39,20 +78,37 @@ export const useAuth = (redirectUrl: string) => {
   const handleSignIn = async (values: { email: string; password: string }) => {
     setIsLoading(true);
     try {
+      // Input validation
+      if (!values.email || !values.password) {
+        toast.error('Email and password are required');
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email: values.email,
+        email: values.email.trim().toLowerCase(),
         password: values.password,
       });
       
       if (error) {
         console.error('Sign in error:', error);
+        await logSecurityEvent('auth_signin_failed', { 
+          email: values.email.trim().toLowerCase(), 
+          error: error.message 
+        });
         toast.error(error.message);
       } else {
+        await logSecurityEvent('auth_signin_success', { 
+          email: values.email.trim().toLowerCase() 
+        });
         toast.success('Signed in successfully!');
         navigate(redirectUrl);
       }
     } catch (error) {
       console.error('Unexpected sign in error:', error);
+      await logSecurityEvent('auth_signin_error', { 
+        email: values.email.trim().toLowerCase(), 
+        error: 'Unexpected error' 
+      });
       toast.error('An unexpected error occurred during sign in');
     } finally {
       setIsLoading(false);

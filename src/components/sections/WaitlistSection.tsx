@@ -5,39 +5,56 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Mail, CheckCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const WaitlistSection = () => {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && email.length <= 254;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email) {
+    if (!email.trim()) {
       toast.error('Please enter your email address');
+      return;
+    }
+
+    if (!validateEmail(email.trim())) {
+      toast.error('Please enter a valid email address');
       return;
     }
 
     setIsSubmitting(true);
     
     try {
-      // Store in localStorage for now - you can later integrate with your backend
-      const waitlistEmails = JSON.parse(localStorage.getItem('waitlistEmails') || '[]');
-      
-      if (waitlistEmails.includes(email)) {
-        toast.error('This email is already on the waitlist');
-        setIsSubmitting(false);
+      const { data, error } = await supabase.functions.invoke('secure-waitlist', {
+        body: { 
+          email: email.trim(),
+          source: 'website_waitlist'
+        }
+      });
+
+      if (error) {
+        console.error('Waitlist submission error:', error);
+        if (error.message?.includes('already registered')) {
+          toast.error('This email is already on the waitlist');
+        } else {
+          toast.error('Failed to join waitlist. Please try again.');
+        }
         return;
       }
-      
-      waitlistEmails.push(email);
-      localStorage.setItem('waitlistEmails', JSON.stringify(waitlistEmails));
-      
+
       setIsSubscribed(true);
       toast.success('Successfully joined the waitlist!');
       setEmail('');
     } catch (error) {
+      console.error('Unexpected error:', error);
       toast.error('Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -85,11 +102,13 @@ const WaitlistSection = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full"
                 disabled={isSubmitting}
+                maxLength={254}
+                required
               />
             </div>
             <Button 
               type="submit" 
-              disabled={isSubmitting}
+              disabled={isSubmitting || !email.trim()}
               className="bg-gradient-to-r from-purple-600 to-yellow-400 hover:from-purple-500 hover:to-yellow-300 text-white font-semibold px-6 py-2 rounded-md"
             >
               {isSubmitting ? 'Joining...' : 'Join Waitlist'}

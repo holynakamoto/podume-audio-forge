@@ -16,6 +16,22 @@ interface PodcastCreationFormProps {
   initialResumeContent?: string;
 }
 
+const logSecurityEvent = async (eventType: string, eventData: any) => {
+  try {
+    await supabase.from('security_audit_log').insert({
+      event_type: eventType,
+      event_data: eventData,
+      created_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Failed to log security event:', error);
+  }
+};
+
+const sanitizeInput = (input: string): string => {
+  return input.trim().replace(/[<>]/g, '');
+};
+
 export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({ 
   initialResumeContent = '' 
 }) => {
@@ -47,47 +63,87 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
     form.setValue('resume_content', resumeContent);
   }, [resumeContent, form]);
 
+  const validateSubmitData = (data: FormValues): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    if (!data.title || data.title.trim().length < 3) {
+      errors.push('Title must be at least 3 characters');
+    }
+    
+    if (data.title && data.title.length > 200) {
+      errors.push('Title cannot exceed 200 characters');
+    }
+    
+    if (!data.resume_content || data.resume_content.trim().length < 5) {
+      errors.push('Resume content must be at least 5 characters');
+    }
+    
+    if (data.resume_content && data.resume_content.length > 50000) {
+      errors.push('Resume content cannot exceed 50,000 characters');
+    }
+    
+    return { isValid: errors.length === 0, errors };
+  };
+
   const onSubmit = async (values: FormValues) => {
     console.log('Form submission started with values:', values);
     console.log('Resume content length:', resumeContent.length);
-    console.log('Resume content preview:', resumeContent.substring(0, 100) + '...');
     
-    // Ensure we use the current resume content
-    const submitData = { 
-      ...values, 
-      resume_content: resumeContent 
-    };
-    
-    if (submitData.resume_content.length < 5) {
-      toast.error('Resume content must be at least 5 characters.');
+    // Enhanced validation
+    const validation = validateSubmitData({ ...values, resume_content: resumeContent });
+    if (!validation.isValid) {
+      validation.errors.forEach(error => toast.error(error));
       return;
     }
 
-    if (submitData.title.length < 3) {
-      toast.error('Title must be at least 3 characters.');
-      return;
-    }
+    // Sanitize inputs
+    const submitData = { 
+      ...values, 
+      title: sanitizeInput(values.title),
+      resume_content: sanitizeInput(resumeContent)
+    };
 
     setIsLoading(true);
     toast.info('Generating your podcast... This may take a moment.');
 
     try {
       console.log('Calling generate-podcast function with data:', submitData);
+      
+      // Log podcast creation attempt
+      await logSecurityEvent('podcast_creation_attempt', {
+        title: submitData.title,
+        package_type: submitData.package_type,
+        content_length: submitData.resume_content.length
+      });
+
       const { data, error } = await supabase.functions.invoke('generate-podcast', {
         body: submitData,
       });
 
       if (error) {
         console.error('Supabase function error:', error);
+        await logSecurityEvent('podcast_creation_failed', {
+          title: submitData.title,
+          error: error.message
+        });
         throw error;
       }
 
       console.log('Podcast generated successfully:', data);
+      await logSecurityEvent('podcast_creation_success', {
+        podcast_id: data.podcast.id,
+        title: submitData.title
+      });
+      
       toast.success('Your podcast has been created!');
       const newPodcastId = data.podcast.id;
       navigate(`/podcast/${newPodcastId}`);
     } catch (error: any) {
       console.error('Error creating podcast:', error);
+      await logSecurityEvent('podcast_creation_error', {
+        title: submitData.title,
+        error: error.message || 'Unknown error'
+      });
       toast.error(`Failed to create podcast: ${error.message || 'Unknown error'}`);
     } finally {
       setIsLoading(false);
@@ -97,8 +153,12 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
   // Watch form values for validation
   const titleValue = form.watch('title');
   
-  // Use the actual resumeContent state for validation, not just the form value
-  const canSubmit = resumeContent.length >= 5 && titleValue && titleValue.length >= 3;
+  // Enhanced validation for submit button
+  const canSubmit = resumeContent.length >= 5 && 
+                   resumeContent.length <= 50000 &&
+                   titleValue && 
+                   titleValue.length >= 3 && 
+                   titleValue.length <= 200;
 
   console.log('Form state:', { 
     resumeContentLength: resumeContent.length, 
@@ -121,8 +181,11 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
             onResumeContentChange={setResumeContent}
             resumeContent={resumeContent}
           />
-          {resumeContent.length < 5 && resumeContent.length > 0 && (
+          {resumeContent.length > 0 && resumeContent.length < 5 && (
             <p className="text-red-500 text-sm">Resume content must be at least 5 characters.</p>
+          )}
+          {resumeContent.length > 50000 && (
+            <p className="text-red-500 text-sm">Resume content cannot exceed 50,000 characters.</p>
           )}
           
           <PodcastSettings form={form} />
