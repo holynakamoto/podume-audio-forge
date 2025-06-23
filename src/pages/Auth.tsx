@@ -3,7 +3,6 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Logo from '@/components/Logo';
-import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import SignInForm from '@/components/auth/SignInForm';
 import SignUpForm from '@/components/auth/SignUpForm';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,10 +13,8 @@ const AuthPage = () => {
   
   const {
     isLoading,
-    isSocialLoading,
     handleSignUp,
     handleSignIn,
-    handleSocialSignIn,
   } = useAuth(redirectUrl);
 
   return (
@@ -39,10 +36,6 @@ const AuthPage = () => {
               <CardDescription>Enter your credentials to access your account.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <SocialLoginButtons 
-                onSocialSignIn={handleSocialSignIn}
-                isSocialLoading={isSocialLoading}
-              />
               <SignInForm onSubmit={handleSignIn} isLoading={isLoading} />
             </CardContent>
           </Card>
@@ -54,10 +47,6 @@ const AuthPage = () => {
               <CardDescription>Create an account to get started.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <SocialLoginButtons 
-                onSocialSignIn={handleSocialSignIn}
-                isSocialLoading={isSocialLoading}
-              />
               <SignUpForm onSubmit={handleSignUp} isLoading={isLoading} />
             </CardContent>
           </Card>
