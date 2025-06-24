@@ -39,50 +39,6 @@ export const useAuth = (redirectUrl: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const sendWelcomeEmail = async (email: string, name?: string) => {
-    try {
-      console.log('Attempting to send welcome email to:', email);
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        const { data, error } = await supabase.functions.invoke('send-welcome-email', {
-          body: { email, name }
-        });
-        
-        if (error) {
-          console.error('Welcome email error:', error);
-        } else {
-          console.log('Welcome email sent successfully:', data);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to send welcome email:', error);
-    }
-  };
-
-  const sendFallbackConfirmationEmail = async (email: string) => {
-    try {
-      console.log('Sending fallback confirmation email to:', email);
-      const { data, error } = await supabase.functions.invoke('send-confirmation-email', {
-        body: { 
-          email,
-          token: 'manual-confirmation',
-          token_hash: 'manual-hash',
-          redirect_to: window.location.origin,
-          email_action_type: 'signup'
-        }
-      });
-      
-      if (error) {
-        console.error('Fallback confirmation email error:', error);
-      } else {
-        console.log('Fallback confirmation email sent:', data);
-      }
-    } catch (error) {
-      console.error('Failed to send fallback confirmation email:', error);
-    }
-  };
-
   const handleSignUp = async (values: { email: string; password: string; fullName: string }) => {
     setIsLoading(true);
     try {
@@ -144,17 +100,29 @@ export const useAuth = (redirectUrl: string) => {
           email: sanitizedEmail 
         });
         
-        // Send multiple email attempts for better delivery
+        // Send confirmation email via edge function
         if (data.user && !data.user.email_confirmed_at) {
-          console.log('User needs email confirmation, sending emails...');
+          console.log('User needs email confirmation, sending confirmation email...');
           
-          // Send welcome email as primary method
-          await sendWelcomeEmail(sanitizedEmail, sanitizedName);
-          
-          // Send fallback confirmation email
-          setTimeout(() => {
-            sendFallbackConfirmationEmail(sanitizedEmail);
-          }, 2000);
+          try {
+            const { error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
+              body: { 
+                email: sanitizedEmail,
+                token: 'confirmation-required',
+                token_hash: 'manual-hash',
+                redirect_to: window.location.origin,
+                email_action_type: 'signup'
+              }
+            });
+            
+            if (emailError) {
+              console.error('Confirmation email error:', emailError);
+            } else {
+              console.log('Confirmation email sent successfully');
+            }
+          } catch (emailError) {
+            console.error('Failed to send confirmation email:', emailError);
+          }
         }
         
         toast.success('Account created! Please check your email for the confirmation link.');

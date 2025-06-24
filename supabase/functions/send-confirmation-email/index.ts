@@ -40,41 +40,44 @@ Deno.serve(async (req) => {
       })
     }
 
-    // For webhook verification - if no secret, allow through (for testing)
-    if (hookSecret) {
-      const headers = Object.fromEntries(req.headers)
-      console.log('Request headers received:', Object.keys(headers))
-      
-      const wh = new Webhook(hookSecret)
-      
+    // Try webhook verification first, fallback to direct call
+    let emailData;
+    
+    if (hookSecret && payload.includes('user')) {
+      // Webhook call from Supabase
       try {
-        const {
-          user,
-          email_data: { token, token_hash, redirect_to, email_action_type },
-        } = wh.verify(payload, headers) as {
+        const headers = Object.fromEntries(req.headers)
+        console.log('Attempting webhook verification')
+        
+        const wh = new Webhook(hookSecret)
+        const verified = wh.verify(payload, headers) as {
           user: { email: string }
           email_data: {
             token: string
             token_hash: string
             redirect_to: string
             email_action_type: string
-            site_url: string
           }
         }
 
-        console.log('Webhook verified successfully for user:', user.email)
-        console.log('Email action type:', email_action_type)
-
+        console.log('Webhook verified for user:', verified.user.email)
+        
         // Only handle signup confirmations
-        if (email_action_type !== 'signup') {
-          console.log('Email type not handled:', email_action_type)
+        if (verified.email_data.email_action_type !== 'signup') {
+          console.log('Email type not handled:', verified.email_data.email_action_type)
           return new Response('Email type not handled', { 
             status: 200,
             headers: corsHeaders 
           })
         }
 
-        await sendConfirmationEmail(user.email, token, token_hash, redirect_to, email_action_type)
+        emailData = {
+          email: verified.user.email,
+          token: verified.email_data.token,
+          token_hash: verified.email_data.token_hash,
+          redirect_to: verified.email_data.redirect_to,
+          email_action_type: verified.email_data.email_action_type
+        }
       } catch (verifyError) {
         console.error('Webhook verification failed:', verifyError)
         return new Response('Webhook verification failed', {
@@ -83,8 +86,8 @@ Deno.serve(async (req) => {
         })
       }
     } else {
-      // Fallback for direct calls without webhook verification
-      console.log('No webhook secret found, processing as direct call')
+      // Direct call fallback
+      console.log('Processing as direct call')
       const body = JSON.parse(payload)
       
       if (!body.email) {
@@ -94,15 +97,16 @@ Deno.serve(async (req) => {
         })
       }
       
-      // For direct calls, use default values
-      await sendConfirmationEmail(
-        body.email, 
-        body.token || 'fallback-token', 
-        body.token_hash || 'fallback-hash',
-        body.redirect_to || window.location.origin,
-        'signup'
-      )
+      emailData = {
+        email: body.email,
+        token: body.token || 'confirmation-required',
+        token_hash: body.token_hash || 'hash-placeholder',
+        redirect_to: body.redirect_to || 'https://pudwgzutzoidxbvozhnk.supabase.co/',
+        email_action_type: 'signup'
+      }
     }
+
+    await sendConfirmationEmail(emailData)
 
   } catch (error) {
     console.error('Error in send-confirmation-email function:', error)
@@ -132,29 +136,29 @@ Deno.serve(async (req) => {
   })
 })
 
-async function sendConfirmationEmail(
-  email: string, 
-  token: string, 
-  token_hash: string, 
-  redirect_to: string, 
+async function sendConfirmationEmail(emailData: {
+  email: string
+  token: string
+  token_hash: string
+  redirect_to: string
   email_action_type: string
-) {
-  console.log('Rendering email template for:', email)
+}) {
+  console.log('Rendering email template for:', emailData.email)
   
   const html = await renderAsync(
     React.createElement(ConfirmationEmail, {
       supabase_url: Deno.env.get('SUPABASE_URL') ?? '',
-      token,
-      token_hash,
-      redirect_to,
-      email_action_type,
+      token: emailData.token,
+      token_hash: emailData.token_hash,
+      redirect_to: emailData.redirect_to,
+      email_action_type: emailData.email_action_type,
     })
   )
 
   console.log('Email template rendered, sending email...')
   const { data, error } = await resend.emails.send({
     from: 'Podumé <onboarding@resend.dev>',
-    to: [email],
+    to: [emailData.email],
     subject: 'Confirm your Podumé account',
     html,
   })
@@ -164,6 +168,6 @@ async function sendConfirmationEmail(
     throw error
   }
 
-  console.log('Confirmation email sent successfully to:', email)
+  console.log('Confirmation email sent successfully to:', emailData.email)
   console.log('Email data:', data)
 }

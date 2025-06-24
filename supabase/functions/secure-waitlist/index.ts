@@ -30,6 +30,8 @@ function sanitizeInput(input: string): string {
 }
 
 serve(async (req: Request) => {
+  console.log('Waitlist function called with method:', req.method);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: { ...corsHeaders, ...securityHeaders } });
   }
@@ -48,6 +50,7 @@ serve(async (req: Request) => {
     );
 
     const body: WaitlistRequest = await req.json();
+    console.log('Received waitlist request for email:', body.email);
     
     if (!body.email) {
       return new Response(JSON.stringify({ error: 'Email is required' }), {
@@ -66,11 +69,19 @@ serve(async (req: Request) => {
     }
 
     // Check for existing email
-    const { data: existing } = await supabase
+    const { data: existing, error: checkError } = await supabase
       .from('waitlist_emails')
       .select('email')
       .eq('email', sanitizedEmail)
       .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Database check error:', checkError);
+      return new Response(JSON.stringify({ error: 'Database error' }), {
+        status: 500,
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     if (existing) {
       return new Response(JSON.stringify({ error: 'Email already registered' }), {
@@ -80,7 +91,7 @@ serve(async (req: Request) => {
     }
 
     // Insert new email
-    const { error } = await supabase
+    const { error: insertError } = await supabase
       .from('waitlist_emails')
       .insert({
         email: sanitizedEmail,
@@ -88,8 +99,8 @@ serve(async (req: Request) => {
         created_at: new Date().toISOString()
       });
 
-    if (error) {
-      console.error('Database error:', error);
+    if (insertError) {
+      console.error('Database insert error:', insertError);
       return new Response(JSON.stringify({ error: 'Failed to register email' }), {
         status: 500,
         headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' }
@@ -101,8 +112,11 @@ serve(async (req: Request) => {
       event_type: 'waitlist_signup',
       event_data: { email: sanitizedEmail, source: body.source },
       ip_address: req.headers.get('x-forwarded-for') || 'unknown',
-      user_agent: req.headers.get('user-agent')
+      user_agent: req.headers.get('user-agent'),
+      created_at: new Date().toISOString()
     });
+
+    console.log('Waitlist signup successful for:', sanitizedEmail);
 
     return new Response(JSON.stringify({ success: true, message: 'Email registered successfully' }), {
       status: 200,
@@ -110,7 +124,7 @@ serve(async (req: Request) => {
     });
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Unexpected error in waitlist function:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' }
