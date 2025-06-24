@@ -6,6 +6,7 @@ import PricingSection from '@/components/sections/PricingSection';
 import FaqSection from '@/components/sections/FaqSection';
 import WaitlistSection from '@/components/sections/WaitlistSection';
 import Footer from '@/components/layout/Footer';
+import ChatBot from '@/components/chat/ChatBot';
 
 const Index = () => {
   return (
@@ -19,6 +20,7 @@ const Index = () => {
         <FaqSection />
       </main>
       <Footer />
+      <ChatBot />
     </div>
   );
 };
