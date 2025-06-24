@@ -14,6 +14,8 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
+  console.log('Email function invoked with method:', req.method)
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -27,7 +29,22 @@ Deno.serve(async (req) => {
 
   try {
     const payload = await req.text()
+    console.log('Received payload length:', payload.length)
+    
+    // Check if we have the required environment variables
+    if (!resend) {
+      console.error('RESEND_API_KEY not found')
+      throw new Error('Email service not configured')
+    }
+
+    if (!hookSecret) {
+      console.error('SEND_EMAIL_HOOK_SECRET not found')
+      throw new Error('Webhook secret not configured')
+    }
+
     const headers = Object.fromEntries(req.headers)
+    console.log('Request headers received:', Object.keys(headers))
+    
     const wh = new Webhook(hookSecret)
     
     const {
@@ -46,14 +63,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log('Webhook verified successfully for user:', user.email)
+    console.log('Email action type:', email_action_type)
+
     // Only handle signup confirmations
     if (email_action_type !== 'signup') {
+      console.log('Email type not handled:', email_action_type)
       return new Response('Email type not handled', { 
         status: 200,
         headers: corsHeaders 
       })
     }
 
+    console.log('Rendering email template...')
     const html = await renderAsync(
       React.createElement(ConfirmationEmail, {
         supabase_url: Deno.env.get('SUPABASE_URL') ?? '',
@@ -64,7 +86,8 @@ Deno.serve(async (req) => {
       })
     )
 
-    const { error } = await resend.emails.send({
+    console.log('Email template rendered, sending email...')
+    const { data, error } = await resend.emails.send({
       from: 'Podumé <noreply@resend.dev>',
       to: [user.email],
       subject: 'Confirm your Podumé account',
@@ -77,6 +100,7 @@ Deno.serve(async (req) => {
     }
 
     console.log('Confirmation email sent successfully to:', user.email)
+    console.log('Email data:', data)
 
   } catch (error) {
     console.error('Error in send-confirmation-email function:', error)
@@ -84,6 +108,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         error: {
           message: error.message,
+          details: error.toString(),
         },
       }),
       {

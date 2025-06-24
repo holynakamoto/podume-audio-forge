@@ -20,6 +20,20 @@ export const useAuth = (redirectUrl: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  const sendWelcomeEmail = async (email: string, name?: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.functions.invoke('send-welcome-email', {
+          body: { email, name }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to send welcome email:', error);
+      // Don't throw error here as it's not critical to the signup flow
+    }
+  };
+
   const handleSignUp = async (values: { email: string; password: string; fullName: string }) => {
     setIsLoading(true);
     try {
@@ -39,7 +53,9 @@ export const useAuth = (redirectUrl: string) => {
         return;
       }
 
-      const { error } = await supabase.auth.signUp({
+      console.log('Attempting to sign up user:', values.email);
+
+      const { data, error } = await supabase.auth.signUp({
         email: values.email.trim().toLowerCase(),
         password: values.password,
         options: {
@@ -58,10 +74,18 @@ export const useAuth = (redirectUrl: string) => {
         });
         toast.error(error.message);
       } else {
+        console.log('Sign up successful:', data);
         await logSecurityEvent('auth_signup_success', { 
           email: values.email.trim().toLowerCase() 
         });
-        toast.success('Check your email for the confirmation link!');
+        
+        // Try to send welcome email as backup
+        if (data.user && !data.user.email_confirmed_at) {
+          console.log('Sending welcome email as backup...');
+          await sendWelcomeEmail(values.email.trim().toLowerCase(), values.fullName.trim());
+        }
+        
+        toast.success('Please check your email for the confirmation link!');
       }
     } catch (error) {
       console.error('Unexpected sign up error:', error);
