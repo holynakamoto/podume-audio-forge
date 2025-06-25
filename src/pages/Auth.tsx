@@ -1,31 +1,19 @@
 
-import { useSearchParams, Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
+import { SignIn, SignUp } from '@clerk/clerk-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Logo from '@/components/Logo';
-import SignInForm from '@/components/auth/SignInForm';
-import SignUpForm from '@/components/auth/SignUpForm';
-import { useAuth } from '@/hooks/useAuth';
 
 const AuthPage = () => {
-  const [searchParams] = useSearchParams();
-  const redirectUrl = searchParams.get('redirect') || '/';
-  const tab = searchParams.get('tab') || 'sign-in';
-  
-  const {
-    isLoading,
-    handleSignUp,
-    handleSignIn,
-  } = useAuth(redirectUrl);
-
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-       <div className="absolute top-8 left-8">
-          <Link to="/">
-              <Logo />
-          </Link>
+      <div className="absolute top-8 left-8">
+        <Link to="/">
+          <Logo />
+        </Link>
       </div>
-      <Tabs defaultValue={tab} className="w-full max-w-md">
+      <Tabs defaultValue="sign-in" className="w-full max-w-md">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="sign-in">Sign In</TabsTrigger>
           <TabsTrigger value="sign-up">Sign Up</TabsTrigger>
@@ -34,10 +22,14 @@ const AuthPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>Sign In</CardTitle>
-              <CardDescription>Enter your credentials to access your account.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <SignInForm onSubmit={handleSignIn} isLoading={isLoading} />
+            <CardContent>
+              <SignIn 
+                routing="path" 
+                path="/auth" 
+                afterSignInUrl="/"
+                signUpUrl="/auth?tab=sign-up"
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -45,10 +37,14 @@ const AuthPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>Sign Up</CardTitle>
-              <CardDescription>Create an account to get started.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <SignUpForm onSubmit={handleSignUp} isLoading={isLoading} />
+            <CardContent>
+              <SignUp 
+                routing="path" 
+                path="/auth" 
+                afterSignUpUrl="/"
+                signInUrl="/auth?tab=sign-in"
+              />
             </CardContent>
           </Card>
         </TabsContent>

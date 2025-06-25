@@ -4,22 +4,22 @@ import { Link, useNavigate } from 'react-router-dom';
 import Logo from '@/components/Logo';
 import { PodcastCreationForm } from '@/components/form/PodcastCreationForm';
 import { PDFToTTS } from '@/components/form/PDFToTTS';
-import { useAuth } from '@/auth/AuthProvider';
+import { useAuth } from '@/auth/ClerkAuthProvider';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Create = () => {
-    const { user, isLoading } = useAuth();
+    const { user, isLoading, isSignedIn } = useAuth();
     const navigate = useNavigate();
     const [extractedText, setExtractedText] = useState('');
 
     useEffect(() => {
-        if (!isLoading && !user) {
-            navigate('/auth?redirect=/create');
+        if (!isLoading && !isSignedIn) {
+            navigate('/auth');
         }
-    }, [user, isLoading, navigate]);
+    }, [isSignedIn, isLoading, navigate]);
 
-    if (isLoading || !user) {
+    if (isLoading || !isSignedIn) {
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
