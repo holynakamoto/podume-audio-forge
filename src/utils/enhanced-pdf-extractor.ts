@@ -1,3 +1,4 @@
+
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
 // Basic debug functions
@@ -35,20 +36,26 @@ const setupPDFWorker = () => {
   console.log('Setting up PDF.js worker with version 5.3.31...');
   
   try {
-    // Try modern ES module approach first with correct version
-    GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
-    console.log('PDF worker set to ES module:', GlobalWorkerOptions.workerSrc);
+    // Use a direct CDN URL that matches our exact package version
+    GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@5.3.31/build/pdf.worker.min.mjs`;
+    console.log('PDF worker set to unpkg CDN with version 5.3.31:', GlobalWorkerOptions.workerSrc);
   } catch (error) {
-    console.warn('Failed to set ES module worker, trying CDN fallback:', error);
+    console.warn('Failed to set unpkg worker, trying alternative CDN:', error);
     try {
-      // Fallback to CDN with matching version 5.3.31
-      GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.worker.min.mjs`;
-      console.log('PDF worker set to CDN with version 5.3.31:', GlobalWorkerOptions.workerSrc);
+      // Fallback to jsdelivr CDN with matching version
+      GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@5.3.31/build/pdf.worker.min.mjs`;
+      console.log('PDF worker set to jsdelivr CDN with version 5.3.31:', GlobalWorkerOptions.workerSrc);
     } catch (cdnError) {
-      console.error('Failed to set CDN worker:', cdnError);
-      // Last resort - try npm package path
-      GlobalWorkerOptions.workerSrc = '/node_modules/pdfjs-dist/build/pdf.worker.min.mjs';
-      console.log('PDF worker set to npm path:', GlobalWorkerOptions.workerSrc);
+      console.error('Failed to set CDN workers, trying local fallback:', cdnError);
+      // Last resort - try local import.meta.url approach
+      try {
+        GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+        console.log('PDF worker set to local import.meta.url:', GlobalWorkerOptions.workerSrc);
+      } catch (localError) {
+        console.error('All worker setup methods failed:', localError);
+        GlobalWorkerOptions.workerSrc = '/node_modules/pdfjs-dist/build/pdf.worker.min.mjs';
+        console.log('PDF worker set to npm path (last resort):', GlobalWorkerOptions.workerSrc);
+      }
     }
   }
 };
