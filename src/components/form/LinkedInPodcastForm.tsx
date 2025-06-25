@@ -18,7 +18,7 @@ import { z } from 'zod';
 const linkedInFormSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(200, 'Title cannot exceed 200 characters'),
   linkedin_url: z.string().url('Please enter a valid URL').refine(
-    (url) => url.includes('linkedin.com'),
+    (url) => url.toLowerCase().includes('linkedin.com'),
     'Please enter a LinkedIn profile URL'
   ),
   package_type: z.enum(['core', 'premium']).default('core'),
@@ -38,7 +38,7 @@ export const LinkedInPodcastForm: React.FC = () => {
     resolver: zodResolver(linkedInFormSchema),
     defaultValues: {
       title: '',
-      linkedin_url: '',
+      linkedin_url: 'https://linkedin.com/in/',
       package_type: 'core',
       voice_clone: false,
       premium_assets: false,
