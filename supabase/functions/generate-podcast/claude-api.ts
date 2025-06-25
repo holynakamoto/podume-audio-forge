@@ -12,9 +12,11 @@ export async function generateScriptWithClaude(resumeContent: string): Promise<s
   try {
     console.log('Generating podcast script with Claude 3.5 Sonnet...');
     console.log('Resume content length:', resumeContent.length);
+    console.log('Resume content preview:', resumeContent.substring(0, 300) + '...');
     
     // Create structured prompt for Claude
     const prompt = createClaudePrompt(resumeContent);
+    console.log('Prompt created, length:', prompt.length);
     
     console.log('Sending request to Claude API...');
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -38,15 +40,17 @@ export async function generateScriptWithClaude(resumeContent: string): Promise<s
     });
 
     console.log('Claude API response status:', response.status);
+    console.log('Claude API response headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Claude API error:', response.status, errorText);
-      throw new Error(`Claude API error: ${response.statusText}`);
+      console.error('Claude API error response:', errorText);
+      throw new Error(`Claude API error: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
     console.log('Claude API response received');
+    console.log('Response structure:', Object.keys(result));
     
     if (result.error) {
       console.error('Claude API returned error:', result.error);
@@ -54,18 +58,24 @@ export async function generateScriptWithClaude(resumeContent: string): Promise<s
     }
 
     const generatedScript = result.content?.[0]?.text || '';
+    console.log('Generated script length:', generatedScript.length);
+    console.log('Generated script preview:', generatedScript.substring(0, 200) + '...');
     
-    if (!generatedScript || generatedScript.length < 500) {
-      console.log('Generated script too short, using enhanced fallback');
+    if (!generatedScript || generatedScript.length < 100) {
+      console.log('Generated script too short or empty, using enhanced fallback');
+      console.log('Script content:', generatedScript);
       const { generateEnhancedScript } = await import('./enhanced-script-generator.ts');
       return generateEnhancedScript(resumeContent);
     }
 
-    console.log('Claude script generated successfully, length:', generatedScript.length);
+    console.log('Claude script generated successfully, final length:', generatedScript.length);
     return generatedScript;
 
   } catch (error) {
-    console.error('Claude generation failed:', error);
+    console.error('=== Claude generation failed ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     console.log('Falling back to enhanced script generator');
     
     const { generateEnhancedScript } = await import('./enhanced-script-generator.ts');

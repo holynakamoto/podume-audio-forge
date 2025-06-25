@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -69,8 +70,15 @@ const PodcastPage = () => {
 
   React.useEffect(() => {
     if (podcast) {
-      console.log('Podcast data:', podcast);
+      console.log('=== PODCAST DEBUG INFO ===');
+      console.log('Podcast ID:', podcast.id);
+      console.log('Podcast status:', podcast.status);
       console.log('Audio URL:', podcast.audio_url);
+      console.log('Transcript exists:', !!podcast.transcript);
+      console.log('Transcript length:', podcast.transcript?.length || 0);
+      console.log('Transcript preview:', podcast.transcript?.substring(0, 200) + '...');
+      console.log('Raw transcript:', podcast.transcript);
+      console.log('========================');
       setIsPublic(podcast.is_public || false);
     }
   }, [podcast]);
@@ -142,14 +150,36 @@ const PodcastPage = () => {
             
             <div className="mt-6 space-y-4">
               <h3 className="font-semibold text-lg">Transcript</h3>
+              
+              {/* Debug info for transcript */}
+              <div className="text-xs text-muted-foreground bg-yellow-50 p-2 rounded border">
+                <strong>Debug Info:</strong><br/>
+                Status: {podcast.status}<br/>
+                Transcript exists: {podcast.transcript ? 'Yes' : 'No'}<br/>
+                Transcript length: {podcast.transcript?.length || 0} characters<br/>
+                Raw transcript type: {typeof podcast.transcript}
+              </div>
+              
               <div className="prose prose-sm max-w-none text-muted-foreground bg-muted p-4 rounded-md max-h-96 overflow-y-auto">
-                {sanitizedTranscript ? (
-                  <div 
-                    className="whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: sanitizedTranscript }}
-                  />
+                {podcast.transcript && podcast.transcript.trim().length > 0 ? (
+                  <div className="whitespace-pre-wrap">
+                    {podcast.transcript}
+                  </div>
                 ) : (
-                  <p className="text-muted-foreground italic">Transcript will be available once the podcast is fully processed.</p>
+                  <div>
+                    <p className="text-muted-foreground italic">
+                      {podcast.status === 'processing' ? 
+                        'Transcript is being generated... Please refresh the page in a moment.' :
+                        'No transcript available. This could be due to an error during generation.'
+                      }
+                    </p>
+                    {podcast.status === 'completed' && (!podcast.transcript || podcast.transcript.trim().length === 0) && (
+                      <p className="text-red-500 text-sm mt-2">
+                        Warning: Podcast is marked as completed but no transcript was generated. 
+                        This might indicate an issue with the Claude API or transcript generation process.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
