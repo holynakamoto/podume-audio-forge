@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +37,26 @@ const isStrongPassword = (password: string): boolean => {
 export const useAuth = (redirectUrl: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const cleanupExistingUser = async (email: string) => {
+    try {
+      console.log('Cleaning up existing user for email:', email);
+      const { error } = await supabase.functions.invoke('cleanup-users', {
+        body: { email }
+      });
+      
+      if (error) {
+        console.error('Cleanup function error:', error);
+        return false;
+      }
+      
+      console.log('User cleanup completed successfully');
+      return true;
+    } catch (error) {
+      console.error('Error calling cleanup function:', error);
+      return false;
+    }
+  };
 
   const handleSignUp = async (values: { email: string; password: string; fullName: string }) => {
     setIsLoading(true);
@@ -84,18 +103,68 @@ export const useAuth = (redirectUrl: string) => {
       
       if (error) {
         console.error('Sign up error:', error);
-        await logSecurityEvent('auth_signup_failed', { 
-          email: sanitizedEmail, 
-          error: error.message 
-        });
         
-        // Enhanced error handling
-        if (error.message.includes('already registered')) {
-          toast.error('This email is already registered. Please sign in instead.');
-        } else if (error.message.includes('invalid email')) {
-          toast.error('Please enter a valid email address');
+        // If user already exists, try to clean up and retry
+        if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+          console.log('User already exists, attempting cleanup and retry...');
+          toast.info('Cleaning up existing account, please wait...');
+          
+          const cleanupSuccess = await cleanupExistingUser(sanitizedEmail);
+          
+          if (cleanupSuccess) {
+            // Wait a moment for cleanup to complete
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Retry signup
+            console.log('Retrying signup after cleanup...');
+            const { data: retryData, error: retryError } = await supabase.auth.signUp({
+              email: sanitizedEmail,
+              password: values.password,
+              options: {
+                data: {
+                  full_name: sanitizedName,
+                },
+                emailRedirectTo: redirectTo,
+              },
+            });
+            
+            if (retryError) {
+              console.error('Retry sign up error:', retryError);
+              await logSecurityEvent('auth_signup_retry_failed', { 
+                email: sanitizedEmail, 
+                error: retryError.message 
+              });
+              toast.error(`Signup failed after cleanup: ${retryError.message}`);
+            } else {
+              console.log('Retry sign up successful:', retryData);
+              await logSecurityEvent('auth_signup_retry_success', { 
+                email: sanitizedEmail 
+              });
+              
+              if (retryData.user && !retryData.user.email_confirmed_at) {
+                toast.success('Account created! Please check your email for the confirmation link.');
+              } else {
+                toast.success('Account created and confirmed! Redirecting...');
+                navigate(redirectUrl);
+              }
+            }
+          } else {
+            toast.error('Unable to clean up existing account. Please try a different email or contact support.');
+          }
         } else {
-          toast.error(error.message);
+          await logSecurityEvent('auth_signup_failed', { 
+            email: sanitizedEmail, 
+            error: error.message 
+          });
+          
+          // Enhanced error handling
+          if (error.message.includes('already registered')) {
+            toast.error('This email is already registered. Please sign in instead.');
+          } else if (error.message.includes('invalid email')) {
+            toast.error('Please enter a valid email address');
+          } else {
+            toast.error(error.message);
+          }
         }
       } else {
         console.log('Sign up successful:', data);
