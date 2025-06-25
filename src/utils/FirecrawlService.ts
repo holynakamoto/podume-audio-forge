@@ -36,15 +36,18 @@ export class FirecrawlService {
   static async scrapeUrl(url: string): Promise<{ success: boolean; error?: string; data?: string }> {
     try {
       console.log('=== FireCrawl Debug Start ===');
-      console.log('Calling FireCrawl edge function for URL:', url);
+      console.log('Attempting to scrape URL:', url);
       
       // Basic URL validation - accept any valid URL
       if (!this.validateUrl(url)) {
+        console.log('URL validation failed for:', url);
         return { 
           success: false, 
           error: 'Please provide a valid URL' 
         };
       }
+      
+      console.log('URL validation passed, calling edge function...');
       
       // Call our edge function
       const response = await fetch(`https://pudwgzutzoidxbvozhnk.supabase.co/functions/v1/firecrawl-scrape`, {
@@ -56,11 +59,16 @@ export class FirecrawlService {
         body: JSON.stringify({ url }),
       });
 
-      console.log('Response status:', response.status);
+      console.log('Edge function response status:', response.status);
+      console.log('Edge function response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('HTTP error response:', errorText);
+        console.error('Edge function HTTP error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
         
         // Enhanced error handling for HTML responses
         if (errorText.trim().startsWith('<') || errorText.includes('<!DOCTYPE')) {
@@ -78,11 +86,15 @@ export class FirecrawlService {
           };
         }
         
-        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+        return { 
+          success: false, 
+          error: `Service error (${response.status}): ${errorText || 'Unknown error'}` 
+        };
       }
 
       const responseText = await response.text();
-      console.log('Raw response text length:', responseText.length);
+      console.log('Edge function raw response length:', responseText.length);
+      console.log('Edge function raw response preview:', responseText.substring(0, 200));
       
       if (!responseText || responseText.trim().length === 0) {
         console.error('Empty response from FireCrawl service');
@@ -97,8 +109,15 @@ export class FirecrawlService {
       try {
         result = JSON.parse(responseText);
         console.log('Successfully parsed JSON response');
+        console.log('Parsed result structure:', {
+          success: result.success,
+          hasData: !!result.data,
+          dataLength: result.data?.length || 0,
+          error: result.error
+        });
       } catch (jsonError) {
         console.error('JSON parse error:', jsonError);
+        console.error('Failed to parse response:', responseText);
         
         if (responseText.trim().startsWith('<')) {
           return { 
@@ -122,6 +141,7 @@ export class FirecrawlService {
       }
 
       console.log('FireCrawl scraping successful');
+      console.log('Data extracted, length:', result.data?.length || 0);
       console.log('=== FireCrawl Debug End ===');
       return { 
         success: true,
@@ -130,19 +150,31 @@ export class FirecrawlService {
     } catch (error) {
       console.error('=== FireCrawl Error ===');
       console.error('Error during FireCrawl scraping:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       
-      if (error.message?.includes('Unexpected token') && error.message?.includes('<')) {
-        return { 
-          success: false, 
-          error: 'Service temporarily unavailable. Please try again later or use the "Paste Text" option.' 
-        };
-      }
-      
-      if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
-        return { 
-          success: false, 
-          error: 'Unable to access this URL. Please ensure it is publicly accessible.' 
-        };
+      if (error instanceof Error) {
+        if (error.message?.includes('Unexpected token') && error.message?.includes('<')) {
+          return { 
+            success: false, 
+            error: 'Service temporarily unavailable. Please try again later or use the "Paste Text" option.' 
+          };
+        }
+        
+        if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
+          return { 
+            success: false, 
+            error: 'Unable to access this URL. Please ensure it is publicly accessible.' 
+          };
+        }
+        
+        if (error.message?.includes('fetch')) {
+          return { 
+            success: false, 
+            error: 'Network error: Unable to connect to scraping service. Please check your internet connection.' 
+          };
+        }
       }
       
       return { 
