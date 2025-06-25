@@ -3,6 +3,27 @@ import { linkedInFormSchema } from '../linkedInFormSchema';
 
 describe('linkedInFormSchema', () => {
   describe('linkedin_url validation', () => {
+    // Test the exact URL that's failing
+    test('should accept the specific failing URL: https://linkedin.com/in/nicholasmoore', () => {
+      const testUrl = 'https://linkedin.com/in/nicholasmoore';
+      console.log('Testing specific URL:', testUrl);
+      
+      const result = linkedInFormSchema.safeParse({
+        title: 'My Podumé',
+        linkedin_url: testUrl,
+        package_type: 'core',
+        voice_clone: false,
+        premium_assets: false,
+      });
+      
+      console.log('Test result:', result);
+      if (!result.success) {
+        console.log('Validation errors:', result.error.issues);
+      }
+      
+      expect(result.success).toBe(true);
+    });
+
     const validUrls = [
       'https://linkedin.com/in/nicholasmoore',
       'https://www.linkedin.com/in/nicholasmoore',
@@ -33,6 +54,11 @@ describe('linkedInFormSchema', () => {
         premium_assets: false,
       });
       
+      if (!result.success) {
+        console.log(`Failed URL: ${url}`);
+        console.log('Errors:', result.error.issues);
+      }
+      
       expect(result.success).toBe(true);
     });
 
@@ -51,21 +77,6 @@ describe('linkedInFormSchema', () => {
           issue.path.includes('linkedin_url')
         )).toBe(true);
       }
-    });
-
-    // Specific test for the problematic URL
-    test('should specifically accept https://linkedin.com/in/nicholasmoore', () => {
-      const testUrl = 'https://linkedin.com/in/nicholasmoore';
-      const result = linkedInFormSchema.safeParse({
-        title: 'My Podumé',
-        linkedin_url: testUrl,
-        package_type: 'core',
-        voice_clone: false,
-        premium_assets: false,
-      });
-      
-      console.log('Specific test result for', testUrl, ':', result);
-      expect(result.success).toBe(true);
     });
   });
 });
