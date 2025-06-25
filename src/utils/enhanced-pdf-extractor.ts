@@ -1,4 +1,3 @@
-
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
 // Set up PDF.js worker
@@ -44,6 +43,15 @@ export const extractTextFromPDFEnhanced = async (
     console.log('Array buffer created, size:', arrayBuffer.byteLength);
     onProgress?.(15);
 
+    // Validate PDF header
+    const uint8Array = new Uint8Array(arrayBuffer.slice(0, 8));
+    const pdfSignature = [0x25, 0x50, 0x44, 0x46]; // %PDF
+    const isPDF = pdfSignature.every((byte, index) => uint8Array[index] === byte);
+    
+    if (!isPDF) {
+      throw new Error('File does not appear to be a valid PDF. Please ensure you are uploading a PDF file.');
+    }
+
     // Load PDF document
     console.log('Loading PDF document...');
     const pdf = await getDocument({ data: arrayBuffer }).promise;
@@ -56,23 +64,29 @@ export const extractTextFromPDFEnhanced = async (
     // Extract text from each page with enhanced parsing
     for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
       console.log(`Processing page ${pageNum}/${maxPages}`);
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
       
-      // Enhanced text extraction with positioning data
-      const pageText = extractStructuredTextFromPage(textContent);
-      fullText += pageText + '\n\n';
-      
-      // Update progress
-      const progress = 25 + ((pageNum / maxPages) * 50);
-      onProgress?.(progress);
+      try {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        
+        // Enhanced text extraction with positioning data
+        const pageText = extractStructuredTextFromPage(textContent);
+        fullText += pageText + '\n\n';
+        
+        // Update progress
+        const progress = 25 + ((pageNum / maxPages) * 50);
+        onProgress?.(progress);
+      } catch (pageError) {
+        console.warn(`Failed to extract text from page ${pageNum}:`, pageError);
+        // Continue with other pages
+      }
     }
 
     console.log('PDF extraction completed. Total text length:', fullText.length);
     onProgress?.(80);
 
     if (fullText.trim().length < 50) {
-      throw new Error('Could not extract sufficient text from PDF. The file may be image-based or password protected.');
+      throw new Error('Could not extract sufficient text from this PDF. The file may be image-based, password protected, or corrupted. Please try pasting your resume text directly instead.');
     }
 
     // Structure the extracted data
@@ -101,7 +115,11 @@ export const extractTextFromPDFEnhanced = async (
       if (error.message.includes('Invalid PDF') || error.message.includes('password')) {
         userMessage = 'Invalid or password-protected PDF file. Please upload a valid PDF or paste the text directly.';
       } else if (error.message.includes('Could not extract sufficient text')) {
-        userMessage = error.message + ' Please try pasting your resume text instead.';
+        userMessage = error.message;
+      } else if (error.message.includes('File does not appear to be a valid PDF')) {
+        userMessage = error.message;
+      } else if (error.message.includes('AbortError') || error.message.includes('network')) {
+        userMessage = 'Network error while processing PDF. Please check your connection and try again.';
       }
     }
 
@@ -110,27 +128,45 @@ export const extractTextFromPDFEnhanced = async (
 };
 
 function extractStructuredTextFromPage(textContent: any): string {
+  if (!textContent || !textContent.items) {
+    return '';
+  }
+
   const items = textContent.items;
   let pageText = '';
   
-  // Sort items by vertical position, then horizontal
-  const sortedItems = items.sort((a: any, b: any) => {
-    const yDiff = b.transform[5] - a.transform[5]; // Y coordinate (inverted)
-    if (Math.abs(yDiff) > 5) return yDiff > 0 ? 1 : -1;
-    return a.transform[4] - b.transform[4]; // X coordinate
-  });
-  
-  let currentY = null;
-  for (const item of sortedItems) {
-    const y = item.transform[5];
+  try {
+    // Sort items by vertical position, then horizontal
+    const sortedItems = items.sort((a: any, b: any) => {
+      if (!a.transform || !b.transform) return 0;
+      
+      const yDiff = b.transform[5] - a.transform[5]; // Y coordinate (inverted)
+      if (Math.abs(yDiff) > 5) return yDiff > 0 ? 1 : -1;
+      return a.transform[4] - b.transform[4]; // X coordinate
+    });
     
-    // Add line break if significant Y position change
-    if (currentY !== null && Math.abs(currentY - y) > 10) {
-      pageText += '\n';
+    let currentY = null;
+    for (const item of sortedItems) {
+      if (!item.str || !item.transform) continue;
+      
+      const y = item.transform[5];
+      
+      // Add line break if significant Y position change
+      if (currentY !== null && Math.abs(currentY - y) > 10) {
+        pageText += '\n';
+      }
+      
+      pageText += item.str + ' ';
+      currentY = y;
     }
-    
-    pageText += item.str + ' ';
-    currentY = y;
+  } catch (sortError) {
+    console.warn('Error sorting text items, using fallback extraction:', sortError);
+    // Fallback: just concatenate all text items
+    for (const item of items) {
+      if (item.str) {
+        pageText += item.str + ' ';
+      }
+    }
   }
   
   return pageText;

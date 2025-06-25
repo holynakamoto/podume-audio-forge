@@ -1,80 +1,116 @@
 
-import { PodcastRequest } from './types.ts';
+interface ValidationResult {
+  isValid: boolean;
+  error?: string;
+  data?: PodcastRequest;
+}
+
+interface PodcastRequest {
+  title: string;
+  package_type: string;
+  voice_clone: boolean;
+  premium_assets: boolean;
+  resume_content: string;
+}
 
 export function validateEnvironment(): string | null {
-  const huggingFaceApiKey = Deno.env.get('HUGGING_FACE_API_KEY');
+  console.log('=== Environment Validation ===');
+  
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   
-  console.log('=== Environment Validation ===');
-  console.log('Hugging Face API key present:', !!huggingFaceApiKey);
-  console.log('Hugging Face API key prefix:', huggingFaceApiKey ? huggingFaceApiKey.substring(0, 7) + '...' : 'MISSING');
   console.log('Supabase URL present:', !!supabaseUrl);
   console.log('Supabase Service Role Key present:', !!supabaseServiceKey);
   
-  if (!huggingFaceApiKey) {
-    console.error('Hugging Face API key not found in environment variables');
-    return 'Hugging Face API key not configured. Please check your Supabase secrets configuration';
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return 'Missing required Supabase environment variables';
   }
+
+  // Check for API keys (optional but recommended)
+  const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
+  const deepgramKey = Deno.env.get('DEEPGRAM_API_KEY');
+  const hfKey = Deno.env.get('HUGGING_FACE_API_KEY');
   
-  if (!supabaseUrl) {
-    console.error('Supabase URL not found in environment variables');
-    return 'Supabase URL not configured. Please check your Supabase secrets configuration';
+  console.log('Anthropic API key present:', !!anthropicKey);
+  console.log('Deepgram API key present:', !!deepgramKey);
+  console.log('Hugging Face API key present:', !!hfKey);
+  
+  if (anthropicKey) {
+    console.log('Anthropic API key prefix:', anthropicKey.substring(0, 8) + '...');
   }
-  
-  if (!supabaseServiceKey) {
-    console.error('Supabase Service Role Key not found in environment variables');
-    return 'Supabase Service Role Key not configured. Please check your Supabase secrets configuration';
+  if (deepgramKey) {
+    console.log('Deepgram API key prefix:', deepgramKey.substring(0, 8) + '...');
+  }
+  if (hfKey) {
+    console.log('Hugging Face API key prefix:', hfKey.substring(0, 8) + '...');
   }
   
   console.log('All required environment variables found');
   return null;
 }
 
-export function validateRequest(body: any): { isValid: boolean; error?: string; data?: PodcastRequest } {
-  const { resume_content, title, package_type, voice_clone, premium_assets } = body;
-  
+export function validateRequest(body: any): ValidationResult {
   console.log('=== Request Validation ===');
-  console.log('Request data received:', { 
-    title, 
-    package_type, 
-    voice_clone, 
-    premium_assets,
-    resume_content_length: resume_content?.length || 0,
-    resume_content_preview: resume_content ? resume_content.substring(0, 100) + '...' : 'MISSING'
+  
+  if (!body) {
+    return { isValid: false, error: 'Request body is required' };
+  }
+
+  console.log('Request data received:', {
+    title: body.title,
+    package_type: body.package_type,
+    voice_clone: body.voice_clone,
+    premium_assets: body.premium_assets,
+    resume_content_length: body.resume_content?.length || 0,
+    resume_content_preview: body.resume_content?.substring(0, 100) + '...' || 'No content'
   });
 
-  if (!resume_content || typeof resume_content !== 'string') {
-    console.error('Resume content validation failed:', { 
-      present: !!resume_content, 
-      type: typeof resume_content,
-      length: resume_content?.length || 0
-    });
-    return { isValid: false, error: 'Missing or invalid resume_content field' };
+  // Validate required fields
+  if (!body.title || typeof body.title !== 'string') {
+    return { isValid: false, error: 'Valid title is required' };
   }
 
-  if (!title || typeof title !== 'string') {
-    console.error('Title validation failed:', { 
-      present: !!title, 
-      type: typeof title,
-      value: title
-    });
-    return { isValid: false, error: 'Missing or invalid title field' };
+  if (body.title.length < 3 || body.title.length > 200) {
+    return { isValid: false, error: 'Title must be between 3 and 200 characters' };
   }
 
-  if (resume_content.length < 5) {
-    console.error('Resume content too short:', resume_content.length);
-    return { isValid: false, error: 'Resume content must be at least 5 characters' };
+  if (!body.package_type || typeof body.package_type !== 'string') {
+    return { isValid: false, error: 'Valid package_type is required' };
   }
 
-  if (title.length < 3) {
-    console.error('Title too short:', title.length);
-    return { isValid: false, error: 'Title must be at least 3 characters' };
+  if (!['core', 'premium', 'enterprise'].includes(body.package_type)) {
+    return { isValid: false, error: 'package_type must be core, premium, or enterprise' };
   }
+
+  if (!body.resume_content || typeof body.resume_content !== 'string') {
+    return { isValid: false, error: 'Resume content is required' };
+  }
+
+  if (body.resume_content.length < 50) {
+    return { isValid: false, error: 'Resume content is too short (minimum 50 characters)' };
+  }
+
+  if (body.resume_content.length > 50000) {
+    return { isValid: false, error: 'Resume content is too long (maximum 50,000 characters)' };
+  }
+
+  // Validate boolean fields
+  if (typeof body.voice_clone !== 'boolean') {
+    body.voice_clone = false;
+  }
+
+  if (typeof body.premium_assets !== 'boolean') {
+    body.premium_assets = false;
+  }
+
+  const validatedData: PodcastRequest = {
+    title: body.title.trim(),
+    package_type: body.package_type,
+    voice_clone: body.voice_clone,
+    premium_assets: body.premium_assets,
+    resume_content: body.resume_content.trim()
+  };
 
   console.log('Request validation passed');
-  return {
-    isValid: true,
-    data: { resume_content, title, package_type, voice_clone, premium_assets }
-  };
+  return { isValid: true, data: validatedData };
 }
