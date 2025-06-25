@@ -13,20 +13,9 @@ import { useAuth } from '@/auth/ClerkAuthProvider';
 import { FirecrawlService } from '@/utils/FirecrawlService';
 import { Loader2, Globe, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { z } from 'zod';
-
-const linkedInFormSchema = z.object({
-  title: z.string().min(3, 'Title must be at least 3 characters').max(200, 'Title cannot exceed 200 characters'),
-  linkedin_url: z.string().url('Please enter a valid URL').refine(
-    (url) => url.toLowerCase().includes('linkedin.com'),
-    'Please enter a LinkedIn profile URL'
-  ),
-  package_type: z.enum(['core', 'premium']).default('core'),
-  voice_clone: z.boolean().default(false),
-  premium_assets: z.boolean().default(false),
-});
-
-type LinkedInFormValues = z.infer<typeof linkedInFormSchema>;
+import { linkedInFormSchema, LinkedInFormValues } from './schemas/linkedInFormSchema';
+import { LinkedInUrlInput } from './LinkedInUrlInput';
+import { PackageSelector } from './PackageSelector';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -149,51 +138,12 @@ export const LinkedInPodcastForm: React.FC = () => {
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="linkedin_url">LinkedIn Profile URL</Label>
-            <Input
-              id="linkedin_url"
-              type="url"
-              {...form.register('linkedin_url')}
-              placeholder="https://linkedin.com/in/yourprofile"
-              className="w-full"
-            />
-            {form.formState.errors.linkedin_url && (
-              <p className="text-red-500 text-sm">{form.formState.errors.linkedin_url.message}</p>
-            )}
-          </div>
+          <LinkedInUrlInput 
+            register={form.register}
+            errors={form.formState.errors}
+          />
 
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Package Options</Label>
-            
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="core"
-                  value="core"
-                  {...form.register('package_type')}
-                  className="w-4 h-4"
-                />
-                <Label htmlFor="core" className="font-normal">
-                  Core Package - Standard podcast generation
-                </Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="premium"
-                  value="premium"
-                  {...form.register('package_type')}
-                  className="w-4 h-4"
-                />
-                <Label htmlFor="premium" className="font-normal">
-                  Premium Package - Enhanced features
-                </Label>
-              </div>
-            </div>
-          </div>
+          <PackageSelector register={form.register} />
 
           <Button 
             type="submit" 
