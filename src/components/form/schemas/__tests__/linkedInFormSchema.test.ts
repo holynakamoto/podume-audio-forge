@@ -51,5 +51,20 @@ describe('linkedInFormSchema', () => {
         )).toBe(true);
       }
     });
+
+    // Specific test for the problematic URL
+    test('should specifically accept https://linkedin.com/in/nicholasmoore', () => {
+      const testUrl = 'https://linkedin.com/in/nicholasmoore';
+      const result = linkedInFormSchema.safeParse({
+        title: 'Test Title',
+        linkedin_url: testUrl,
+        package_type: 'core',
+        voice_clone: false,
+        premium_assets: false,
+      });
+      
+      console.log('Specific test result for', testUrl, ':', result);
+      expect(result.success).toBe(true);
+    });
   });
 });

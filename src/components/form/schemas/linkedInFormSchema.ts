@@ -7,7 +7,10 @@ export const linkedInFormSchema = z.object({
     (url) => {
       // More flexible pattern that handles both with and without www
       const pattern = /^https?:\/\/(www\.)?linkedin\.com\/in\/[\w-]+\/?$/i;
-      return pattern.test(url);
+      console.log('Testing URL:', url);
+      console.log('Pattern test result:', pattern.test(url));
+      const result = pattern.test(url);
+      return result;
     },
     'Please enter a valid LinkedIn profile URL (e.g., https://linkedin.com/in/yourprofile)'
   ),
