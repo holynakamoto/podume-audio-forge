@@ -1,11 +1,19 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// Set up PDF.js worker with better fallback options
+// Enhanced PDF.js worker setup with multiple fallbacks
 try {
+  // Try modern ES module approach first
   GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
-} catch {
-  // Fallback for environments where URL constructor might not work
-  GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+} catch (error) {
+  console.warn('Failed to set ES module worker, trying CDN fallback:', error);
+  try {
+    // Fallback to CDN with correct version
+    GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+  } catch (cdnError) {
+    console.error('Failed to set CDN worker:', cdnError);
+    // Last resort - try npm package path
+    GlobalWorkerOptions.workerSrc = '/node_modules/pdfjs-dist/build/pdf.worker.min.js';
+  }
 }
 
 export interface ProgressCallback {
@@ -34,12 +42,16 @@ export interface PDFExtractionResult {
   };
 }
 
-// Enhanced PDF text extraction with better error handling
+// Enhanced PDF text extraction with improved error handling
 export const extractTextFromPDFEnhanced = async (
   file: File,
   onProgress?: ProgressCallback
 ): Promise<PDFExtractionResult> => {
-  console.log('Starting enhanced PDF text extraction...', { fileName: file.name, fileSize: file.size });
+  console.log('Starting enhanced PDF text extraction...', { 
+    fileName: file.name, 
+    fileSize: file.size,
+    fileType: file.type 
+  });
   onProgress?.(5);
 
   try {
@@ -53,43 +65,65 @@ export const extractTextFromPDFEnhanced = async (
       throw new Error('The uploaded file appears to be empty. Please try uploading a different PDF file.');
     }
 
-    // Validate PDF header with better logic
-    const uint8Array = new Uint8Array(arrayBuffer.slice(0, 10));
-    const pdfSignature = [0x25, 0x50, 0x44, 0x46]; // %PDF
-    const isPDF = pdfSignature.every((byte, index) => uint8Array[index] === byte);
-    
-    if (!isPDF) {
-      // Check for common file signatures to give better error messages
-      const fileHeader = Array.from(uint8Array.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join('');
-      console.warn('File header:', fileHeader);
-      throw new Error('This file does not appear to be a valid PDF. Please ensure you are uploading a PDF file and not a Word document, image, or other file type.');
+    if (arrayBuffer.byteLength < 100) {
+      throw new Error('The file is too small to be a valid PDF. Please check your file and try again.');
     }
 
-    // Load PDF document with improved configuration
-    console.log('Loading PDF document...');
+    // Enhanced PDF signature validation
+    const uint8Array = new Uint8Array(arrayBuffer.slice(0, 50));
+    const pdfSignature = [0x25, 0x50, 0x44, 0x46]; // %PDF
+    const hasPDFHeader = pdfSignature.every((byte, index) => uint8Array[index] === byte);
+    
+    if (!hasPDFHeader) {
+      // Check for other common file signatures
+      const fileHeader = Array.from(uint8Array.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('');
+      console.warn('Invalid PDF header. File header:', fileHeader);
+      
+      // Check for common file types
+      if (uint8Array[0] === 0x50 && uint8Array[1] === 0x4B) {
+        throw new Error('This appears to be a ZIP file or Office document (like .docx). Please upload a PDF file instead.');
+      } else if (uint8Array[0] === 0xFF && uint8Array[1] === 0xD8) {
+        throw new Error('This appears to be a JPEG image. Please upload a PDF file instead.');
+      } else if (uint8Array[0] === 0x89 && uint8Array[1] === 0x50 && uint8Array[2] === 0x4E && uint8Array[3] === 0x47) {
+        throw new Error('This appears to be a PNG image. Please upload a PDF file instead.');
+      } else {
+        throw new Error('This file does not appear to be a valid PDF. Please ensure you are uploading a PDF file.');
+      }
+    }
+
+    // Load PDF document with enhanced configuration
+    console.log('Loading PDF document with enhanced settings...');
     let pdf;
     try {
       pdf = await getDocument({ 
         data: arrayBuffer,
         useSystemFonts: true,
         disableFontFace: false,
-        standardFontDataUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/',
-        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-        cMapPacked: true,
         isEvalSupported: false,
-        maxImageSize: 1024 * 1024 // Limit image size to prevent memory issues
+        maxImageSize: 1024 * 1024,
+        disableAutoFetch: false,
+        disableStream: false,
+        disableRange: false,
+        stopAtErrors: false, // Continue processing even with minor errors
+        verbosity: 0 // Reduce console noise
       }).promise;
     } catch (pdfError: any) {
-      console.error('PDF loading error:', pdfError);
+      console.error('PDF loading error details:', pdfError);
       
-      if (pdfError.message?.includes('Invalid PDF structure') || pdfError.message?.includes('PDF header')) {
-        throw new Error('This PDF file appears to be corrupted or uses an unsupported format. Please try saving your resume as a new PDF from your word processor, or use the "Paste Text" option instead.');
-      } else if (pdfError.message?.includes('password') || pdfError.message?.includes('encrypted')) {
-        throw new Error('This PDF is password protected or encrypted. Please remove the password protection or use the "Paste Text" option instead.');
+      // More specific error handling
+      if (pdfError.name === 'PasswordException') {
+        throw new Error('This PDF is password protected. Please remove the password protection or use the "Paste Text" option instead.');
+      } else if (pdfError.name === 'InvalidPDFException') {
+        throw new Error('This PDF file is corrupted or uses an unsupported format. Please try saving your resume as a new PDF from your word processor.');
       } else if (pdfError.message?.includes('XFA')) {
-        throw new Error('This PDF uses XFA forms which are not supported. Please save your resume as a standard PDF or use the "Paste Text" option instead.');
+        throw new Error('This PDF uses XFA forms which are not supported. Please save your resume as a standard PDF.');
+      } else if (pdfError.message?.includes('Invalid PDF structure')) {
+        throw new Error('The PDF structure is invalid. Please try re-saving your document as a new PDF.');
+      } else if (pdfError.message?.includes('network')) {
+        throw new Error('Network error loading PDF worker. Please try again or use the "Paste Text" option.');
       } else {
-        throw new Error('Unable to read this PDF file. This might be due to the PDF format or security settings. Please try using the "Paste Text" option instead.');
+        // Generic fallback
+        throw new Error('Unable to read this PDF file. This might be due to the PDF format, security settings, or the file being corrupted. Please try using the "Paste Text" option instead.');
       }
     }
     
@@ -101,15 +135,18 @@ export const extractTextFromPDFEnhanced = async (
     }
 
     let fullText = '';
-    const maxPages = Math.min(pdf.numPages, 10); // Process up to 10 pages
+    const maxPages = Math.min(pdf.numPages, 15); // Process up to 15 pages
 
-    // Extract text from each page with enhanced parsing
+    // Extract text from each page with enhanced error recovery
     for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
       console.log(`Processing page ${pageNum}/${maxPages}`);
       
       try {
         const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
+        const textContent = await page.getTextContent({
+          normalizeWhitespace: true,
+          disableCombineTextItems: false
+        });
         
         // Enhanced text extraction with positioning data
         const pageText = extractStructuredTextFromPage(textContent);
@@ -123,6 +160,7 @@ export const extractTextFromPDFEnhanced = async (
       } catch (pageError) {
         console.warn(`Failed to extract text from page ${pageNum}:`, pageError);
         // Continue with other pages - don't fail completely
+        fullText += `[Error reading page ${pageNum}]\n\n`;
       }
     }
 
@@ -132,9 +170,9 @@ export const extractTextFromPDFEnhanced = async (
     // Clean up the extracted text
     fullText = cleanExtractedText(fullText);
 
-    // Be more lenient with text length requirements
-    if (fullText.trim().length < 10) {
-      throw new Error('Could not extract readable text from this PDF. This might be a scanned document, image-based PDF, or the text might be embedded as images. Please try using the "Paste Text" option to enter your resume content directly.');
+    // More lenient text length requirements
+    if (fullText.trim().length < 5) {
+      throw new Error('Could not extract readable text from this PDF. This might be a scanned document or image-based PDF. Please try using the "Paste Text" option to enter your resume content directly.');
     }
 
     // Structure the extracted data
@@ -151,6 +189,7 @@ export const extractTextFromPDFEnhanced = async (
     };
 
     onProgress?.(100);
+    console.log('Enhanced PDF extraction completed successfully');
     return result;
 
   } catch (error) {
@@ -158,14 +197,7 @@ export const extractTextFromPDFEnhanced = async (
     
     if (error instanceof Error) {
       // Re-throw our custom error messages
-      if (error.message.includes('Please try using the "Paste Text"') ||
-          error.message.includes('does not appear to be a valid PDF') ||
-          error.message.includes('password protected') ||
-          error.message.includes('corrupted') ||
-          error.message.includes('XFA forms') ||
-          error.message.includes('appears to be empty')) {
-        throw error;
-      }
+      throw error;
     }
 
     // Generic fallback error
