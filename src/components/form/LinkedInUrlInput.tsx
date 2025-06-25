@@ -17,12 +17,12 @@ export const LinkedInUrlInput: React.FC<LinkedInUrlInputProps> = ({
   return (
     <div className="space-y-2">
       <Label htmlFor="linkedin_url" className="text-gray-700 font-medium">
-        Kickresume Preview URL
+        Resume URL
       </Label>
       <Input
         id="linkedin_url"
         {...register('linkedin_url')}
-        placeholder="https://www.kickresume.com/edit/16086325/preview/"
+        placeholder="https://example.com/resume or any publicly accessible resume URL"
         className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
       />
       {errors.linkedin_url && (

@@ -17,7 +17,7 @@ export const LinkedInAlerts: React.FC<LinkedInAlertsProps> = ({ showManualOption
       <Alert className="mb-6 border-blue-200 bg-blue-50">
         <Globe className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-800 text-sm">
-          Make sure your Kickresume is public or accessible for the best results. Use the preview URL from your Kickresume editor.
+          Make sure your resume URL is publicly accessible for the best results. Works with Kickresume, Teal, LinkedIn, and other resume platforms.
         </AlertDescription>
       </Alert>
 
@@ -26,7 +26,7 @@ export const LinkedInAlerts: React.FC<LinkedInAlertsProps> = ({ showManualOption
           <AlertCircle className="h-4 w-4 text-orange-600" />
           <AlertDescription className="text-orange-800 text-sm">
             <div className="space-y-2">
-              <p><strong>Unable to extract content from your Kickresume.</strong></p>
+              <p><strong>Unable to extract content from your resume URL.</strong></p>
               <p>Alternative options:</p>
               <ul className="list-disc list-inside ml-2 space-y-1">
                 <li>Try using a different resume URL</li>

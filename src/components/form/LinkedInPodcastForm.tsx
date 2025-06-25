@@ -26,7 +26,7 @@ export const LinkedInPodcastForm: React.FC = () => {
     resolver: zodResolver(linkedInFormSchema),
     defaultValues: {
       title: 'My Podumé',
-      linkedin_url: 'https://www.kickresume.com/edit/16086325/preview/',
+      linkedin_url: '',
       package_type: 'core',
       voice_clone: false,
       premium_assets: false,
@@ -45,7 +45,7 @@ export const LinkedInPodcastForm: React.FC = () => {
     toast.info('Extracting resume content and generating podcast...');
 
     try {
-      // First, extract content from Kickresume
+      // Extract content from the provided URL
       const extractResult = await FirecrawlService.scrapeUrl(values.linkedin_url);
       
       if (!extractResult.success || !extractResult.data) {
@@ -116,7 +116,7 @@ export const LinkedInPodcastForm: React.FC = () => {
           Create Your Podcast
         </h1>
         <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
-          Transform your Kickresume into an engaging audio resume
+          Transform your resume into an engaging audio experience
         </p>
       </div>
 
