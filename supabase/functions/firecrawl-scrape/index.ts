@@ -64,14 +64,12 @@ serve(async (req: Request) => {
     
     let scrapeResult;
     try {
-      // Use the same configuration as the playground for better compatibility
+      // Use the same configuration as your working example
       scrapeResult = await app.scrapeUrl(url, {
-        formats: ['markdown', 'html'],
+        formats: ['markdown'],
         onlyMainContent: true,
         waitFor: 1000, // Wait 1 second for page to load
         timeout: 30000, // 30 second timeout
-        includeTags: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li', 'span', 'div', 'section', 'article'],
-        excludeTags: ['nav', 'footer', 'header', 'script', 'style', 'noscript', 'meta'],
       });
       console.log('FireCrawl API response success:', scrapeResult.success);
       console.log('FireCrawl API response type:', typeof scrapeResult);
@@ -84,7 +82,7 @@ serve(async (req: Request) => {
       if (apiError.message?.includes('403') || apiError.message?.includes('Forbidden')) {
         return new Response(JSON.stringify({ 
           success: false, 
-          error: 'Access denied to the provided URL. Please ensure the Kickresume is publicly accessible.' 
+          error: 'Access denied to the provided URL. Please ensure the resume is publicly accessible.' 
         }), {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -122,8 +120,8 @@ serve(async (req: Request) => {
       });
     }
 
-    // Extract content - prefer markdown, fallback to HTML
-    const extractedText = scrapeResult.data?.markdown || scrapeResult.data?.html || '';
+    // Extract content - prefer markdown
+    const extractedText = scrapeResult.data?.markdown || scrapeResult.data?.content || '';
     console.log('Extracted text length:', extractedText.length);
     console.log('Extracted text preview (first 200 chars):', extractedText.substring(0, 200));
     
