@@ -2,18 +2,18 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/ClerkAuthProvider';
 import { FirecrawlService } from '@/utils/FirecrawlService';
-import { Loader2, Globe, AlertCircle, FileText } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { linkedInFormSchema, LinkedInFormValues } from './schemas/linkedInFormSchema';
+import { LinkedInAlerts } from './LinkedInAlerts';
+import { LinkedInTitleInput } from './LinkedInTitleInput';
+import { LinkedInUrlInput } from './LinkedInUrlInput';
+import { PackageTypeSelector } from './PackageTypeSelector';
+import { LinkedInSubmitButton } from './LinkedInSubmitButton';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -106,10 +106,10 @@ export const LinkedInPodcastForm: React.FC = () => {
   if (!isSignedIn) {
     return (
       <Card className="w-full max-w-lg mx-auto shadow-sm border-0 bg-white/80 backdrop-blur-sm">
-        <CardHeader className="text-center pb-4">
-          <CardTitle className="text-xl font-semibold text-gray-900">Sign In Required</CardTitle>
-          <CardDescription className="text-gray-600">You must be signed in to create a podcast from LinkedIn.</CardDescription>
-        </CardHeader>
+        <CardContent className="text-center pb-4 pt-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign In Required</h2>
+          <p className="text-gray-600">You must be signed in to create a podcast from LinkedIn.</p>
+        </CardContent>
       </Card>
     );
   }
@@ -127,122 +127,25 @@ export const LinkedInPodcastForm: React.FC = () => {
 
       <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-6 sm:p-8">
-          <Alert className="mb-6 border-blue-200 bg-blue-50">
-            <Globe className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800 text-sm">
-              Make sure your LinkedIn profile is public or accessible for the best results.
-            </AlertDescription>
-          </Alert>
-
-          {showManualOption && (
-            <Alert className="mb-6 border-orange-200 bg-orange-50">
-              <AlertCircle className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-800 text-sm">
-                <div className="space-y-2">
-                  <p><strong>LinkedIn scraping requires special activation.</strong></p>
-                  <p>Alternative options:</p>
-                  <ul className="list-disc list-inside ml-2 space-y-1">
-                    <li>Contact help@firecrawl.com to activate LinkedIn scraping</li>
-                    <li>Use the main podcast creation form with "Paste Text" option</li>
-                    <li>Copy your LinkedIn profile content and paste it manually</li>
-                  </ul>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2"
-                    onClick={() => navigate('/create-podcast')}
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Use Manual Entry
-                  </Button>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
+          <LinkedInAlerts showManualOption={showManualOption} />
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-gray-700 font-medium">
-                Podcast Title
-              </Label>
-              <Input
-                id="title"
-                {...form.register('title')}
-                placeholder="My Podumé"
-                className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
-              />
-              {form.formState.errors.title && (
-                <p className="text-red-500 text-sm">{form.formState.errors.title.message}</p>
-              )}
-            </div>
+            <LinkedInTitleInput 
+              register={form.register}
+              errors={form.formState.errors}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="linkedin_url" className="text-gray-700 font-medium">
-                LinkedIn Profile URL
-              </Label>
-              <Input
-                id="linkedin_url"
-                type="url"
-                {...form.register('linkedin_url')}
-                placeholder="https://linkedin.com/in/yourprofile"
-                className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
-              />
-              {form.formState.errors.linkedin_url && (
-                <p className="text-red-500 text-sm">{form.formState.errors.linkedin_url.message}</p>
-              )}
-            </div>
+            <LinkedInUrlInput
+              register={form.register}
+              errors={form.formState.errors}
+            />
 
-            <div className="space-y-4">
-              <Label className="text-gray-700 font-medium">Package Options</Label>
-              
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                  <input
-                    type="radio"
-                    id="core"
-                    value="core"
-                    {...form.register('package_type')}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <Label htmlFor="core" className="font-normal text-gray-700 cursor-pointer flex-1">
-                    Core Package
-                    <span className="block text-sm text-gray-500">Standard podcast generation</span>
-                  </Label>
-                </div>
-                
-                <div className="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                  <input
-                    type="radio"
-                    id="premium"
-                    value="premium"
-                    {...form.register('package_type')}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <Label htmlFor="premium" className="font-normal text-gray-700 cursor-pointer flex-1">
-                    Premium Package
-                    <span className="block text-sm text-gray-500">Enhanced features & quality</span>
-                  </Label>
-                </div>
-              </div>
-            </div>
+            <PackageTypeSelector register={form.register} />
 
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isExtracting ? 'Extracting Profile...' : 'Generating Podcast...'}
-                </>
-              ) : (
-                <>
-                  <Globe className="w-4 h-4 mr-2" />
-                  Create Podcast
-                </>
-              )}
-            </Button>
+            <LinkedInSubmitButton 
+              isLoading={isLoading}
+              isExtracting={isExtracting}
+            />
           </form>
         </CardContent>
       </Card>
