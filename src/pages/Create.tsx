@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Logo from '@/components/Logo';
 import { PodcastCreationForm } from '@/components/form/PodcastCreationForm';
 import { PDFToTTS } from '@/components/form/PDFToTTS';
+import { LinkedInPodcastForm } from '@/components/form/LinkedInPodcastForm';
 import { useAuth } from '@/auth/ClerkAuthProvider';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -37,13 +38,18 @@ const Create = () => {
             </div>
             <div className="w-full max-w-4xl">
                 <Tabs defaultValue="create" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsList className="grid w-full grid-cols-3 mb-6">
                         <TabsTrigger value="create">Create Podcast</TabsTrigger>
+                        <TabsTrigger value="linkedin">LinkedIn Profile</TabsTrigger>
                         <TabsTrigger value="tts">PDF to Speech</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="create">
                         <PodcastCreationForm initialResumeContent={extractedText} />
+                    </TabsContent>
+                    
+                    <TabsContent value="linkedin">
+                        <LinkedInPodcastForm />
                     </TabsContent>
                     
                     <TabsContent value="tts">
