@@ -14,7 +14,9 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req) => {
-  console.log('Email function invoked with method:', req.method)
+  console.log('=== Email function invoked ===')
+  console.log('Method:', req.method)
+  console.log('URL:', req.url)
   
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -30,6 +32,8 @@ Deno.serve(async (req) => {
   try {
     const payload = await req.text()
     console.log('Received payload length:', payload.length)
+    console.log('Has RESEND_API_KEY:', !!Deno.env.get('RESEND_API_KEY'))
+    console.log('Has SEND_EMAIL_HOOK_SECRET:', !!hookSecret)
     
     // Security: Check if we have the required environment variables
     if (!resend) {
@@ -40,11 +44,10 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Try webhook verification first, fallback to direct call
     let emailData;
     
+    // Try to parse as webhook first
     if (hookSecret && payload.includes('user')) {
-      // Webhook call from Supabase
       try {
         const headers = Object.fromEntries(req.headers)
         console.log('Attempting webhook verification')
@@ -61,6 +64,7 @@ Deno.serve(async (req) => {
         }
 
         console.log('Webhook verified for user:', verified.user.email)
+        console.log('Email action type:', verified.email_data.email_action_type)
         
         // Only handle signup confirmations
         if (verified.email_data.email_action_type !== 'signup') {
@@ -75,38 +79,55 @@ Deno.serve(async (req) => {
           email: verified.user.email,
           token: verified.email_data.token,
           token_hash: verified.email_data.token_hash,
-          redirect_to: verified.email_data.redirect_to || 'https://pudwgzutzoidxbvozhnk.supabase.co/',
+          redirect_to: verified.email_data.redirect_to || `${new URL(req.url).origin}/confirm`,
           email_action_type: verified.email_data.email_action_type
         }
       } catch (verifyError) {
         console.error('Webhook verification failed:', verifyError)
-        return new Response('Webhook verification failed', {
-          status: 401,
-          headers: corsHeaders
-        })
+        // Fall back to direct call processing
+        console.log('Falling back to direct call processing')
       }
-    } else {
-      // Direct call fallback
+    }
+    
+    // If webhook failed or no webhook secret, try direct call
+    if (!emailData) {
       console.log('Processing as direct call')
-      const body = JSON.parse(payload)
-      
-      if (!body.email) {
-        return new Response('Email is required', {
+      try {
+        const body = JSON.parse(payload)
+        
+        if (!body.email) {
+          return new Response('Email is required', {
+            status: 400,
+            headers: corsHeaders
+          })
+        }
+        
+        emailData = {
+          email: body.email,
+          token: body.token || 'confirmation-required',
+          token_hash: body.token_hash || 'hash-placeholder',
+          redirect_to: body.redirect_to || `${new URL(req.url).origin}/confirm`,
+          email_action_type: 'signup'
+        }
+      } catch (parseError) {
+        console.error('Failed to parse as JSON:', parseError)
+        return new Response('Invalid request format', {
           status: 400,
           headers: corsHeaders
         })
       }
-      
-      emailData = {
-        email: body.email,
-        token: body.token || 'confirmation-required',
-        token_hash: body.token_hash || 'hash-placeholder',
-        redirect_to: body.redirect_to || 'https://pudwgzutzoidxbvozhnk.supabase.co/',
-        email_action_type: 'signup'
-      }
     }
 
+    console.log('Sending email to:', emailData.email)
     await sendConfirmationEmail(emailData)
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      },
+    })
 
   } catch (error) {
     console.error('Error in send-confirmation-email function:', error)
@@ -126,14 +147,6 @@ Deno.serve(async (req) => {
       }
     )
   }
-
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json',
-      ...corsHeaders
-    },
-  })
 })
 
 async function sendConfirmationEmail(emailData: {
@@ -143,7 +156,9 @@ async function sendConfirmationEmail(emailData: {
   redirect_to: string
   email_action_type: string
 }) {
-  console.log('Rendering email template for:', emailData.email)
+  console.log('=== Sending confirmation email ===')
+  console.log('To:', emailData.email)
+  console.log('Redirect to:', emailData.redirect_to)
   
   const html = await renderAsync(
     React.createElement(ConfirmationEmail, {
@@ -168,6 +183,6 @@ async function sendConfirmationEmail(emailData: {
     throw error
   }
 
-  console.log('Confirmation email sent successfully to:', emailData.email)
-  console.log('Email data:', data)
+  console.log('Confirmation email sent successfully!')
+  console.log('Email ID:', data?.id)
 }
