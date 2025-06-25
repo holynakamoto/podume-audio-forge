@@ -72,10 +72,18 @@ global.console = {
 // Mock fetch for tests that don't use MSW
 global.fetch = jest.fn();
 
-// Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  observe() { return null; }
-  disconnect() { return null; }
-  unobserve() { return null; }
-};
+// Mock IntersectionObserver with proper typing
+const MockIntersectionObserver = jest.fn().mockImplementation((callback, options) => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+  root: null,
+  rootMargin: '0px',
+  thresholds: [0],
+  takeRecords: jest.fn(() => []),
+}));
+
+Object.defineProperty(global, 'IntersectionObserver', {
+  value: MockIntersectionObserver,
+  writable: true,
+});

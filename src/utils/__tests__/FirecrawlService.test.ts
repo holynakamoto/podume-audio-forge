@@ -1,7 +1,7 @@
 
 import { FirecrawlService } from '../FirecrawlService';
 import { server } from '../../__mocks__/firecrawl-server';
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 
 // Setup MSW
 beforeAll(() => server.listen());
@@ -35,10 +35,10 @@ describe('FirecrawlService', () => {
     it('should handle API errors gracefully', async () => {
       // Mock API failure
       server.use(
-        rest.post('/api/firecrawl-scrape', (req, res, ctx) => {
-          return res(
-            ctx.status(500),
-            ctx.json({ success: false, error: 'Server error' })
+        http.post('/api/firecrawl-scrape', () => {
+          return new HttpResponse(
+            JSON.stringify({ success: false, error: 'Server error' }), 
+            { status: 500 }
           );
         })
       );
@@ -52,8 +52,8 @@ describe('FirecrawlService', () => {
     it('should handle network errors', async () => {
       // Mock network failure
       server.use(
-        rest.post('/api/firecrawl-scrape', (req, res, ctx) => {
-          return res.networkError('Network error');
+        http.post('/api/firecrawl-scrape', () => {
+          return HttpResponse.error();
         })
       );
 
@@ -66,11 +66,8 @@ describe('FirecrawlService', () => {
     it('should handle empty response data', async () => {
       // Mock empty response
       server.use(
-        rest.post('/api/firecrawl-scrape', (req, res, ctx) => {
-          return res(
-            ctx.status(200),
-            ctx.json({ success: true, data: '' })
-          );
+        http.post('/api/firecrawl-scrape', () => {
+          return HttpResponse.json({ success: true, data: '' });
         })
       );
 
@@ -84,12 +81,9 @@ describe('FirecrawlService', () => {
       let requestBody: any;
       
       server.use(
-        rest.post('/api/firecrawl-scrape', (req, res, ctx) => {
-          requestBody = req.body;
-          return res(
-            ctx.status(200),
-            ctx.json({ success: true, data: 'test data' })
-          );
+        http.post('/api/firecrawl-scrape', async ({ request }) => {
+          requestBody = await request.json();
+          return HttpResponse.json({ success: true, data: 'test data' });
         })
       );
 

@@ -1,5 +1,5 @@
 
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 
 const mockLinkedInProfileData = {
@@ -26,19 +26,13 @@ Skills: React, TypeScript, Node.js, AWS, Docker, Kubernetes
 
 const handlers = [
   // Mock the firecrawl edge function endpoint
-  rest.post('/api/firecrawl-scrape', (req, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.json(mockLinkedInProfileData)
-    );
+  http.post('/api/firecrawl-scrape', () => {
+    return HttpResponse.json(mockLinkedInProfileData);
   }),
   
   // Mock the Supabase edge function endpoint
-  rest.post('*/functions/v1/firecrawl-scrape', (req, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.json(mockLinkedInProfileData)
-    );
+  http.post('*/functions/v1/firecrawl-scrape', () => {
+    return HttpResponse.json(mockLinkedInProfileData);
   }),
 ];
 

@@ -4,7 +4,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LinkedInPodcastForm } from '../LinkedInPodcastForm';
 import { server } from '../../../__mocks__/firecrawl-server';
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 
 // Mock dependencies
 jest.mock('@/auth/ClerkAuthProvider', () => ({
@@ -120,10 +120,10 @@ describe('LinkedInPodcastForm Integration Tests', () => {
     
     // Mock FireCrawl API failure
     server.use(
-      rest.post('/api/firecrawl-scrape', (req, res, ctx) => {
-        return res(
-          ctx.status(400),
-          ctx.json({ success: false, error: 'Failed to access LinkedIn profile' })
+      http.post('/api/firecrawl-scrape', () => {
+        return new HttpResponse(
+          JSON.stringify({ success: false, error: 'Failed to access LinkedIn profile' }), 
+          { status: 400 }
         );
       })
     );
