@@ -40,7 +40,7 @@ export const LinkedInPodcastForm: React.FC = () => {
     const handleOAuthCallback = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (session?.provider_token && session.app_metadata?.provider === 'linkedin_oidc') {
+      if (session?.provider_token && session.user.app_metadata?.provider === 'linkedin_oidc') {
         console.log('LinkedIn OAuth successful, fetching profile...');
         
         try {
