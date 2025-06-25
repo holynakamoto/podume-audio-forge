@@ -31,7 +31,7 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
 
   const handleExtract = async () => {
     if (!url.trim()) {
-      toast.error('Please enter a resume URL');
+      toast.error('Please enter a URL');
       return;
     }
 
@@ -45,7 +45,7 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
         setExtractionProgress(prev => Math.min(prev + 10, 90));
       }, 200);
 
-      console.log('=== Starting hybrid extraction ===');
+      console.log('=== Starting URL extraction ===');
       const result = await ResumeDataService.extractResumeData(url);
 
       clearInterval(progressInterval);
@@ -57,13 +57,13 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
         
         onContentExtracted(result.data);
         
-        const platformName = result.metadata?.platform || 'resume';
+        const platformName = result.metadata?.platform || 'website';
         toast.success(
-          `${platformName} extracted successfully via ${result.metadata?.extractionMethod || result.source}!`
+          `Content extracted successfully from ${platformName} via ${result.metadata?.extractionMethod || result.source}!`
         );
       } else {
         console.error('Extraction failed:', result.error);
-        toast.error(result.error || 'Failed to extract resume content');
+        toast.error(result.error || 'Failed to extract content');
       }
     } catch (error) {
       console.error('Extraction error:', error);
@@ -88,7 +88,7 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
     <div className="space-y-4">
       <div>
         <Label htmlFor="resume-url" className="font-semibold">
-          Resume URL
+          Website URL
         </Label>
         <div className="mt-2 space-y-3">
           <Input
@@ -96,7 +96,7 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
             type="url"
             value={url}
             onChange={handleUrlChange}
-            placeholder="https://app.tealhq.com/your-resume-id or https://www.kickresume.com/edit/123/preview/"
+            placeholder="https://example.com/resume or any publicly accessible URL"
             className="w-full"
             disabled={isExtracting}
           />
@@ -114,7 +114,7 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
             <div className="space-y-2">
               <Progress value={extractionProgress} className="w-full" />
               <p className="text-sm text-muted-foreground text-center">
-                Extracting resume content... {extractionProgress}%
+                Extracting content... {extractionProgress}%
               </p>
             </div>
           )}
@@ -156,13 +156,14 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
         <AlertCircle className="h-4 w-4" />
         <AlertDescription className="text-sm">
           <div className="space-y-2">
-            <p><strong>Supported platforms:</strong></p>
+            <p><strong>How it works:</strong></p>
             <ul className="list-disc list-inside ml-2 space-y-1 text-xs">
-              <li><strong>Kickresume:</strong> Preview URLs (/edit/{'{id}'}/preview/) and public URLs (/cv/{'{id}'} or /resume/{'{id}'})</li>
-              <li><strong>Teal:</strong> Resume URLs (app.tealhq.com/{'{uuid}'})</li>
+              <li>FireCrawl can extract content from any publicly accessible website</li>
+              <li>Works best with resume platforms like Kickresume, Teal, LinkedIn, etc.</li>
+              <li>Ensure the URL is publicly accessible (not behind login or private)</li>
             </ul>
             <p className="mt-2">
-              <strong>Extraction method:</strong> FireCrawl scraping (primary), with future API support planned
+              <strong>Extraction method:</strong> FireCrawl web scraping with intelligent content parsing
             </p>
           </div>
         </AlertDescription>

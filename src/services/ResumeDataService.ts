@@ -8,13 +8,13 @@ export interface ResumeData {
     extractionMethod: string;
     timestamp: string;
     confidence?: number;
-    platform?: 'kickresume' | 'teal';
+    platform?: 'kickresume' | 'teal' | 'other';
   };
 }
 
 export interface ResumeUrlInfo {
   isValid: boolean;
-  platform?: 'kickresume' | 'teal';
+  platform?: 'kickresume' | 'teal' | 'other';
   resumeId?: string;
   isPreviewUrl: boolean;
   originalUrl: string;
@@ -33,6 +33,21 @@ export class ResumeDataService {
     const tealInfo = this.parseTeal(url);
     if (tealInfo.isValid) {
       return { ...tealInfo, platform: 'teal' };
+    }
+
+    // Accept any other valid URL as 'other' platform
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.protocol === 'http:' || urlObj.protocol === 'https:') {
+        return {
+          isValid: true,
+          platform: 'other',
+          isPreviewUrl: false,
+          originalUrl: url
+        };
+      }
+    } catch {
+      // Invalid URL
     }
 
     return {
@@ -150,14 +165,14 @@ export class ResumeDataService {
     if (!urlInfo.isValid) {
       return {
         success: false,
-        error: 'Invalid resume URL format. Please provide a valid Kickresume or Teal URL.',
+        error: 'Invalid URL format. Please provide a valid URL.',
         source: 'manual'
       };
     }
 
-    // Method 1: Try FireCrawl (current working method for both platforms)
+    // Method 1: Try FireCrawl (works for any URL)
     try {
-      console.log(`Attempting FireCrawl extraction for ${urlInfo.platform}...`);
+      console.log(`Attempting FireCrawl extraction for ${urlInfo.platform || 'website'}...`);
       const firecrawlResult = await this.extractViaFireCrawl(url);
       
       if (firecrawlResult.success) {
@@ -179,8 +194,8 @@ export class ResumeDataService {
       console.error('FireCrawl extraction error:', error);
     }
 
-    // Method 2: Try platform-specific APIs (placeholder for future implementation)
-    if (urlInfo.resumeId && urlInfo.platform) {
+    // Method 2: Try platform-specific APIs (only for known platforms with IDs)
+    if (urlInfo.resumeId && (urlInfo.platform === 'kickresume' || urlInfo.platform === 'teal')) {
       try {
         console.log(`Attempting ${urlInfo.platform} API extraction...`);
         const apiResult = await this.extractViaPlatformAPI(urlInfo.platform, urlInfo.resumeId);
@@ -206,7 +221,7 @@ export class ResumeDataService {
     // All methods failed
     return {
       success: false,
-      error: `Unable to extract resume data from ${urlInfo.platform || 'this platform'}. Please ensure the resume is publicly accessible or try the "Paste Text" option.`,
+      error: `Unable to extract content from this URL. Please ensure the content is publicly accessible or try the "Paste Text" option.`,
       source: 'manual'
     };
   }
@@ -249,7 +264,7 @@ export class ResumeDataService {
     if (!urlInfo.isValid) {
       return {
         isValid: false,
-        message: 'Please enter a valid Kickresume or Teal URL'
+        message: 'Please enter a valid URL'
       };
     }
 
@@ -269,7 +284,7 @@ export class ResumeDataService {
 
     return {
       isValid: true,
-      message: `${urlInfo.platform} URL appears valid - extraction will be attempted`
+      message: `URL appears valid - extraction will be attempted`
     };
   }
 }

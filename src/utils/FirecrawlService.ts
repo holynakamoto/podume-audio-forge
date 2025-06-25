@@ -38,11 +38,11 @@ export class FirecrawlService {
       console.log('=== FireCrawl Debug Start ===');
       console.log('Calling FireCrawl edge function for URL:', url);
       
-      // Enhanced URL validation for supported platforms
-      if (!this.validateSupportedUrl(url)) {
+      // Basic URL validation - accept any valid URL
+      if (!this.validateUrl(url)) {
         return { 
           success: false, 
-          error: 'Please provide a valid Kickresume or Teal URL' 
+          error: 'Please provide a valid URL' 
         };
       }
       
@@ -74,7 +74,7 @@ export class FirecrawlService {
         if (response.status === 403 || errorText.includes('Forbidden')) {
           return { 
             success: false, 
-            error: 'Access denied to this URL. Please ensure the resume is publicly accessible.' 
+            error: 'Access denied to this URL. Please ensure the content is publicly accessible.' 
           };
         }
         
@@ -152,78 +152,14 @@ export class FirecrawlService {
     }
   }
 
-  // Enhanced URL validation to support multiple platforms
-  static validateSupportedUrl(url: string): boolean {
-    return this.validateKickresume(url) || this.validateTeal(url);
-  }
-
-  // Enhanced Kickresume URL validation
-  static validateKickresume(url: string): boolean {
-    try {
-      const urlObj = new URL(url);
-      
-      // Must be HTTPS
-      if (urlObj.protocol !== 'https:') {
-        return false;
-      }
-      
-      // Must be Kickresume domain
-      if (!urlObj.hostname.includes('kickresume.com')) {
-        return false;
-      }
-      
-      // Check for common Kickresume URL patterns
-      const pathname = urlObj.pathname;
-      
-      // Preview URLs: /edit/{id}/preview/
-      if (pathname.match(/\/edit\/\d+\/preview\/?$/)) {
-        return true;
-      }
-      
-      // Public URLs: /cv/{id} or /resume/{id}
-      if (pathname.match(/\/(cv|resume)\/\d+\/?$/)) {
-        return true;
-      }
-      
-      // Other Kickresume URLs might be valid too
-      return pathname.length > 1; // Has some path
-      
-    } catch {
-      return false;
-    }
-  }
-
-  // New Teal URL validation
-  static validateTeal(url: string): boolean {
-    try {
-      const urlObj = new URL(url);
-      
-      // Must be HTTPS
-      if (urlObj.protocol !== 'https:') {
-        return false;
-      }
-      
-      // Must be Teal domain
-      if (!urlObj.hostname.includes('tealhq.com')) {
-        return false;
-      }
-      
-      // Check for Teal URL patterns
-      const pathname = urlObj.pathname;
-      
-      // Teal resume URLs: /{uuid}
-      if (pathname.match(/^\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/)) {
-        return true;
-      }
-      
-      return pathname.length > 1; // Has some path
-      
-    } catch {
-      return false;
-    }
-  }
-
+  // Simple URL validation - accept any valid URL
   static validateUrl(url: string): boolean {
-    return this.validateSupportedUrl(url);
+    try {
+      const urlObj = new URL(url);
+      // Accept HTTP and HTTPS protocols
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    } catch {
+      return false;
+    }
   }
 }
