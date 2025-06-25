@@ -24,7 +24,7 @@ export const LinkedInPodcastForm: React.FC = () => {
   const form = useForm<LinkedInFormValues>({
     resolver: zodResolver(linkedInFormSchema),
     defaultValues: {
-      title: '',
+      title: 'My Podumé',
       linkedin_url: 'https://linkedin.com/in/',
       package_type: 'core',
       voice_clone: false,
@@ -134,7 +134,7 @@ export const LinkedInPodcastForm: React.FC = () => {
               <Input
                 id="title"
                 {...form.register('title')}
-                placeholder="John Smith's Professional Journey"
+                placeholder="My Podumé"
                 className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
               />
               {form.formState.errors.title && (

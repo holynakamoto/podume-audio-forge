@@ -12,6 +12,7 @@ describe('linkedInFormSchema', () => {
       'https://linkedin.com/in/jane_doe',
       'https://linkedin.com/in/user123',
       'https://linkedin.com/in/nicholasmoore/',
+      'https://linkedin.com/in/nicholasmoore?trk=public',
     ];
 
     const invalidUrls = [
@@ -25,7 +26,7 @@ describe('linkedInFormSchema', () => {
 
     test.each(validUrls)('should accept valid LinkedIn URL: %s', (url) => {
       const result = linkedInFormSchema.safeParse({
-        title: 'Test Title',
+        title: 'My Podumé',
         linkedin_url: url,
         package_type: 'core',
         voice_clone: false,
@@ -37,7 +38,7 @@ describe('linkedInFormSchema', () => {
 
     test.each(invalidUrls)('should reject invalid LinkedIn URL: %s', (url) => {
       const result = linkedInFormSchema.safeParse({
-        title: 'Test Title',
+        title: 'My Podumé',
         linkedin_url: url,
         package_type: 'core',
         voice_clone: false,
@@ -56,7 +57,7 @@ describe('linkedInFormSchema', () => {
     test('should specifically accept https://linkedin.com/in/nicholasmoore', () => {
       const testUrl = 'https://linkedin.com/in/nicholasmoore';
       const result = linkedInFormSchema.safeParse({
-        title: 'Test Title',
+        title: 'My Podumé',
         linkedin_url: testUrl,
         package_type: 'core',
         voice_clone: false,
