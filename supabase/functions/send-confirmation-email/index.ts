@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     console.log('Has SEND_EMAIL_HOOK_SECRET:', !!hookSecret)
     
     // Security: Check if we have the required environment variables
-    if (!resend) {
+    if (!Deno.env.get('RESEND_API_KEY')) {
       console.error('RESEND_API_KEY not found')
       return new Response('Email service not configured', {
         status: 500,
