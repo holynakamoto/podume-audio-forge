@@ -43,11 +43,12 @@ export class FirecrawlService {
         console.log('Kickresume URL detected - should work with FireCrawl');
       }
       
-      // Call our edge function instead of using the client directly
-      const response = await fetch('/api/firecrawl-scrape', {
+      // Call our edge function
+      const response = await fetch(`https://pudwgzutzoidxbvozhnk.supabase.co/functions/v1/firecrawl-scrape`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZHdnenV0em9pZHhidm96aG5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5MDg4NzQsImV4cCI6MjA2NTQ4NDg3NH0.kh_J0YvR52AkzSdajkyjGyae1W9NRD_Av4EGqQtS6Xo`,
         },
         body: JSON.stringify({ url }),
       });
@@ -58,6 +59,15 @@ export class FirecrawlService {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('HTTP error response:', errorText);
+        
+        // Check if we got HTML instead of JSON
+        if (errorText.trim().startsWith('<') || errorText.includes('<!DOCTYPE')) {
+          console.error('Received HTML error page instead of JSON');
+          return { 
+            success: false, 
+            error: 'Service temporarily unavailable. Please try again in a few moments or use the "Paste Text" option to manually enter your resume content.' 
+          };
+        }
         
         // Handle specific restriction errors
         if (response.status === 403 || errorText.includes('Forbidden') || errorText.includes('no longer supported')) {
@@ -70,10 +80,10 @@ export class FirecrawlService {
         throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
-      // Get the raw response text first
+      // Get the response text
       const responseText = await response.text();
-      console.log('Raw response text:', responseText);
-      console.log('Response text length:', responseText.length);
+      console.log('Raw response text length:', responseText.length);
+      console.log('Response text preview (first 100 chars):', responseText.substring(0, 100));
       
       // Check if response is empty
       if (!responseText || responseText.trim().length === 0) {
@@ -85,20 +95,11 @@ export class FirecrawlService {
       }
 
       // Check if response looks like HTML (common for error pages)
-      if (responseText.trim().startsWith('<')) {
+      if (responseText.trim().startsWith('<') || responseText.includes('<!DOCTYPE')) {
         console.error('Received HTML instead of JSON - likely an error page');
-        
-        // Check for specific restriction message
-        if (responseText.includes('no longer supported') || responseText.includes('Forbidden')) {
-          return { 
-            success: false, 
-            error: 'Unable to access this resume URL. Please ensure your Kickresume is publicly accessible or use the "Paste Text" option to manually enter your resume content.' 
-          };
-        }
-        
         return { 
           success: false, 
-          error: 'Received HTML error page instead of JSON response from scraping service' 
+          error: 'Service temporarily unavailable. Please try again in a few moments or use the "Paste Text" option to manually enter your resume content.' 
         };
       }
 
@@ -106,27 +107,18 @@ export class FirecrawlService {
       let result;
       try {
         result = JSON.parse(responseText);
-        console.log('Successfully parsed JSON:', result);
+        console.log('Successfully parsed JSON response');
       } catch (jsonError) {
         console.error('JSON parse error:', jsonError);
-        console.error('Failed to parse response as JSON. Raw text:', responseText);
+        console.error('Failed to parse response as JSON. Raw text preview:', responseText.substring(0, 200));
         return { 
           success: false, 
-          error: `Invalid JSON response from scraping service: ${jsonError.message}` 
+          error: 'Invalid response format from scraping service. Please try again or use the "Paste Text" option.' 
         };
       }
       
       if (!result.success) {
         console.error('FireCrawl scraping failed:', result.error);
-        
-        // Handle restriction errors in the response
-        if (result.error?.includes('Forbidden') || result.error?.includes('no longer supported')) {
-          return { 
-            success: false, 
-            error: 'Unable to access this resume URL. Please ensure your Kickresume is publicly accessible or use the "Paste Text" option instead.' 
-          };
-        }
-        
         return { 
           success: false, 
           error: result.error || 'Failed to scrape website' 
@@ -144,8 +136,15 @@ export class FirecrawlService {
       console.error('Error during FireCrawl scraping:', error);
       console.error('Error type:', error.constructor.name);
       console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
       console.error('=== End FireCrawl Error ===');
+      
+      // Handle network errors that might return HTML
+      if (error.message?.includes('Unexpected token') && error.message?.includes('<')) {
+        return { 
+          success: false, 
+          error: 'Service temporarily unavailable. Please try again in a few moments or use the "Paste Text" option instead.' 
+        };
+      }
       
       // Handle restriction network errors
       if (error.message?.includes('403') || error.message?.includes('Forbidden')) {

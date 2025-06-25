@@ -16,7 +16,6 @@ serve(async (req: Request) => {
   try {
     console.log('=== FireCrawl scrape function called ===');
     console.log('Request method:', req.method);
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
     
     const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
     if (!firecrawlApiKey) {
@@ -59,24 +58,53 @@ serve(async (req: Request) => {
     }
 
     console.log('Scraping URL:', url);
-    console.log('Using FireCrawl API key:', firecrawlApiKey.substring(0, 10) + '...');
+    console.log('Using FireCrawl API key (first 10 chars):', firecrawlApiKey.substring(0, 10) + '...');
     
     const app = new FirecrawlApp({ apiKey: firecrawlApiKey });
     
     let scrapeResult;
     try {
+      // Use the same configuration as the playground for better compatibility
       scrapeResult = await app.scrapeUrl(url, {
-        formats: ['markdown'],
+        formats: ['markdown', 'html'],
         onlyMainContent: true,
-        includeTags: ['h1', 'h2', 'h3', 'p', 'li', 'span', 'div'],
-        excludeTags: ['nav', 'footer', 'script', 'style'],
+        waitFor: 1000, // Wait 1 second for page to load
+        timeout: 30000, // 30 second timeout
+        includeTags: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li', 'span', 'div', 'section', 'article'],
+        excludeTags: ['nav', 'footer', 'header', 'script', 'style', 'noscript', 'meta'],
       });
-      console.log('FireCrawl API response:', scrapeResult);
+      console.log('FireCrawl API response success:', scrapeResult.success);
+      console.log('FireCrawl API response type:', typeof scrapeResult);
     } catch (apiError) {
       console.error('FireCrawl API error:', apiError);
+      console.error('Error type:', typeof apiError);
+      console.error('Error message:', apiError.message);
+      
+      // Handle specific API errors
+      if (apiError.message?.includes('403') || apiError.message?.includes('Forbidden')) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Access denied to the provided URL. Please ensure the Kickresume is publicly accessible.' 
+        }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       return new Response(JSON.stringify({ 
         success: false, 
         error: `FireCrawl API error: ${apiError.message}` 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!scrapeResult || typeof scrapeResult !== 'object') {
+      console.error('Invalid scrape result:', scrapeResult);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid response from FireCrawl API' 
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -94,15 +122,16 @@ serve(async (req: Request) => {
       });
     }
 
-    const extractedText = scrapeResult.data?.markdown || '';
+    // Extract content - prefer markdown, fallback to HTML
+    const extractedText = scrapeResult.data?.markdown || scrapeResult.data?.html || '';
     console.log('Extracted text length:', extractedText.length);
-    console.log('Extracted text preview:', extractedText.substring(0, 200) + '...');
+    console.log('Extracted text preview (first 200 chars):', extractedText.substring(0, 200));
     
     if (!extractedText || extractedText.length < 10) {
       console.error('No meaningful content extracted');
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'No meaningful content found on the webpage' 
+        error: 'No meaningful content found on the webpage. Please check if the URL is accessible and contains resume content.' 
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
