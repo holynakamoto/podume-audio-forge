@@ -68,6 +68,9 @@ export const useAuth = (redirectUrl: string) => {
 
       console.log('Attempting to sign up user:', sanitizedEmail);
 
+      // Get the current origin for redirect
+      const redirectTo = `${window.location.origin}/`;
+
       const { data, error } = await supabase.auth.signUp({
         email: sanitizedEmail,
         password: values.password,
@@ -75,7 +78,7 @@ export const useAuth = (redirectUrl: string) => {
           data: {
             full_name: sanitizedName,
           },
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: redirectTo,
         },
       });
       
@@ -99,31 +102,6 @@ export const useAuth = (redirectUrl: string) => {
         await logSecurityEvent('auth_signup_success', { 
           email: sanitizedEmail 
         });
-        
-        // Send confirmation email via edge function
-        if (data.user && !data.user.email_confirmed_at) {
-          console.log('User needs email confirmation, sending confirmation email...');
-          
-          try {
-            const { error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
-              body: { 
-                email: sanitizedEmail,
-                token: 'confirmation-required',
-                token_hash: 'manual-hash',
-                redirect_to: window.location.origin,
-                email_action_type: 'signup'
-              }
-            });
-            
-            if (emailError) {
-              console.error('Confirmation email error:', emailError);
-            } else {
-              console.log('Confirmation email sent successfully');
-            }
-          } catch (emailError) {
-            console.error('Failed to send confirmation email:', emailError);
-          }
-        }
         
         toast.success('Account created! Please check your email for the confirmation link.');
       }

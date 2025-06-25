@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
           email: verified.user.email,
           token: verified.email_data.token,
           token_hash: verified.email_data.token_hash,
-          redirect_to: verified.email_data.redirect_to,
+          redirect_to: verified.email_data.redirect_to || 'https://pudwgzutzoidxbvozhnk.supabase.co/',
           email_action_type: verified.email_data.email_action_type
         }
       } catch (verifyError) {
