@@ -17,21 +17,22 @@ const EmailConfirmation = () => {
   useEffect(() => {
     const confirmEmail = async () => {
       try {
-        // Get the token and type from URL params
-        const token = searchParams.get('token');
+        // Get all the params from the URL
+        const token_hash = searchParams.get('token_hash');
         const type = searchParams.get('type');
-        
-        if (!token || !type) {
+        const next = searchParams.get('next');
+
+        console.log('Email confirmation params:', { token_hash, type, next });
+
+        if (!token_hash || !type) {
           setStatus('error');
           setMessage('Invalid confirmation link. Please try signing up again.');
           return;
         }
 
-        console.log('Confirming email with token:', token, 'type:', type);
-
-        // Use Supabase's verify method to confirm the email
+        // Use Supabase's verifyOtp method to confirm the email
         const { data, error } = await supabase.auth.verifyOtp({
-          token_hash: token,
+          token_hash,
           type: type as any,
         });
 
