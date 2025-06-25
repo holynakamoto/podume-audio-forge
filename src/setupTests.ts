@@ -1,5 +1,21 @@
 
 import '@testing-library/jest-dom';
+import { server } from './__mocks__/firecrawl-server';
+
+// Start MSW server before all tests
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: 'error' });
+});
+
+// Reset handlers after each test
+afterEach(() => {
+  server.resetHandlers();
+});
+
+// Stop MSW server after all tests
+afterAll(() => {
+  server.close();
+});
 
 // Mock window.URL.createObjectURL
 Object.defineProperty(global.URL, 'createObjectURL', {
@@ -51,4 +67,15 @@ global.console = {
   warn: jest.fn(),
   info: jest.fn(),
   debug: jest.fn(),
+};
+
+// Mock fetch for tests that don't use MSW
+global.fetch = jest.fn();
+
+// Mock IntersectionObserver
+global.IntersectionObserver = class IntersectionObserver {
+  constructor() {}
+  observe() { return null; }
+  disconnect() { return null; }
+  unobserve() { return null; }
 };
