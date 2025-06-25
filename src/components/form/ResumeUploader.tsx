@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { extractTextFromPDF } from '@/utils/pdfExtractor';
+import { extractTextFromPDFEnhanced, PDFExtractionResult } from '@/utils/enhanced-pdf-extractor';
 import { UploadModeSelector } from './UploadModeSelector';
 import { PDFUploadZone } from './PDFUploadZone';
 import { TextPasteArea } from './TextPasteArea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle, Info, CheckCircle } from 'lucide-react';
 
 interface ResumeUploaderProps {
   onResumeContentChange: (content: string) => void;
@@ -22,17 +22,17 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   const [uploadMode, setUploadMode] = useState<'upload' | 'paste'>('upload');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showPasteRecommendation, setShowPasteRecommendation] = useState(false);
-  const [usedFallbackMode, setUsedFallbackMode] = useState(false);
+  const [extractionResult, setExtractionResult] = useState<PDFExtractionResult | null>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('=== FILE UPLOAD HANDLER START ===');
+    console.log('=== ENHANCED FILE UPLOAD HANDLER START ===');
     const file = event.target.files?.[0];
     if (!file) {
       console.log('No file selected');
       return;
     }
 
-    console.log('File selected for upload:', {
+    console.log('File selected for enhanced upload:', {
       name: file.name,
       type: file.type,
       size: file.size
@@ -44,47 +44,52 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit as per PRD
       console.log('File too large:', file.size);
-      toast.error('File size must be less than 10MB.');
+      toast.error('File size must be less than 5MB.');
       return;
     }
 
-    console.log('File validation passed, starting extraction...');
+    console.log('File validation passed, starting enhanced extraction...');
     setIsExtracting(true);
     setUploadProgress(0);
     setShowPasteRecommendation(false);
-    setUsedFallbackMode(false);
+    setExtractionResult(null);
     
     try {
-      console.log('Calling extractTextFromPDF...');
-      const extractedText = await extractTextFromPDF(file, setUploadProgress);
+      console.log('Calling extractTextFromPDFEnhanced...');
+      const result = await extractTextFromPDFEnhanced(file, setUploadProgress);
       
-      console.log('PDF extraction completed successfully');
+      console.log('Enhanced PDF extraction completed successfully');
+      console.log('Extraction metadata:', result.metadata);
+      console.log('Structured data:', result.structured);
+      
       setUploadProgress(100);
+      setExtractionResult(result);
       
-      if (extractedText.length < 50) {
-        console.log('Extracted text too short:', extractedText.length);
+      if (result.text.length < 50) {
+        console.log('Extracted text too short:', result.text.length);
         toast.error('Could not extract readable text from this PDF. Please try pasting your resume text instead.');
         setShowPasteRecommendation(true);
         return;
       }
 
-      console.log('Text extraction successful, updating content');
-      onResumeContentChange(extractedText);
+      console.log('Enhanced text extraction successful, updating content');
+      onResumeContentChange(result.text);
       
-      // Check if fallback mode was used (simplified detection)
-      if (extractedText.length > 0 && extractedText.length < 2000) {
-        setUsedFallbackMode(true);
-        toast.success('PDF text extracted using simplified mode. For better results with complex PDFs, try pasting the text directly.');
+      // Provide feedback based on extraction quality
+      if (result.metadata.confidence > 0.8) {
+        toast.success(`PDF processed successfully! Extracted ${result.metadata.pageCount} pages with high confidence.`);
+      } else if (result.metadata.confidence > 0.6) {
+        toast.success(`PDF processed with good results. Some sections may need manual review.`);
       } else {
-        toast.success('PDF text extracted successfully!');
+        toast.success(`PDF processed. Consider using "Paste Text" mode for better results with complex layouts.`);
       }
       
-      console.log('=== FILE UPLOAD HANDLER SUCCESS ===');
+      console.log('=== ENHANCED FILE UPLOAD HANDLER SUCCESS ===');
     } catch (error) {
-      console.error('=== FILE UPLOAD HANDLER ERROR ===');
-      console.error('Error in handleFileUpload:', error);
+      console.error('=== ENHANCED FILE UPLOAD HANDLER ERROR ===');
+      console.error('Error in enhanced handleFileUpload:', error);
       
       let errorMessage = 'Failed to extract text from PDF.';
       let shouldRecommendPaste = true;
@@ -92,13 +97,8 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       if (error instanceof Error) {
         errorMessage = error.message;
         
-        // Check for specific error types that suggest paste mode
         if (error.message.includes('Please try pasting') ||
             error.message.includes('paste your text directly')) {
-          shouldRecommendPaste = true;
-        } else if (error.message.includes('Worker loading failure') ||
-                   error.message.includes('Setting up fake worker failed')) {
-          errorMessage = 'PDF processing encountered technical difficulties. Please try pasting your text directly for best results.';
           shouldRecommendPaste = true;
         }
       }
@@ -130,6 +130,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
           setUploadMode(mode);
           if (mode === 'paste') {
             setShowPasteRecommendation(false);
+            setExtractionResult(null);
           }
         }} 
       />
@@ -143,11 +144,22 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
         </Alert>
       )}
 
-      {usedFallbackMode && uploadMode === 'upload' && resumeContent && (
+      {extractionResult && uploadMode === 'upload' && resumeContent && (
         <Alert>
-          <Info className="h-4 w-4" />
+          <CheckCircle className="h-4 w-4" />
           <AlertDescription>
-            PDF processed in simplified mode (limited to first 5 pages). For complex PDFs or better accuracy, consider using "Paste Text" mode.
+            <div className="space-y-1">
+              <div><strong>PDF Analysis Complete:</strong></div>
+              <div>• Extracted {extractionResult.metadata.pageCount} pages</div>
+              <div>• Confidence: {Math.round(extractionResult.metadata.confidence * 100)}%</div>
+              <div>• Found: {extractionResult.structured.name !== 'Professional' ? extractionResult.structured.name : 'Resume content'}</div>
+              {extractionResult.structured.sections.experience.length > 0 && (
+                <div>• Experience sections: {extractionResult.structured.sections.experience.length}</div>
+              )}
+              {extractionResult.structured.sections.skills.length > 0 && (
+                <div>• Skills identified: {extractionResult.structured.sections.skills.length}</div>
+              )}
+            </div>
           </AlertDescription>
         </Alert>
       )}
