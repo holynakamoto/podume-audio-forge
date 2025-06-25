@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { MoveRight, Sparkles, Headphones } from 'lucide-react';
+import { MoveRight, Sparkles } from 'lucide-react';
 
 const HeroSection = () => {
   return (
@@ -13,39 +13,6 @@ const HeroSection = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-transparent to-amber-400/20"></div>
         </div>
         
-        {/* Floating tactile elements */}
-        <div className="absolute top-32 right-16 hidden lg:block">
-          <div className="relative group cursor-pointer">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/30 to-amber-400/30 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-700"></div>
-            <div className="relative bg-card/20 backdrop-blur-md border border-purple-400/30 rounded-2xl p-6 group-hover:border-amber-400/50 transition-all duration-500 group-hover:scale-105">
-              <img 
-                src="/lovable-uploads/4253ea4e-a6e4-47ba-a43e-d17cc47a16a5.png" 
-                alt="Professional Audio Equipment" 
-                className="w-40 h-auto rounded-lg shadow-2xl"
-              />
-              <div className="absolute -top-2 -right-2">
-                <Sparkles className="w-8 h-8 text-amber-400 animate-pulse" />
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="absolute bottom-32 left-16 hidden lg:block">
-          <div className="relative group cursor-pointer">
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-400/30 to-purple-500/30 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-700"></div>
-            <div className="relative bg-card/20 backdrop-blur-md border border-amber-400/30 rounded-2xl p-6 group-hover:border-purple-400/50 transition-all duration-500 group-hover:scale-105">
-              <img 
-                src="/lovable-uploads/7e304183-92dc-46c7-9da9-1f941d0c7cd0.png" 
-                alt="Luxury Headphones" 
-                className="w-36 h-auto rounded-lg shadow-2xl"
-              />
-              <div className="absolute -top-2 -right-2">
-                <Headphones className="w-8 h-8 text-purple-400 animate-bounce" />
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="container relative z-10 text-center px-4 md:px-6 max-w-6xl">
             {/* Editorial-style headline with confident typography */}
             <div className="relative mb-8">
