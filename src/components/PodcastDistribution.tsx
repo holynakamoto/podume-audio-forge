@@ -7,7 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { Loader2, Podcast, Music, Radio, Headphones, Copy, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/auth/AuthProvider';
+import { useAuth } from '@/auth/ClerkAuthProvider';
 
 interface PodcastDistributionProps {
   podcastId: string;

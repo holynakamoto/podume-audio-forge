@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +10,7 @@ import PodcastDistribution from '@/components/PodcastDistribution';
 import { PodcastSharingControls } from '@/components/PodcastSharingControls';
 import { toast } from 'sonner';
 import { sanitizeHtml, sanitizeText } from '@/utils/security';
-import { useAuth } from '@/auth/AuthProvider';
+import { useAuth } from '@/auth/ClerkAuthProvider';
 
 const fetchPodcast = async (id: string) => {
   const { data, error } = await supabase
