@@ -60,7 +60,6 @@ password_min_length = 6
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = true
-template = {}
 
 [auth.hook.send_email]
 enabled = true

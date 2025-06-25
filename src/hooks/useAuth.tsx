@@ -103,7 +103,12 @@ export const useAuth = (redirectUrl: string) => {
           email: sanitizedEmail 
         });
         
-        toast.success('Account created! Please check your email for the confirmation link.');
+        if (data.user && !data.user.email_confirmed_at) {
+          toast.success('Account created! Please check your email for the confirmation link.');
+        } else {
+          toast.success('Account created and confirmed! Redirecting...');
+          navigate(redirectUrl);
+        }
       }
     } catch (error) {
       console.error('Unexpected sign up error:', error);
@@ -133,7 +138,7 @@ export const useAuth = (redirectUrl: string) => {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: sanitizedEmail,
         password: values.password,
       });
@@ -154,6 +159,7 @@ export const useAuth = (redirectUrl: string) => {
           toast.error(error.message);
         }
       } else {
+        console.log('Sign in successful:', data);
         await logSecurityEvent('auth_signin_success', { 
           email: sanitizedEmail 
         });
