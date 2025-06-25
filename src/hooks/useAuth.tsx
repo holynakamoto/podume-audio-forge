@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -68,8 +67,8 @@ export const useAuth = (redirectUrl: string) => {
 
       console.log('Attempting to sign up user:', sanitizedEmail);
 
-      // Get the current origin for redirect
-      const redirectTo = `${window.location.origin}/`;
+      // Set redirect to our confirmation page
+      const redirectTo = `${window.location.origin}/confirm`;
 
       const { data, error } = await supabase.auth.signUp({
         email: sanitizedEmail,

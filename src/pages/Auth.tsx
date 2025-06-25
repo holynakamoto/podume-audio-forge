@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 const AuthPage = () => {
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get('redirect') || '/';
+  const tab = searchParams.get('tab') || 'sign-in';
   
   const {
     isLoading,
@@ -24,7 +25,7 @@ const AuthPage = () => {
               <Logo />
           </Link>
       </div>
-      <Tabs defaultValue="sign-in" className="w-full max-w-md">
+      <Tabs defaultValue={tab} className="w-full max-w-md">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="sign-in">Sign In</TabsTrigger>
           <TabsTrigger value="sign-up">Sign Up</TabsTrigger>

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +11,7 @@ import { AuthProvider } from "./auth/AuthProvider";
 import AuthPage from "./pages/Auth";
 import PodcastPage from "./pages/PodcastPage";
 import ZooToolsDemo from "./pages/ZooToolsDemo";
+import EmailConfirmation from "./pages/EmailConfirmation";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +26,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/create" element={<Create />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/confirm" element={<EmailConfirmation />} />
             <Route path="/podcast/:id" element={<PodcastPage />} />
             <Route path="/zootools" element={<ZooToolsDemo />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
