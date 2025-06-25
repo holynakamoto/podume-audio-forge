@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '@/components/Logo';
 import { Button } from '@/components/ui/button';
+import MobileNav from './MobileNav';
 
 const Header = () => {
   return (
@@ -13,7 +14,7 @@ const Header = () => {
           <Logo />
         </Link>
         
-        {/* Navigation - Notion-style centered */}
+        {/* Navigation - Notion-style centered - Hidden on mobile */}
         <nav className="hidden items-center gap-8 md:flex">
           <a 
             href="/#features" 
@@ -41,12 +42,15 @@ const Header = () => {
           </a>
         </nav>
         
-        {/* CTA Button - Notion-style */}
-        <Link to="/create">
+        {/* Desktop CTA Button - Hidden on mobile */}
+        <Link to="/create" className="hidden md:block">
           <Button className="bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-300 ease-in-out hover:scale-105 shadow-lg hover:shadow-purple-500/25 border-0">
             Create Podcast
           </Button>
         </Link>
+
+        {/* Mobile Navigation */}
+        <MobileNav />
       </div>
     </header>
   );
