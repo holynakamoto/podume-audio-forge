@@ -1,13 +1,34 @@
 
 import React from 'react';
-import { render } from '@/utils/test-utils';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ResumeUploader } from '../ResumeUploader';
 import { extractTextFromPDFEnhanced } from '@/utils/enhanced-pdf-extractor';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock the PDF extractor with different scenarios
 jest.mock('@/utils/enhanced-pdf-extractor');
 const mockExtractText = extractTextFromPDFEnhanced as jest.MockedFunction<typeof extractTextFromPDFEnhanced>;
+
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
+          {children}
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 describe('ResumeUploader Integration', () => {
   const mockOnResumeContentChange = jest.fn();
@@ -38,10 +59,12 @@ describe('ResumeUploader Integration', () => {
     mockExtractText.mockResolvedValueOnce(mockResult);
 
     render(
-      <ResumeUploader 
-        onResumeContentChange={mockOnResumeContentChange}
-        resumeContent=""
-      />
+      <TestWrapper>
+        <ResumeUploader 
+          onResumeContentChange={mockOnResumeContentChange}
+          resumeContent=""
+        />
+      </TestWrapper>
     );
     
     const fileInput = screen.getByLabelText(/Upload Your Resume \(PDF\)/);
@@ -63,10 +86,12 @@ describe('ResumeUploader Integration', () => {
     mockExtractText.mockRejectedValueOnce(new Error('Unable to read this PDF file'));
 
     render(
-      <ResumeUploader 
-        onResumeContentChange={mockOnResumeContentChange}
-        resumeContent=""
-      />
+      <TestWrapper>
+        <ResumeUploader 
+          onResumeContentChange={mockOnResumeContentChange}
+          resumeContent=""
+        />
+      </TestWrapper>
     );
     
     const fileInput = screen.getByLabelText(/Upload Your Resume \(PDF\)/);
@@ -104,10 +129,12 @@ describe('ResumeUploader Integration', () => {
     });
 
     render(
-      <ResumeUploader 
-        onResumeContentChange={mockOnResumeContentChange}
-        resumeContent=""
-      />
+      <TestWrapper>
+        <ResumeUploader 
+          onResumeContentChange={mockOnResumeContentChange}
+          resumeContent=""
+        />
+      </TestWrapper>
     );
     
     const fileInput = screen.getByLabelText(/Upload Your Resume \(PDF\)/);

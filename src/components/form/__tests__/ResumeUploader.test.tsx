@@ -1,9 +1,11 @@
 
 import React from 'react';
-import { render } from '@/utils/test-utils';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ResumeUploader } from '../ResumeUploader';
 import { toast } from 'sonner';
+import { BrowserRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock the PDF extractor
 jest.mock('@/utils/enhanced-pdf-extractor', () => ({
@@ -18,6 +20,25 @@ jest.mock('sonner', () => ({
   },
 }));
 
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
+          {children}
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
+
 describe('ResumeUploader', () => {
   const mockOnResumeContentChange = jest.fn();
   
@@ -27,10 +48,12 @@ describe('ResumeUploader', () => {
 
   it('renders upload mode by default', () => {
     render(
-      <ResumeUploader 
-        onResumeContentChange={mockOnResumeContentChange}
-        resumeContent=""
-      />
+      <TestWrapper>
+        <ResumeUploader 
+          onResumeContentChange={mockOnResumeContentChange}
+          resumeContent=""
+        />
+      </TestWrapper>
     );
     
     expect(screen.getByText('Upload PDF')).toBeInTheDocument();
@@ -39,10 +62,12 @@ describe('ResumeUploader', () => {
 
   it('switches to paste mode when selected', () => {
     render(
-      <ResumeUploader 
-        onResumeContentChange={mockOnResumeContentChange}
-        resumeContent=""
-      />
+      <TestWrapper>
+        <ResumeUploader 
+          onResumeContentChange={mockOnResumeContentChange}
+          resumeContent=""
+        />
+      </TestWrapper>
     );
     
     fireEvent.click(screen.getByText('Paste Text'));
@@ -51,10 +76,12 @@ describe('ResumeUploader', () => {
 
   it('validates file type before processing', async () => {
     render(
-      <ResumeUploader 
-        onResumeContentChange={mockOnResumeContentChange}
-        resumeContent=""
-      />
+      <TestWrapper>
+        <ResumeUploader 
+          onResumeContentChange={mockOnResumeContentChange}
+          resumeContent=""
+        />
+      </TestWrapper>
     );
     
     const fileInput = screen.getByLabelText(/Upload Your Resume \(PDF\)/);
@@ -69,10 +96,12 @@ describe('ResumeUploader', () => {
 
   it('validates file size', async () => {
     render(
-      <ResumeUploader 
-        onResumeContentChange={mockOnResumeContentChange}
-        resumeContent=""
-      />
+      <TestWrapper>
+        <ResumeUploader 
+          onResumeContentChange={mockOnResumeContentChange}
+          resumeContent=""
+        />
+      </TestWrapper>
     );
     
     const fileInput = screen.getByLabelText(/Upload Your Resume \(PDF\)/);
@@ -90,10 +119,12 @@ describe('ResumeUploader', () => {
   it('shows extracted text preview', () => {
     const sampleText = 'This is extracted resume content from the PDF file.';
     render(
-      <ResumeUploader 
-        onResumeContentChange={mockOnResumeContentChange}
-        resumeContent={sampleText}
-      />
+      <TestWrapper>
+        <ResumeUploader 
+          onResumeContentChange={mockOnResumeContentChange}
+          resumeContent={sampleText}
+        />
+      </TestWrapper>
     );
     
     expect(screen.getByText('Extracted Text Preview')).toBeInTheDocument();
@@ -102,10 +133,12 @@ describe('ResumeUploader', () => {
 
   it('updates content when text is pasted', () => {
     render(
-      <ResumeUploader 
-        onResumeContentChange={mockOnResumeContentChange}
-        resumeContent=""
-      />
+      <TestWrapper>
+        <ResumeUploader 
+          onResumeContentChange={mockOnResumeContentChange}
+          resumeContent=""
+        />
+      </TestWrapper>
     );
     
     // Switch to paste mode
