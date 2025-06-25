@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@/utils/test-utils';
+import { render } from '@/utils/test-utils';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { ResumeUploader } from '../ResumeUploader';
 import { extractTextFromPDFEnhanced } from '@/utils/enhanced-pdf-extractor';
 
