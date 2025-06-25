@@ -1,4 +1,3 @@
-
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
 // Basic debug functions
@@ -31,24 +30,24 @@ const testPDFWorker = async (): Promise<boolean> => {
   }
 };
 
-// Enhanced PDF.js worker setup with multiple fallbacks and debugging
+// Enhanced PDF.js worker setup with correct version matching
 const setupPDFWorker = () => {
-  console.log('Setting up PDF.js worker...');
+  console.log('Setting up PDF.js worker with version 5.3.31...');
   
   try {
-    // Try modern ES module approach first
+    // Try modern ES module approach first with correct version
     GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
     console.log('PDF worker set to ES module:', GlobalWorkerOptions.workerSrc);
   } catch (error) {
     console.warn('Failed to set ES module worker, trying CDN fallback:', error);
     try {
-      // Fallback to CDN with correct version
-      GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-      console.log('PDF worker set to CDN:', GlobalWorkerOptions.workerSrc);
+      // Fallback to CDN with matching version 5.3.31
+      GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.worker.min.mjs`;
+      console.log('PDF worker set to CDN with version 5.3.31:', GlobalWorkerOptions.workerSrc);
     } catch (cdnError) {
       console.error('Failed to set CDN worker:', cdnError);
       // Last resort - try npm package path
-      GlobalWorkerOptions.workerSrc = '/node_modules/pdfjs-dist/build/pdf.worker.min.js';
+      GlobalWorkerOptions.workerSrc = '/node_modules/pdfjs-dist/build/pdf.worker.min.mjs';
       console.log('PDF worker set to npm path:', GlobalWorkerOptions.workerSrc);
     }
   }
@@ -159,6 +158,8 @@ export const extractTextFromPDFEnhanced = async (
         throw new Error('The PDF structure is invalid. Please try re-saving your document as a new PDF.');
       } else if (pdfError.message?.includes('network') || pdfError.message?.includes('worker')) {
         throw new Error('Network error loading PDF worker. Please refresh the page and try again, or use the "Paste Text" option.');
+      } else if (pdfError.message?.includes('version') || pdfError.message?.includes('API version')) {
+        throw new Error('PDF worker version mismatch. Please refresh the page and try again, or use the "Paste Text" option.');
       } else {
         // Generic fallback with debug info
         throw new Error(`Unable to read this PDF file: ${pdfError.message}. This might be due to the PDF format, security settings, or the file being corrupted. Please try using the "Paste Text" option instead.`);
