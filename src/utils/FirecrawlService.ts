@@ -38,6 +38,11 @@ export class FirecrawlService {
       console.log('=== FireCrawl Debug Start ===');
       console.log('Calling FireCrawl edge function for URL:', url);
       
+      // Check if it's a LinkedIn URL and warn about restrictions
+      if (url.includes('linkedin.com')) {
+        console.log('LinkedIn URL detected - may require special account activation');
+      }
+      
       // Call our edge function instead of using the client directly
       const response = await fetch('/api/firecrawl-scrape', {
         method: 'POST',
@@ -53,6 +58,15 @@ export class FirecrawlService {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('HTTP error response:', errorText);
+        
+        // Handle specific LinkedIn restriction error
+        if (response.status === 403 || errorText.includes('Forbidden') || errorText.includes('no longer supported')) {
+          return { 
+            success: false, 
+            error: 'LinkedIn scraping requires special account activation. Please contact help@firecrawl.com to activate LinkedIn scraping for your account, or try using the "Paste Text" option instead.' 
+          };
+        }
+        
         throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
@@ -67,6 +81,24 @@ export class FirecrawlService {
         return { 
           success: false, 
           error: 'Empty response from scraping service' 
+        };
+      }
+
+      // Check if response looks like HTML (common for error pages)
+      if (responseText.trim().startsWith('<')) {
+        console.error('Received HTML instead of JSON - likely an error page');
+        
+        // Check for specific LinkedIn restriction message
+        if (responseText.includes('no longer supported') || responseText.includes('Forbidden')) {
+          return { 
+            success: false, 
+            error: 'LinkedIn scraping is restricted and requires special account activation. Please contact help@firecrawl.com to activate LinkedIn scraping for your account, or use the "Paste Text" option to manually enter your LinkedIn profile content.' 
+          };
+        }
+        
+        return { 
+          success: false, 
+          error: 'Received HTML error page instead of JSON response from scraping service' 
         };
       }
 
@@ -86,6 +118,15 @@ export class FirecrawlService {
       
       if (!result.success) {
         console.error('FireCrawl scraping failed:', result.error);
+        
+        // Handle LinkedIn-specific errors in the response
+        if (result.error?.includes('Forbidden') || result.error?.includes('no longer supported')) {
+          return { 
+            success: false, 
+            error: 'LinkedIn scraping requires special account activation. Please contact help@firecrawl.com to activate LinkedIn scraping for your account, or use the "Paste Text" option instead.' 
+          };
+        }
+        
         return { 
           success: false, 
           error: result.error || 'Failed to scrape website' 
@@ -105,6 +146,15 @@ export class FirecrawlService {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
       console.error('=== End FireCrawl Error ===');
+      
+      // Handle LinkedIn-specific network errors
+      if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
+        return { 
+          success: false, 
+          error: 'LinkedIn scraping requires special account activation. Please contact help@firecrawl.com to activate LinkedIn scraping for your account, or use the "Paste Text" option instead.' 
+        };
+      }
+      
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Failed to connect to scraping service' 

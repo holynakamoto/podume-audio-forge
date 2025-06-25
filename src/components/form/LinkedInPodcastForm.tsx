@@ -11,13 +11,14 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/ClerkAuthProvider';
 import { FirecrawlService } from '@/utils/FirecrawlService';
-import { Loader2, Globe, AlertCircle } from 'lucide-react';
+import { Loader2, Globe, AlertCircle, FileText } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { linkedInFormSchema, LinkedInFormValues } from './schemas/linkedInFormSchema';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [showManualOption, setShowManualOption] = useState(false);
   const navigate = useNavigate();
   const { user, isSignedIn } = useAuth();
 
@@ -48,6 +49,13 @@ export const LinkedInPodcastForm: React.FC = () => {
       const extractResult = await FirecrawlService.scrapeUrl(values.linkedin_url);
       
       if (!extractResult.success || !extractResult.data) {
+        // Show manual option if LinkedIn scraping fails
+        if (extractResult.error?.includes('LinkedIn scraping requires special account activation')) {
+          setShowManualOption(true);
+          toast.error(extractResult.error);
+          return;
+        }
+        
         toast.error(extractResult.error || 'Failed to extract LinkedIn profile content');
         return;
       }
@@ -125,6 +133,32 @@ export const LinkedInPodcastForm: React.FC = () => {
               Make sure your LinkedIn profile is public or accessible for the best results.
             </AlertDescription>
           </Alert>
+
+          {showManualOption && (
+            <Alert className="mb-6 border-orange-200 bg-orange-50">
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800 text-sm">
+                <div className="space-y-2">
+                  <p><strong>LinkedIn scraping requires special activation.</strong></p>
+                  <p>Alternative options:</p>
+                  <ul className="list-disc list-inside ml-2 space-y-1">
+                    <li>Contact help@firecrawl.com to activate LinkedIn scraping</li>
+                    <li>Use the main podcast creation form with "Paste Text" option</li>
+                    <li>Copy your LinkedIn profile content and paste it manually</li>
+                  </ul>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => navigate('/create-podcast')}
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Use Manual Entry
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
