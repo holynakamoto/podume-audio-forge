@@ -18,7 +18,7 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
   onContentExtracted,
   resumeContent
 }) => {
-  const [url, setUrl] = useState('https://www.kickresume.com/edit/16086325/preview/');
+  const [url, setUrl] = useState('https://app.tealhq.com/db44a22a-ceec-4a01-8997-4ddcfb03c15e');
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionProgress, setExtractionProgress] = useState(0);
   const [validationMessage, setValidationMessage] = useState('');
@@ -31,7 +31,7 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
 
   const handleExtract = async () => {
     if (!url.trim()) {
-      toast.error('Please enter a Kickresume URL');
+      toast.error('Please enter a resume URL');
       return;
     }
 
@@ -57,8 +57,9 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
         
         onContentExtracted(result.data);
         
+        const platformName = result.metadata?.platform || 'resume';
         toast.success(
-          `Resume extracted successfully via ${result.metadata?.extractionMethod || result.source}!`
+          `${platformName} extracted successfully via ${result.metadata?.extractionMethod || result.source}!`
         );
       } else {
         console.error('Extraction failed:', result.error);
@@ -86,16 +87,16 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="kickresume-url" className="font-semibold">
-          Kickresume URL
+        <Label htmlFor="resume-url" className="font-semibold">
+          Resume URL
         </Label>
         <div className="mt-2 space-y-3">
           <Input
-            id="kickresume-url"
+            id="resume-url"
             type="url"
             value={url}
             onChange={handleUrlChange}
-            placeholder="https://www.kickresume.com/edit/16086325/preview/"
+            placeholder="https://app.tealhq.com/your-resume-id or https://www.kickresume.com/edit/123/preview/"
             className="w-full"
             disabled={isExtracting}
           />
@@ -155,14 +156,13 @@ export const UrlScraper: React.FC<UrlScraperProps> = ({
         <AlertCircle className="h-4 w-4" />
         <AlertDescription className="text-sm">
           <div className="space-y-2">
-            <p><strong>Supported URL formats:</strong></p>
+            <p><strong>Supported platforms:</strong></p>
             <ul className="list-disc list-inside ml-2 space-y-1 text-xs">
-              <li>Preview URLs: /edit/{'{id}'}/preview/</li>
-              <li>Public URLs: /cv/{'{id}'} or /resume/{'{id}'}</li>
+              <li><strong>Kickresume:</strong> Preview URLs (/edit/{'{id}'}/preview/) and public URLs (/cv/{'{id}'} or /resume/{'{id}'})</li>
+              <li><strong>Teal:</strong> Resume URLs (app.tealhq.com/{'{uuid}'})</li>
             </ul>
             <p className="mt-2">
-              <strong>Extraction methods:</strong> FireCrawl scraping (primary), 
-              Kickresume API (when available)
+              <strong>Extraction method:</strong> FireCrawl scraping (primary), with future API support planned
             </p>
           </div>
         </AlertDescription>

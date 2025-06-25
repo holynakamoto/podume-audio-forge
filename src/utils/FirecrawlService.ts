@@ -1,3 +1,4 @@
+
 import FirecrawlApp from '@mendable/firecrawl-js';
 
 interface ErrorResponse {
@@ -37,11 +38,11 @@ export class FirecrawlService {
       console.log('=== FireCrawl Debug Start ===');
       console.log('Calling FireCrawl edge function for URL:', url);
       
-      // Enhanced URL validation for Kickresume
-      if (!this.validateKickresume(url)) {
+      // Enhanced URL validation for supported platforms
+      if (!this.validateSupportedUrl(url)) {
         return { 
           success: false, 
-          error: 'Please provide a valid Kickresume URL (e.g., https://www.kickresume.com/edit/123/preview/)' 
+          error: 'Please provide a valid Kickresume or Teal URL' 
         };
       }
       
@@ -66,14 +67,14 @@ export class FirecrawlService {
           console.error('Received HTML error page instead of JSON');
           return { 
             success: false, 
-            error: 'Service temporarily unavailable. This might be due to Kickresume access restrictions or server issues.' 
+            error: 'Service temporarily unavailable. This might be due to access restrictions or server issues.' 
           };
         }
         
         if (response.status === 403 || errorText.includes('Forbidden')) {
           return { 
             success: false, 
-            error: 'Access denied to this Kickresume. Please ensure your resume is publicly accessible or use a preview URL.' 
+            error: 'Access denied to this URL. Please ensure the resume is publicly accessible.' 
           };
         }
         
@@ -140,7 +141,7 @@ export class FirecrawlService {
       if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
         return { 
           success: false, 
-          error: 'Unable to access this Kickresume URL. Please ensure it is publicly accessible.' 
+          error: 'Unable to access this URL. Please ensure it is publicly accessible.' 
         };
       }
       
@@ -149,6 +150,11 @@ export class FirecrawlService {
         error: error instanceof Error ? error.message : 'Failed to connect to scraping service' 
       };
     }
+  }
+
+  // Enhanced URL validation to support multiple platforms
+  static validateSupportedUrl(url: string): boolean {
+    return this.validateKickresume(url) || this.validateTeal(url);
   }
 
   // Enhanced Kickresume URL validation
@@ -187,7 +193,37 @@ export class FirecrawlService {
     }
   }
 
+  // New Teal URL validation
+  static validateTeal(url: string): boolean {
+    try {
+      const urlObj = new URL(url);
+      
+      // Must be HTTPS
+      if (urlObj.protocol !== 'https:') {
+        return false;
+      }
+      
+      // Must be Teal domain
+      if (!urlObj.hostname.includes('tealhq.com')) {
+        return false;
+      }
+      
+      // Check for Teal URL patterns
+      const pathname = urlObj.pathname;
+      
+      // Teal resume URLs: /{uuid}
+      if (pathname.match(/^\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/)) {
+        return true;
+      }
+      
+      return pathname.length > 1; // Has some path
+      
+    } catch {
+      return false;
+    }
+  }
+
   static validateUrl(url: string): boolean {
-    return this.validateKickresume(url);
+    return this.validateSupportedUrl(url);
   }
 }
