@@ -60,19 +60,21 @@ serve(async (req: Request) => {
     console.log('Scraping URL:', url);
     console.log('Using FireCrawl API key (first 10 chars):', firecrawlApiKey.substring(0, 10) + '...');
     
+    // Initialize FireCrawl exactly like your working example
     const app = new FirecrawlApp({ apiKey: firecrawlApiKey });
     
     let scrapeResult;
     try {
-      // Use the same configuration as your working example
+      // Use exact same configuration as your working example
       scrapeResult = await app.scrapeUrl(url, {
-        formats: ['markdown'],
+        formats: ["markdown"],
         onlyMainContent: true,
-        waitFor: 1000, // Wait 1 second for page to load
-        timeout: 30000, // 30 second timeout
       });
-      console.log('FireCrawl API response success:', scrapeResult.success);
-      console.log('FireCrawl API response type:', typeof scrapeResult);
+      
+      console.log('FireCrawl API response:', scrapeResult);
+      console.log('Response success:', scrapeResult?.success);
+      console.log('Response data keys:', scrapeResult?.data ? Object.keys(scrapeResult.data) : 'no data');
+      
     } catch (apiError) {
       console.error('FireCrawl API error:', apiError);
       console.error('Error type:', typeof apiError);
@@ -98,11 +100,11 @@ serve(async (req: Request) => {
       });
     }
 
-    if (!scrapeResult || typeof scrapeResult !== 'object') {
-      console.error('Invalid scrape result:', scrapeResult);
+    if (!scrapeResult) {
+      console.error('Null scrape result from FireCrawl API');
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Invalid response from FireCrawl API' 
+        error: 'No response from FireCrawl API' 
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -120,7 +122,7 @@ serve(async (req: Request) => {
       });
     }
 
-    // Extract content - prefer markdown
+    // Extract markdown content from the response
     const extractedText = scrapeResult.data?.markdown || scrapeResult.data?.content || '';
     console.log('Extracted text length:', extractedText.length);
     console.log('Extracted text preview (first 200 chars):', extractedText.substring(0, 200));
