@@ -1,4 +1,3 @@
-
 import FirecrawlApp from '@mendable/firecrawl-js';
 
 interface ErrorResponse {
@@ -38,9 +37,12 @@ export class FirecrawlService {
       console.log('=== FireCrawl Debug Start ===');
       console.log('Calling FireCrawl edge function for URL:', url);
       
-      // Check if it's a Kickresume URL and provide specific guidance
-      if (url.includes('kickresume.com')) {
-        console.log('Kickresume URL detected - should work with FireCrawl');
+      // Enhanced URL validation for Kickresume
+      if (!this.validateKickresume(url)) {
+        return { 
+          success: false, 
+          error: 'Please provide a valid Kickresume URL (e.g., https://www.kickresume.com/edit/123/preview/)' 
+        };
       }
       
       // Call our edge function
@@ -54,38 +56,33 @@ export class FirecrawlService {
       });
 
       console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('HTTP error response:', errorText);
         
-        // Check if we got HTML instead of JSON
+        // Enhanced error handling for HTML responses
         if (errorText.trim().startsWith('<') || errorText.includes('<!DOCTYPE')) {
           console.error('Received HTML error page instead of JSON');
           return { 
             success: false, 
-            error: 'Service temporarily unavailable. Please try again in a few moments or use the "Paste Text" option to manually enter your resume content.' 
+            error: 'Service temporarily unavailable. This might be due to Kickresume access restrictions or server issues.' 
           };
         }
         
-        // Handle specific restriction errors
-        if (response.status === 403 || errorText.includes('Forbidden') || errorText.includes('no longer supported')) {
+        if (response.status === 403 || errorText.includes('Forbidden')) {
           return { 
             success: false, 
-            error: 'Unable to access this resume URL. Please ensure your Kickresume is publicly accessible or try using the "Paste Text" option instead.' 
+            error: 'Access denied to this Kickresume. Please ensure your resume is publicly accessible or use a preview URL.' 
           };
         }
         
         throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
-      // Get the response text
       const responseText = await response.text();
       console.log('Raw response text length:', responseText.length);
-      console.log('Response text preview (first 100 chars):', responseText.substring(0, 100));
       
-      // Check if response is empty
       if (!responseText || responseText.trim().length === 0) {
         console.error('Empty response from FireCrawl service');
         return { 
@@ -94,26 +91,24 @@ export class FirecrawlService {
         };
       }
 
-      // Check if response looks like HTML (common for error pages)
-      if (responseText.trim().startsWith('<') || responseText.includes('<!DOCTYPE')) {
-        console.error('Received HTML instead of JSON - likely an error page');
-        return { 
-          success: false, 
-          error: 'Service temporarily unavailable. Please try again in a few moments or use the "Paste Text" option to manually enter your resume content.' 
-        };
-      }
-
-      // Try to parse JSON
+      // Enhanced JSON parsing with better error handling
       let result;
       try {
         result = JSON.parse(responseText);
         console.log('Successfully parsed JSON response');
       } catch (jsonError) {
         console.error('JSON parse error:', jsonError);
-        console.error('Failed to parse response as JSON. Raw text preview:', responseText.substring(0, 200));
+        
+        if (responseText.trim().startsWith('<')) {
+          return { 
+            success: false, 
+            error: 'Received HTML instead of expected data. The URL might be private or inaccessible.' 
+          };
+        }
+        
         return { 
           success: false, 
-          error: 'Invalid response format from scraping service. Please try again or use the "Paste Text" option.' 
+          error: 'Invalid response format from scraping service.' 
         };
       }
       
@@ -134,23 +129,18 @@ export class FirecrawlService {
     } catch (error) {
       console.error('=== FireCrawl Error ===');
       console.error('Error during FireCrawl scraping:', error);
-      console.error('Error type:', error.constructor.name);
-      console.error('Error message:', error.message);
-      console.error('=== End FireCrawl Error ===');
       
-      // Handle network errors that might return HTML
       if (error.message?.includes('Unexpected token') && error.message?.includes('<')) {
         return { 
           success: false, 
-          error: 'Service temporarily unavailable. Please try again in a few moments or use the "Paste Text" option instead.' 
+          error: 'Service temporarily unavailable. Please try again later or use the "Paste Text" option.' 
         };
       }
       
-      // Handle restriction network errors
       if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
         return { 
           success: false, 
-          error: 'Unable to access this resume URL. Please ensure your Kickresume is publicly accessible or use the "Paste Text" option instead.' 
+          error: 'Unable to access this Kickresume URL. Please ensure it is publicly accessible.' 
         };
       }
       
@@ -161,12 +151,43 @@ export class FirecrawlService {
     }
   }
 
-  static validateUrl(url: string): boolean {
+  // Enhanced Kickresume URL validation
+  static validateKickresume(url: string): boolean {
     try {
       const urlObj = new URL(url);
-      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+      
+      // Must be HTTPS
+      if (urlObj.protocol !== 'https:') {
+        return false;
+      }
+      
+      // Must be Kickresume domain
+      if (!urlObj.hostname.includes('kickresume.com')) {
+        return false;
+      }
+      
+      // Check for common Kickresume URL patterns
+      const pathname = urlObj.pathname;
+      
+      // Preview URLs: /edit/{id}/preview/
+      if (pathname.match(/\/edit\/\d+\/preview\/?$/)) {
+        return true;
+      }
+      
+      // Public URLs: /cv/{id} or /resume/{id}
+      if (pathname.match(/\/(cv|resume)\/\d+\/?$/)) {
+        return true;
+      }
+      
+      // Other Kickresume URLs might be valid too
+      return pathname.length > 1; // Has some path
+      
     } catch {
       return false;
     }
+  }
+
+  static validateUrl(url: string): boolean {
+    return this.validateKickresume(url);
   }
 }
