@@ -1,5 +1,35 @@
+
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
-import { debugPDFFile, logPDFError, testPDFWorker } from './pdf-debug';
+
+// Basic debug functions
+const debugPDFFile = async (file: File) => {
+  const arrayBuffer = await file.arrayBuffer();
+  const header = new Uint8Array(arrayBuffer.slice(0, 10));
+  
+  return {
+    headerAnalysis: {
+      isPDF: header[0] === 0x25 && header[1] === 0x50 && header[2] === 0x44 && header[3] === 0x46,
+      detectedType: header[0] === 0x25 && header[1] === 0x50 ? 'PDF' :
+                   header[0] === 0x50 && header[1] === 0x4B ? 'ZIP/Office document' :
+                   header[0] === 0xFF && header[1] === 0xD8 ? 'JPEG image' : 'Unknown'
+    }
+  };
+};
+
+const logPDFError = (error: Error, context: string, debugInfo?: any) => {
+  console.error(`PDF Error in ${context}:`, error.message);
+  if (debugInfo) {
+    console.error('Debug info:', debugInfo);
+  }
+};
+
+const testPDFWorker = async (): Promise<boolean> => {
+  try {
+    return typeof GlobalWorkerOptions.workerSrc === 'string' && GlobalWorkerOptions.workerSrc.length > 0;
+  } catch {
+    return false;
+  }
+};
 
 // Enhanced PDF.js worker setup with multiple fallbacks and debugging
 const setupPDFWorker = () => {
