@@ -1,6 +1,6 @@
 
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
-import { setupPDFWorker, testPDFWorker } from './pdf/worker-setup';
+import { setupPDFWorker, testPDFWorker, resetPDFWorker, checkWorkerHealth } from './pdf/worker-setup';
 import { debugPDFFile, logPDFError, validatePDFFile } from './pdf/file-validation';
 import { cleanExtractedText, extractStructuredTextFromPage } from './pdf/text-extraction';
 import { parseResumeStructure, calculateExtractionConfidence } from './pdf/resume-parser';
@@ -12,31 +12,33 @@ export const extractTextFromPDFEnhanced = async (
   onProgress?: ProgressCallback
 ): Promise<PDFExtractionResult> => {
   console.log('=== ENHANCED PDF EXTRACTION START ===');
-  console.log('Current worker source:', GlobalWorkerOptions.workerSrc);
+  console.log('File info:', { name: file.name, size: file.size, type: file.type });
   
   // Debug file information
   const debugInfo = await debugPDFFile(file);
+  console.log('File debug info:', debugInfo);
   
-  // Ensure worker is properly set up
-  if (!GlobalWorkerOptions.workerSrc) {
-    console.log('Worker not initialized, setting up...');
-    setupPDFWorker();
-  }
+  // Enhanced worker setup and validation
+  console.log('Checking worker health...');
+  let workerHealth = await checkWorkerHealth();
+  console.log('Initial worker health:', workerHealth);
   
-  // Test worker readiness
-  const workerReady = await testPDFWorker();
-  if (!workerReady) {
-    console.error('PDF worker is not properly configured, attempting reset...');
-    setupPDFWorker();
+  if (!workerHealth.healthy) {
+    console.log('Worker unhealthy, attempting reset...');
+    resetPDFWorker();
     
-    // Give it one more chance
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const retryWorkerReady = await testPDFWorker();
-    if (!retryWorkerReady) {
-      throw new Error('PDF processing is currently unavailable. Please refresh the page and try again, or use the "Paste Text" option.');
+    // Wait for reset to complete
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    workerHealth = await checkWorkerHealth();
+    console.log('Post-reset worker health:', workerHealth);
+    
+    if (!workerHealth.healthy) {
+      throw new Error(`PDF worker is not properly configured: ${workerHealth.error}. Please refresh the page and try again, or use the "Paste Text" option.`);
     }
   }
   
+  console.log('Current worker source:', GlobalWorkerOptions.workerSrc);
   onProgress?.(5);
 
   try {
@@ -51,49 +53,79 @@ export const extractTextFromPDFEnhanced = async (
     // Load PDF document with enhanced configuration
     console.log('Loading PDF document...');
     let pdf;
-    try {
-      pdf = await getDocument({ 
-        data: arrayBuffer,
-        useSystemFonts: true,
-        disableFontFace: false,
-        isEvalSupported: false,
-        maxImageSize: 1024 * 1024,
-        disableAutoFetch: false,
-        disableStream: false,
-        disableRange: false,
-        stopAtErrors: false,
-        verbosity: 0
-      }).promise;
-      
-      console.log('PDF loaded successfully:', {
-        numPages: pdf.numPages,
-        fingerprint: pdf.fingerprint,
-      });
-    } catch (pdfError: any) {
-      console.error('PDF loading error details:', pdfError);
-      logPDFError(pdfError, 'PDF loading', { debugInfo });
-      
-      // Enhanced error handling for worker issues
-      if (pdfError.message?.includes('worker') || 
-          pdfError.message?.includes('Worker') ||
-          pdfError.message?.includes('API version') || 
-          pdfError.message?.includes('version mismatch')) {
-        console.error('Worker/version issue detected, attempting fresh setup...');
-        setupPDFWorker();
-        throw new Error('PDF worker issue detected. Please refresh the page and try again, or use the "Paste Text" option.');
-      } else if (pdfError.name === 'PasswordException') {
-        throw new Error('This PDF is password protected. Please remove the password protection or use the "Paste Text" option instead.');
-      } else if (pdfError.name === 'InvalidPDFException') {
-        throw new Error('This PDF file is corrupted or uses an unsupported format. Please try saving your resume as a new PDF from your word processor.');
-      } else if (pdfError.message?.includes('XFA')) {
-        throw new Error('This PDF uses XFA forms which are not supported. Please save your resume as a standard PDF.');
-      } else if (pdfError.message?.includes('Invalid PDF structure')) {
-        throw new Error('The PDF structure is invalid. Please try re-saving your document as a new PDF.');
-      } else if (pdfError.message?.includes('network')) {
-        throw new Error('Network error loading PDF. Please check your connection and try again, or use the "Paste Text" option.');
-      } else {
-        throw new Error(`Unable to read this PDF file: ${pdfError.message}. Please try using the "Paste Text" option instead.`);
+    
+    // Retry mechanism for worker mismatch issues
+    let retryCount = 0;
+    const maxRetries = 2;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        console.log(`PDF loading attempt ${retryCount + 1}/${maxRetries + 1}`);
+        
+        pdf = await getDocument({ 
+          data: arrayBuffer,
+          useSystemFonts: true,
+          disableFontFace: false,
+          isEvalSupported: false,
+          maxImageSize: 1024 * 1024,
+          disableAutoFetch: false,
+          disableStream: false,
+          disableRange: false,
+          stopAtErrors: false,
+          verbosity: 0
+        }).promise;
+        
+        console.log('PDF loaded successfully:', {
+          numPages: pdf.numPages,
+          fingerprint: pdf.fingerprint,
+        });
+        break; // Success, exit retry loop
+        
+      } catch (pdfError: any) {
+        console.error(`PDF loading attempt ${retryCount + 1} failed:`, pdfError);
+        
+        // Check for worker/version mismatch errors
+        const isWorkerError = pdfError.message?.includes('worker') || 
+                             pdfError.message?.includes('Worker') ||
+                             pdfError.message?.includes('API version') || 
+                             pdfError.message?.includes('version mismatch') ||
+                             pdfError.message?.includes('Cannot resolve') ||
+                             pdfError.name === 'UnknownErrorException';
+        
+        if (isWorkerError && retryCount < maxRetries) {
+          console.log(`Worker error detected, attempting worker reset (retry ${retryCount + 1})`);
+          resetPDFWorker();
+          
+          // Wait for worker reset
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          retryCount++;
+          continue; // Retry with new worker
+        }
+        
+        // Handle specific error types
+        logPDFError(pdfError, 'PDF loading', { debugInfo, retryCount });
+        
+        if (pdfError.name === 'PasswordException') {
+          throw new Error('This PDF is password protected. Please remove the password protection or use the "Paste Text" option instead.');
+        } else if (pdfError.name === 'InvalidPDFException') {
+          throw new Error('This PDF file is corrupted or uses an unsupported format. Please try saving your resume as a new PDF from your word processor.');
+        } else if (pdfError.message?.includes('XFA')) {
+          throw new Error('This PDF uses XFA forms which are not supported. Please save your resume as a standard PDF.');
+        } else if (pdfError.message?.includes('Invalid PDF structure')) {
+          throw new Error('The PDF structure is invalid. Please try re-saving your document as a new PDF.');
+        } else if (pdfError.message?.includes('network')) {
+          throw new Error('Network error loading PDF. Please check your connection and try again, or use the "Paste Text" option.');
+        } else if (isWorkerError) {
+          throw new Error('PDF processing worker error. Please refresh the page and try again, or use the "Paste Text" option.');
+        } else {
+          throw new Error(`Unable to read this PDF file: ${pdfError.message}. Please try using the "Paste Text" option instead.`);
+        }
       }
+    }
+    
+    if (!pdf) {
+      throw new Error('Failed to load PDF after multiple attempts. Please try refreshing the page or use the "Paste Text" option.');
     }
     
     onProgress?.(25);
