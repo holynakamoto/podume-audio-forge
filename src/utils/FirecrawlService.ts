@@ -35,6 +35,7 @@ export class FirecrawlService {
 
   static async scrapeUrl(url: string): Promise<{ success: boolean; error?: string; data?: string }> {
     try {
+      console.log('=== FireCrawl Debug Start ===');
       console.log('Calling FireCrawl edge function for URL:', url);
       
       // Call our edge function instead of using the client directly
@@ -46,11 +47,42 @@ export class FirecrawlService {
         body: JSON.stringify({ url }),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('HTTP error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
-      const result = await response.json();
+      // Get the raw response text first
+      const responseText = await response.text();
+      console.log('Raw response text:', responseText);
+      console.log('Response text length:', responseText.length);
+      
+      // Check if response is empty
+      if (!responseText || responseText.trim().length === 0) {
+        console.error('Empty response from FireCrawl service');
+        return { 
+          success: false, 
+          error: 'Empty response from scraping service' 
+        };
+      }
+
+      // Try to parse JSON
+      let result;
+      try {
+        result = JSON.parse(responseText);
+        console.log('Successfully parsed JSON:', result);
+      } catch (jsonError) {
+        console.error('JSON parse error:', jsonError);
+        console.error('Failed to parse response as JSON. Raw text:', responseText);
+        return { 
+          success: false, 
+          error: `Invalid JSON response from scraping service: ${jsonError.message}` 
+        };
+      }
       
       if (!result.success) {
         console.error('FireCrawl scraping failed:', result.error);
@@ -61,12 +93,18 @@ export class FirecrawlService {
       }
 
       console.log('FireCrawl scraping successful');
+      console.log('=== FireCrawl Debug End ===');
       return { 
         success: true,
         data: result.data 
       };
     } catch (error) {
+      console.error('=== FireCrawl Error ===');
       console.error('Error during FireCrawl scraping:', error);
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      console.error('=== End FireCrawl Error ===');
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Failed to connect to scraping service' 

@@ -15,10 +15,12 @@ serve(async (req: Request) => {
 
   try {
     console.log('=== FireCrawl scrape function called ===');
+    console.log('Request method:', req.method);
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
     
     const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
     if (!firecrawlApiKey) {
-      console.error('FireCrawl API key not found');
+      console.error('FireCrawl API key not found in environment');
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'FireCrawl API key not configured' 
@@ -28,9 +30,25 @@ serve(async (req: Request) => {
       });
     }
 
-    const { url } = await req.json();
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log('Request body:', requestBody);
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid JSON in request body' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { url } = requestBody;
     
     if (!url || typeof url !== 'string') {
+      console.error('Invalid URL provided:', url);
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Valid URL is required' 
@@ -41,15 +59,29 @@ serve(async (req: Request) => {
     }
 
     console.log('Scraping URL:', url);
+    console.log('Using FireCrawl API key:', firecrawlApiKey.substring(0, 10) + '...');
     
     const app = new FirecrawlApp({ apiKey: firecrawlApiKey });
     
-    const scrapeResult = await app.scrapeUrl(url, {
-      formats: ['markdown'],
-      onlyMainContent: true,
-      includeTags: ['h1', 'h2', 'h3', 'p', 'li', 'span', 'div'],
-      excludeTags: ['nav', 'footer', 'script', 'style'],
-    });
+    let scrapeResult;
+    try {
+      scrapeResult = await app.scrapeUrl(url, {
+        formats: ['markdown'],
+        onlyMainContent: true,
+        includeTags: ['h1', 'h2', 'h3', 'p', 'li', 'span', 'div'],
+        excludeTags: ['nav', 'footer', 'script', 'style'],
+      });
+      console.log('FireCrawl API response:', scrapeResult);
+    } catch (apiError) {
+      console.error('FireCrawl API error:', apiError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: `FireCrawl API error: ${apiError.message}` 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!scrapeResult.success) {
       console.error('FireCrawl scraping failed:', scrapeResult.error);
@@ -63,8 +95,11 @@ serve(async (req: Request) => {
     }
 
     const extractedText = scrapeResult.data?.markdown || '';
+    console.log('Extracted text length:', extractedText.length);
+    console.log('Extracted text preview:', extractedText.substring(0, 200) + '...');
     
     if (!extractedText || extractedText.length < 10) {
+      console.error('No meaningful content extracted');
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'No meaningful content found on the webpage' 
@@ -74,21 +109,26 @@ serve(async (req: Request) => {
       });
     }
 
-    console.log('Successfully scraped content, length:', extractedText.length);
+    console.log('Successfully scraped content, returning success response');
     
-    return new Response(JSON.stringify({ 
+    const successResponse = { 
       success: true, 
       data: extractedText 
-    }), {
+    };
+    
+    return new Response(JSON.stringify(successResponse), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in FireCrawl scrape function:', error);
+    console.error('=== CRITICAL ERROR in FireCrawl scrape function ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error instanceof Error ? error.message : 'Internal server error' 
+      error: `Internal server error: ${error.message}` 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
