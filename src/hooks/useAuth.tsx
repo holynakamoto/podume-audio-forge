@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -87,6 +88,17 @@ export const useAuth = (redirectUrl: string) => {
 
       console.log('Attempting to sign up user:', sanitizedEmail);
 
+      // Always try to clean up existing users first
+      console.log('Proactively cleaning up any existing users...');
+      toast.info('Checking for existing accounts...');
+      
+      const cleanupSuccess = await cleanupExistingUser(sanitizedEmail);
+      
+      if (cleanupSuccess) {
+        // Wait a moment for cleanup to complete
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+
       // Set redirect to our confirmation page
       const redirectTo = `${window.location.origin}/confirm`;
 
@@ -104,19 +116,19 @@ export const useAuth = (redirectUrl: string) => {
       if (error) {
         console.error('Sign up error:', error);
         
-        // If user already exists, try to clean up and retry
+        // If user still exists after cleanup, try one more time
         if (error.message.includes('already registered') || error.message.includes('already been registered')) {
-          console.log('User already exists, attempting cleanup and retry...');
+          console.log('User still exists after cleanup, trying more aggressive cleanup...');
           toast.info('Cleaning up existing account, please wait...');
           
-          const cleanupSuccess = await cleanupExistingUser(sanitizedEmail);
+          const secondCleanupSuccess = await cleanupExistingUser(sanitizedEmail);
           
-          if (cleanupSuccess) {
-            // Wait a moment for cleanup to complete
-            await new Promise(resolve => setTimeout(resolve, 1000));
+          if (secondCleanupSuccess) {
+            // Wait longer for more thorough cleanup
+            await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // Retry signup
-            console.log('Retrying signup after cleanup...');
+            // Retry signup one more time
+            console.log('Retrying signup after second cleanup...');
             const { data: retryData, error: retryError } = await supabase.auth.signUp({
               email: sanitizedEmail,
               password: values.password,
@@ -134,7 +146,7 @@ export const useAuth = (redirectUrl: string) => {
                 email: sanitizedEmail, 
                 error: retryError.message 
               });
-              toast.error(`Signup failed after cleanup: ${retryError.message}`);
+              toast.error(`Signup failed: ${retryError.message}`);
             } else {
               console.log('Retry sign up successful:', retryData);
               await logSecurityEvent('auth_signup_retry_success', { 
@@ -158,9 +170,7 @@ export const useAuth = (redirectUrl: string) => {
           });
           
           // Enhanced error handling
-          if (error.message.includes('already registered')) {
-            toast.error('This email is already registered. Please sign in instead.');
-          } else if (error.message.includes('invalid email')) {
+          if (error.message.includes('invalid email')) {
             toast.error('Please enter a valid email address');
           } else {
             toast.error(error.message);
