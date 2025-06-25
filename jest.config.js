@@ -9,6 +9,7 @@ module.exports = {
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.(ts|tsx)',
     '<rootDir>/src/**/*.(test|spec).(ts|tsx)',
+    '<rootDir>/tests/**/*.(test|spec).(ts|tsx)',
   ],
   collectCoverageFrom: [
     'src/**/*.(ts|tsx)',
@@ -33,4 +34,19 @@ module.exports = {
       useESM: true,
     },
   },
+  // Test categorization
+  projects: [
+    {
+      displayName: 'unit',
+      testMatch: ['<rootDir>/src/**/*.test.(ts|tsx)'],
+    },
+    {
+      displayName: 'integration',
+      testMatch: ['<rootDir>/src/**/*.integration.test.(ts|tsx)'],
+    },
+    {
+      displayName: 'regression',
+      testMatch: ['<rootDir>/tests/regression/**/*.test.(ts|tsx)'],
+    },
+  ],
 };
