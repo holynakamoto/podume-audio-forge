@@ -1,1 +1,91 @@
+
 project_id = "pudwgzutzoidxbvozhnk"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+enabled = true
+port = 54322
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+ip_version = "ipv6"
+port = 54324
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1:54321"
+
+[inbucket]
+enabled = true
+port = 54325
+smtp_port = 54326
+pop3_port = 54327
+
+[storage]
+enabled = true
+port = 54328
+file_size_limit = "50MiB"
+image_transformation = true
+
+[auth]
+enabled = true
+port = 54320
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["https://pudwgzutzoidxbvozhnk.supabase.co/**"]
+jwt_expiry = 3600
+enable_anonymous_users = false
+enable_signup = true
+enable_confirmations = true
+enable_recoveries = true
+enable_email_change_confirmations = true
+max_enrolled_factors = 10
+password_min_length = 6
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+template = {}
+
+[auth.hook.send_email]
+enabled = true
+uri = "https://pudwgzutzoidxbvozhnk.supabase.co/functions/v1/send-confirmation-email"
+
+[functions.send-confirmation-email]
+verify_jwt = false
+
+[functions.generate-podcast]
+verify_jwt = true
+
+[functions.generate-rss]
+verify_jwt = false
+
+[functions.secure-waitlist]
+verify_jwt = false
+
+[functions.secure-zootools]
+verify_jwt = false
+
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.zootools-contact]
+verify_jwt = false
+
+[edge-runtime]
+policy = "per_worker"
