@@ -1,6 +1,6 @@
 
 import React, { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import { render, RenderOptions, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -33,3 +33,5 @@ const customRender = (
 export * from '@testing-library/react';
 // Override render with our custom render
 export { customRender as render };
+// Explicitly export the commonly used utilities
+export { screen, fireEvent, waitFor };
