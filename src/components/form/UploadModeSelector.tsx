@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { UploadCloud, FileText } from 'lucide-react';
+import { Upload, Type, Globe } from 'lucide-react';
 
 interface UploadModeSelectorProps {
-  uploadMode: 'upload' | 'paste';
-  onModeChange: (mode: 'upload' | 'paste') => void;
+  uploadMode: 'upload' | 'paste' | 'url';
+  onModeChange: (mode: 'upload' | 'paste' | 'url') => void;
 }
 
 export const UploadModeSelector: React.FC<UploadModeSelectorProps> = ({
@@ -18,18 +18,27 @@ export const UploadModeSelector: React.FC<UploadModeSelectorProps> = ({
         type="button"
         variant={uploadMode === 'upload' ? 'default' : 'outline'}
         onClick={() => onModeChange('upload')}
-        size="sm"
+        className="flex-1"
       >
-        <UploadCloud className="w-4 h-4 mr-2" />
+        <Upload className="w-4 h-4 mr-2" />
         Upload PDF
+      </Button>
+      <Button
+        type="button"
+        variant={uploadMode === 'url' ? 'default' : 'outline'}
+        onClick={() => onModeChange('url')}
+        className="flex-1"
+      >
+        <Globe className="w-4 h-4 mr-2" />
+        Extract from URL
       </Button>
       <Button
         type="button"
         variant={uploadMode === 'paste' ? 'default' : 'outline'}
         onClick={() => onModeChange('paste')}
-        size="sm"
+        className="flex-1"
       >
-        <FileText className="w-4 h-4 mr-2" />
+        <Type className="w-4 h-4 mr-2" />
         Paste Text
       </Button>
     </div>

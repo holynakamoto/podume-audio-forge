@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -6,8 +5,9 @@ import { extractTextFromPDFEnhanced, PDFExtractionResult } from '@/utils/enhance
 import { UploadModeSelector } from './UploadModeSelector';
 import { PDFUploadZone } from './PDFUploadZone';
 import { TextPasteArea } from './TextPasteArea';
+import { UrlScraper } from './UrlScraper';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Info, CheckCircle, Globe } from 'lucide-react';
 
 interface ResumeUploaderProps {
   onResumeContentChange: (content: string) => void;
@@ -19,7 +19,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   resumeContent
 }) => {
   const [isExtracting, setIsExtracting] = useState(false);
-  const [uploadMode, setUploadMode] = useState<'upload' | 'paste'>('upload');
+  const [uploadMode, setUploadMode] = useState<'upload' | 'paste' | 'url'>('upload');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showPasteRecommendation, setShowPasteRecommendation] = useState(false);
   const [extractionResult, setExtractionResult] = useState<PDFExtractionResult | null>(null);
@@ -136,7 +136,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
         uploadMode={uploadMode} 
         onModeChange={(mode) => {
           setUploadMode(mode);
-          if (mode === 'paste') {
+          if (mode === 'paste' || mode === 'url') {
             setShowPasteRecommendation(false);
             setExtractionResult(null);
           }
@@ -147,7 +147,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Having trouble with PDF upload? Try switching to "Paste Text" mode above for more reliable results, or try saving your PDF in a different format.
+            Having trouble with PDF upload? Try switching to "Extract from URL" or "Paste Text" mode above for more reliable results.
           </AlertDescription>
         </Alert>
       )}
@@ -168,14 +168,14 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
                 <div>• Skills identified: {extractionResult.structured.sections.skills.length}</div>
               )}
               <div className="text-sm text-muted-foreground mt-2">
-                You can review the extracted text below. If it looks incomplete, try using "Paste Text" mode.
+                You can review the extracted text below. If it looks incomplete, try using other extraction methods.
               </div>
             </div>
           </AlertDescription>
         </Alert>
       )}
 
-      {uploadMode === 'upload' ? (
+      {uploadMode === 'upload' && (
         <div>
           <Label htmlFor="resume-upload" className="font-semibold">Upload Your Resume (PDF)</Label>
           <PDFUploadZone 
@@ -184,7 +184,16 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
             uploadProgress={uploadProgress}
           />
         </div>
-      ) : (
+      )}
+
+      {uploadMode === 'url' && (
+        <UrlScraper 
+          onContentExtracted={onResumeContentChange}
+          resumeContent={resumeContent}
+        />
+      )}
+
+      {uploadMode === 'paste' && (
         <TextPasteArea 
           resumeContent={resumeContent}
           onResumeContentChange={onResumeContentChange}
@@ -192,15 +201,17 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       )}
 
       {/* Show extracted text preview for review */}
-      {resumeContent && uploadMode === 'upload' && (
+      {resumeContent && (uploadMode === 'upload' || uploadMode === 'url') && (
         <div className="mt-4">
-          <Label className="font-semibold">Extracted Text Preview</Label>
+          <Label className="font-semibold">
+            {uploadMode === 'url' ? 'Extracted URL Content Preview' : 'Extracted Text Preview'}
+          </Label>
           <div className="mt-2 p-3 bg-muted rounded-md max-h-40 overflow-y-auto text-sm">
             {resumeContent.substring(0, 500)}
             {resumeContent.length > 500 && '...'}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {resumeContent.length} characters extracted. If this doesn't look right, try "Paste Text" mode.
+            {resumeContent.length} characters extracted. {uploadMode === 'url' ? 'From URL scraping' : 'From PDF'}
           </p>
         </div>
       )}
