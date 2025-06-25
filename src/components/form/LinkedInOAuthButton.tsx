@@ -15,27 +15,30 @@ export const LinkedInOAuthButton: React.FC<LinkedInOAuthButtonProps> = ({ onProf
   const handleLinkedInAuth = async () => {
     setIsLoading(true);
     try {
+      // Get the current origin to ensure correct redirect URI
+      const currentOrigin = window.location.origin;
+      
       // Use Supabase OAuth for LinkedIn
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
           scopes: 'r_liteprofile r_emailaddress',
-          redirectTo: `${window.location.origin}/create`
+          redirectTo: `${currentOrigin}/create`
         }
       });
 
       if (error) {
         console.error('LinkedIn OAuth error:', error);
-        toast.error('Failed to connect to LinkedIn');
+        toast.error(`Failed to connect to LinkedIn: ${error.message}`);
         return;
       }
 
       // The OAuth flow will redirect, so we handle the callback in useEffect
       toast.info('Redirecting to LinkedIn...');
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error initiating LinkedIn OAuth:', error);
-      toast.error('Failed to connect to LinkedIn');
+      toast.error(`Failed to connect to LinkedIn: ${error.message || 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
