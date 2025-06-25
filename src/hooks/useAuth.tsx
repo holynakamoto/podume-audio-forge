@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,6 +68,9 @@ export const useAuth = (redirectUrl: string) => {
 
       console.log('Attempting to sign up user:', sanitizedEmail);
 
+      // Set redirect to our confirmation page
+      const redirectTo = `${window.location.origin}/confirm`;
+
       const { data, error } = await supabase.auth.signUp({
         email: sanitizedEmail,
         password: values.password,
@@ -74,6 +78,7 @@ export const useAuth = (redirectUrl: string) => {
           data: {
             full_name: sanitizedName,
           },
+          emailRedirectTo: redirectTo,
         },
       });
       
