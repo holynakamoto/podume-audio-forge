@@ -17,12 +17,24 @@ export const extractTextFromPDFEnhanced = async (
   // Debug file information
   const debugInfo = await debugPDFFile(file);
   
-  // Test worker before proceeding
+  // Ensure worker is properly set up
+  if (!GlobalWorkerOptions.workerSrc) {
+    console.log('Worker not initialized, setting up...');
+    setupPDFWorker();
+  }
+  
+  // Test worker readiness
   const workerReady = await testPDFWorker();
   if (!workerReady) {
-    console.error('PDF worker is not properly configured');
-    setupPDFWorker(); // Try to reinitialize
-    throw new Error('PDF worker is not available. Please refresh the page and try again.');
+    console.error('PDF worker is not properly configured, attempting reset...');
+    setupPDFWorker();
+    
+    // Give it one more chance
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const retryWorkerReady = await testPDFWorker();
+    if (!retryWorkerReady) {
+      throw new Error('PDF processing is currently unavailable. Please refresh the page and try again, or use the "Paste Text" option.');
+    }
   }
   
   onProgress?.(5);
@@ -36,8 +48,8 @@ export const extractTextFromPDFEnhanced = async (
     // Validate file
     validatePDFFile(arrayBuffer, debugInfo);
 
-    // Load PDF document with enhanced configuration and version-specific debugging
-    console.log('Loading PDF document with enhanced settings and version 5.3.31...');
+    // Load PDF document with enhanced configuration
+    console.log('Loading PDF document...');
     let pdf;
     try {
       pdf = await getDocument({ 
@@ -53,7 +65,7 @@ export const extractTextFromPDFEnhanced = async (
         verbosity: 0
       }).promise;
       
-      console.log('PDF loaded successfully with version 5.3.31:', {
+      console.log('PDF loaded successfully:', {
         numPages: pdf.numPages,
         fingerprint: pdf.fingerprint,
       });
@@ -61,11 +73,14 @@ export const extractTextFromPDFEnhanced = async (
       console.error('PDF loading error details:', pdfError);
       logPDFError(pdfError, 'PDF loading', { debugInfo });
       
-      // Enhanced error handling for version mismatch
-      if (pdfError.message?.includes('API version') || pdfError.message?.includes('Worker version')) {
-        console.error('Version mismatch detected, attempting worker reset...');
-        setupPDFWorker(); // Try to reset worker
-        throw new Error('PDF worker version mismatch detected. Please refresh the page and try again, or use the "Paste Text" option.');
+      // Enhanced error handling for worker issues
+      if (pdfError.message?.includes('worker') || 
+          pdfError.message?.includes('Worker') ||
+          pdfError.message?.includes('API version') || 
+          pdfError.message?.includes('version mismatch')) {
+        console.error('Worker/version issue detected, attempting fresh setup...');
+        setupPDFWorker();
+        throw new Error('PDF worker issue detected. Please refresh the page and try again, or use the "Paste Text" option.');
       } else if (pdfError.name === 'PasswordException') {
         throw new Error('This PDF is password protected. Please remove the password protection or use the "Paste Text" option instead.');
       } else if (pdfError.name === 'InvalidPDFException') {
@@ -74,11 +89,10 @@ export const extractTextFromPDFEnhanced = async (
         throw new Error('This PDF uses XFA forms which are not supported. Please save your resume as a standard PDF.');
       } else if (pdfError.message?.includes('Invalid PDF structure')) {
         throw new Error('The PDF structure is invalid. Please try re-saving your document as a new PDF.');
-      } else if (pdfError.message?.includes('network') || pdfError.message?.includes('worker')) {
-        throw new Error('Network error loading PDF worker. Please refresh the page and try again, or use the "Paste Text" option.');
+      } else if (pdfError.message?.includes('network')) {
+        throw new Error('Network error loading PDF. Please check your connection and try again, or use the "Paste Text" option.');
       } else {
-        // Generic fallback with debug info
-        throw new Error(`Unable to read this PDF file: ${pdfError.message}. This might be due to the PDF format, security settings, or the file being corrupted. Please try using the "Paste Text" option instead.`);
+        throw new Error(`Unable to read this PDF file: ${pdfError.message}. Please try using the "Paste Text" option instead.`);
       }
     }
     
@@ -92,7 +106,7 @@ export const extractTextFromPDFEnhanced = async (
     const maxPages = Math.min(pdf.numPages, 15);
     console.log(`Processing ${maxPages} pages...`);
 
-    // Extract text from each page with enhanced error recovery and debugging
+    // Extract text from each page
     for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
       console.log(`Processing page ${pageNum}/${maxPages}`);
       
