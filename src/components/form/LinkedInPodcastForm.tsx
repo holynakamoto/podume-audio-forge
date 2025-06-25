@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -39,7 +40,7 @@ export const LinkedInPodcastForm: React.FC = () => {
     const handleOAuthCallback = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (session?.provider_token && session.provider === 'linkedin_oidc') {
+      if (session?.provider_token && session.app_metadata?.provider === 'linkedin_oidc') {
         console.log('LinkedIn OAuth successful, fetching profile...');
         
         try {
