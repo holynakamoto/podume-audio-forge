@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -69,27 +69,57 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
 
   html {
     scroll-behavior: smooth;
   }
+
+  /* Enhanced typography for editorial feel */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  p {
+    line-height: 1.6;
+  }
 }
 
 @layer utilities {
   .text-gold {
-    @apply text-yellow-400;
+    @apply text-amber-400;
   }
   
   .bg-gold {
-    @apply bg-yellow-400;
+    @apply bg-amber-400;
   }
   
   .border-gold {
-    @apply border-yellow-400;
+    @apply border-amber-400;
   }
   
   .gradient-purple-gold {
     background: linear-gradient(135deg, #8b5cf6 0%, #f59e0b 100%);
+  }
+
+  /* Tactile interaction utilities */
+  .tactile-hover {
+    @apply transition-all duration-300 ease-out hover:scale-105 hover:shadow-2xl;
+  }
+
+  .editorial-text {
+    @apply font-medium tracking-tight leading-tight;
+  }
+
+  .confident-button {
+    @apply font-bold py-4 px-8 rounded-xl transition-all duration-300 hover:scale-105 shadow-lg;
+  }
+
+  .joyful-gradient {
+    background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f59e0b 100%);
   }
 }
