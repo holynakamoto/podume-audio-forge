@@ -1,20 +1,31 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+import { debugPDFFile, logPDFError, testPDFWorker } from './pdf-debug';
 
-// Enhanced PDF.js worker setup with multiple fallbacks
-try {
-  // Try modern ES module approach first
-  GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
-} catch (error) {
-  console.warn('Failed to set ES module worker, trying CDN fallback:', error);
+// Enhanced PDF.js worker setup with multiple fallbacks and debugging
+const setupPDFWorker = () => {
+  console.log('Setting up PDF.js worker...');
+  
   try {
-    // Fallback to CDN with correct version
-    GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-  } catch (cdnError) {
-    console.error('Failed to set CDN worker:', cdnError);
-    // Last resort - try npm package path
-    GlobalWorkerOptions.workerSrc = '/node_modules/pdfjs-dist/build/pdf.worker.min.js';
+    // Try modern ES module approach first
+    GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString();
+    console.log('PDF worker set to ES module:', GlobalWorkerOptions.workerSrc);
+  } catch (error) {
+    console.warn('Failed to set ES module worker, trying CDN fallback:', error);
+    try {
+      // Fallback to CDN with correct version
+      GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+      console.log('PDF worker set to CDN:', GlobalWorkerOptions.workerSrc);
+    } catch (cdnError) {
+      console.error('Failed to set CDN worker:', cdnError);
+      // Last resort - try npm package path
+      GlobalWorkerOptions.workerSrc = '/node_modules/pdfjs-dist/build/pdf.worker.min.js';
+      console.log('PDF worker set to npm path:', GlobalWorkerOptions.workerSrc);
+    }
   }
-}
+};
+
+// Initialize worker setup
+setupPDFWorker();
 
 export interface ProgressCallback {
   (progress: number): void;
@@ -47,11 +58,17 @@ export const extractTextFromPDFEnhanced = async (
   file: File,
   onProgress?: ProgressCallback
 ): Promise<PDFExtractionResult> => {
-  console.log('Starting enhanced PDF text extraction...', { 
-    fileName: file.name, 
-    fileSize: file.size,
-    fileType: file.type 
-  });
+  console.log('=== ENHANCED PDF EXTRACTION START ===');
+  
+  // Debug file information
+  const debugInfo = await debugPDFFile(file);
+  
+  // Test worker before proceeding
+  const workerReady = await testPDFWorker();
+  if (!workerReady) {
+    throw new Error('PDF worker is not available. Please refresh the page and try again.');
+  }
+  
   onProgress?.(5);
 
   try {
@@ -59,6 +76,13 @@ export const extractTextFromPDFEnhanced = async (
     const arrayBuffer = await file.arrayBuffer();
     console.log('Array buffer created, size:', arrayBuffer.byteLength);
     onProgress?.(15);
+
+    // Enhanced validation using debug info
+    if (!debugInfo.headerAnalysis.isPDF) {
+      const errorMessage = `Invalid file type detected: ${debugInfo.headerAnalysis.detectedType}. Please upload a valid PDF file.`;
+      console.error(errorMessage);
+      throw new Error(errorMessage);
+    }
 
     // Basic file size validation
     if (arrayBuffer.byteLength === 0) {
@@ -69,29 +93,7 @@ export const extractTextFromPDFEnhanced = async (
       throw new Error('The file is too small to be a valid PDF. Please check your file and try again.');
     }
 
-    // Enhanced PDF signature validation
-    const uint8Array = new Uint8Array(arrayBuffer.slice(0, 50));
-    const pdfSignature = [0x25, 0x50, 0x44, 0x46]; // %PDF
-    const hasPDFHeader = pdfSignature.every((byte, index) => uint8Array[index] === byte);
-    
-    if (!hasPDFHeader) {
-      // Check for other common file signatures
-      const fileHeader = Array.from(uint8Array.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('');
-      console.warn('Invalid PDF header. File header:', fileHeader);
-      
-      // Check for common file types
-      if (uint8Array[0] === 0x50 && uint8Array[1] === 0x4B) {
-        throw new Error('This appears to be a ZIP file or Office document (like .docx). Please upload a PDF file instead.');
-      } else if (uint8Array[0] === 0xFF && uint8Array[1] === 0xD8) {
-        throw new Error('This appears to be a JPEG image. Please upload a PDF file instead.');
-      } else if (uint8Array[0] === 0x89 && uint8Array[1] === 0x50 && uint8Array[2] === 0x4E && uint8Array[3] === 0x47) {
-        throw new Error('This appears to be a PNG image. Please upload a PDF file instead.');
-      } else {
-        throw new Error('This file does not appear to be a valid PDF. Please ensure you are uploading a PDF file.');
-      }
-    }
-
-    // Load PDF document with enhanced configuration
+    // Load PDF document with enhanced configuration and debugging
     console.log('Loading PDF document with enhanced settings...');
     let pdf;
     try {
@@ -104,13 +106,19 @@ export const extractTextFromPDFEnhanced = async (
         disableAutoFetch: false,
         disableStream: false,
         disableRange: false,
-        stopAtErrors: false, // Continue processing even with minor errors
-        verbosity: 0 // Reduce console noise
+        stopAtErrors: false,
+        verbosity: 0
       }).promise;
+      
+      console.log('PDF loaded successfully:', {
+        numPages: pdf.numPages,
+        fingerprint: pdf.fingerprint,
+      });
     } catch (pdfError: any) {
       console.error('PDF loading error details:', pdfError);
+      logPDFError(pdfError, 'PDF loading', { debugInfo });
       
-      // More specific error handling
+      // More specific error handling with debug context
       if (pdfError.name === 'PasswordException') {
         throw new Error('This PDF is password protected. Please remove the password protection or use the "Paste Text" option instead.');
       } else if (pdfError.name === 'InvalidPDFException') {
@@ -119,15 +127,14 @@ export const extractTextFromPDFEnhanced = async (
         throw new Error('This PDF uses XFA forms which are not supported. Please save your resume as a standard PDF.');
       } else if (pdfError.message?.includes('Invalid PDF structure')) {
         throw new Error('The PDF structure is invalid. Please try re-saving your document as a new PDF.');
-      } else if (pdfError.message?.includes('network')) {
-        throw new Error('Network error loading PDF worker. Please try again or use the "Paste Text" option.');
+      } else if (pdfError.message?.includes('network') || pdfError.message?.includes('worker')) {
+        throw new Error('Network error loading PDF worker. Please refresh the page and try again, or use the "Paste Text" option.');
       } else {
-        // Generic fallback
-        throw new Error('Unable to read this PDF file. This might be due to the PDF format, security settings, or the file being corrupted. Please try using the "Paste Text" option instead.');
+        // Generic fallback with debug info
+        throw new Error(`Unable to read this PDF file: ${pdfError.message}. This might be due to the PDF format, security settings, or the file being corrupted. Please try using the "Paste Text" option instead.`);
       }
     }
     
-    console.log('PDF loaded successfully, pages:', pdf.numPages);
     onProgress?.(25);
 
     if (pdf.numPages === 0) {
@@ -135,9 +142,10 @@ export const extractTextFromPDFEnhanced = async (
     }
 
     let fullText = '';
-    const maxPages = Math.min(pdf.numPages, 15); // Process up to 15 pages
+    const maxPages = Math.min(pdf.numPages, 15);
+    console.log(`Processing ${maxPages} pages...`);
 
-    // Extract text from each page with enhanced error recovery
+    // Extract text from each page with enhanced error recovery and debugging
     for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
       console.log(`Processing page ${pageNum}/${maxPages}`);
       
@@ -148,18 +156,19 @@ export const extractTextFromPDFEnhanced = async (
           disableCombineTextItems: false
         });
         
-        // Enhanced text extraction with positioning data
         const pageText = extractStructuredTextFromPage(textContent);
         if (pageText.trim()) {
           fullText += pageText + '\n\n';
+          console.log(`Page ${pageNum} extracted ${pageText.length} characters`);
+        } else {
+          console.warn(`Page ${pageNum} extracted no text`);
         }
         
-        // Update progress
         const progress = 25 + ((pageNum / maxPages) * 50);
         onProgress?.(progress);
       } catch (pageError) {
         console.warn(`Failed to extract text from page ${pageNum}:`, pageError);
-        // Continue with other pages - don't fail completely
+        logPDFError(pageError as Error, `Page ${pageNum} extraction`);
         fullText += `[Error reading page ${pageNum}]\n\n`;
       }
     }
@@ -167,15 +176,12 @@ export const extractTextFromPDFEnhanced = async (
     console.log('PDF extraction completed. Total text length:', fullText.length);
     onProgress?.(80);
 
-    // Clean up the extracted text
     fullText = cleanExtractedText(fullText);
 
-    // More lenient text length requirements
     if (fullText.trim().length < 5) {
       throw new Error('Could not extract readable text from this PDF. This might be a scanned document or image-based PDF. Please try using the "Paste Text" option to enter your resume content directly.');
     }
 
-    // Structure the extracted data
     const structured = parseResumeStructure(fullText);
     
     const result: PDFExtractionResult = {
@@ -189,18 +195,28 @@ export const extractTextFromPDFEnhanced = async (
     };
 
     onProgress?.(100);
-    console.log('Enhanced PDF extraction completed successfully');
+    console.log('=== ENHANCED PDF EXTRACTION SUCCESS ===');
+    console.log('Final result:', {
+      textLength: result.text.length,
+      confidence: result.metadata.confidence,
+      structuredName: result.structured.name,
+      sectionsFound: {
+        experience: result.structured.sections.experience.length,
+        skills: result.structured.sections.skills.length,
+        education: result.structured.sections.education.length,
+      }
+    });
+    
     return result;
 
   } catch (error) {
-    console.error('PDF extraction failed:', error);
+    console.error('=== ENHANCED PDF EXTRACTION FAILED ===');
+    logPDFError(error as Error, 'Main extraction', { debugInfo });
     
     if (error instanceof Error) {
-      // Re-throw our custom error messages
       throw error;
     }
 
-    // Generic fallback error
     throw new Error('Unable to process this PDF file. This could be due to the file format, security settings, or the PDF being scanned. Please try using the "Paste Text" option to enter your resume content directly.');
   }
 };
