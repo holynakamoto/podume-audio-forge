@@ -2,11 +2,18 @@
 import '@testing-library/jest-dom';
 
 // Mock window.URL.createObjectURL
-global.URL.createObjectURL = jest.fn(() => 'mocked-url');
-global.URL.revokeObjectURL = jest.fn();
+Object.defineProperty(global.URL, 'createObjectURL', {
+  value: jest.fn(() => 'mocked-url'),
+  writable: true,
+});
+
+Object.defineProperty(global.URL, 'revokeObjectURL', {
+  value: jest.fn(),
+  writable: true,
+});
 
 // Mock File and FileReader
-global.File = class MockFile {
+class MockFile {
   name: string;
   size: number;
   type: string;
@@ -28,11 +35,17 @@ global.File = class MockFile {
   arrayBuffer() {
     return Promise.resolve(new ArrayBuffer(this.content.length));
   }
-} as any;
+}
+
+Object.defineProperty(global, 'File', {
+  value: MockFile,
+  writable: true,
+});
 
 // Mock console methods to reduce test noise
+const originalConsole = global.console;
 global.console = {
-  ...console,
+  ...originalConsole,
   log: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),

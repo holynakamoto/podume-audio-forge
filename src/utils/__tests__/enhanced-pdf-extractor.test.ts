@@ -10,9 +10,9 @@ jest.mock('pdfjs-dist', () => ({
 describe('enhanced-pdf-extractor', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    console.log = jest.fn();
-    console.error = jest.fn();
-    console.warn = jest.fn();
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   describe('extractTextFromPDFEnhanced', () => {
