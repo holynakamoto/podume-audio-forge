@@ -1,7 +1,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { PodcastRequest } from './types.ts';
-import { generateAudioWithElevenLabsTTS } from './elevenlabs-tts.ts';
+import { generateAudioWithDeepgram } from './deepgram-tts.ts';
 
 export async function savePodcastToDatabase(
   user: any,
@@ -42,13 +42,13 @@ export async function savePodcastToDatabase(
     }
     
     console.log('Podcast created successfully with ID:', data.id);
-    console.log('Starting TTS generation with ElevenLabs...');
+    console.log('Starting audio generation with Deepgram Aura-2...');
 
-    // Generate audio with ElevenLabs TTS
-    const audioDataUrl = await generateAudioWithElevenLabsTTS(generatedScript);
+    // Generate audio with Deepgram Aura-2
+    const audioDataUrl = await generateAudioWithDeepgram(generatedScript);
     
     if (audioDataUrl) {
-      console.log('TTS generation successful, updating podcast with audio URL');
+      console.log('Deepgram audio generation successful, updating podcast with audio URL');
       
       // Update the podcast with the audio URL
       const { error: updateError } = await supabaseAdminClient
@@ -67,7 +67,7 @@ export async function savePodcastToDatabase(
         data.status = 'completed';
       }
     } else {
-      console.log('TTS generation failed, keeping podcast without audio');
+      console.log('Deepgram audio generation failed, keeping podcast without audio');
       // Update status to completed even without audio
       await supabaseAdminClient
         .from('podcasts')

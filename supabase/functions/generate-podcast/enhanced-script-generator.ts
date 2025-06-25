@@ -1,82 +1,141 @@
 
-import { extractName, extractSummary, extractExperience } from './resume-extractor.ts';
-
 export function generateEnhancedScript(resumeContent: string): string {
-  console.log('=== Generating enhanced script for 5+ minute podcast ===');
+  console.log('=== Generating enhanced script for 5+ minutes ===');
   
   // Extract key information from resume
-  const lines = resumeContent.split('\n').filter(line => line.trim().length > 0);
-  const name = extractName(lines);
-  const summary = extractSummary(lines);
-  const experience = extractExperience(lines);
+  const name = extractName(resumeContent) || 'Professional';
+  const summary = extractSummary(resumeContent);
+  const experience = extractExperience(resumeContent);
+  const skills = extractSkills(resumeContent);
+  const education = extractEducation(resumeContent);
   
-  // Create a longer, more detailed conversational script
-  let script = `Welcome to Career Spotlight, the podcast where we dive deep into inspiring professional journeys! I'm your host Sarah, and today I'm joined by my co-host Mike to explore the remarkable career story of ${name}.`;
+  // Generate a comprehensive 800-1200 word script for 5-7 minutes
+  const script = `
+Sarah: Welcome back to "Career Spotlight," the podcast where we dive deep into the professional journeys of today's most interesting candidates. I'm Sarah, your host.
+
+Mike: And I'm Mike, co-host. Today we're excited to discuss ${name}'s impressive career trajectory and what makes them stand out in today's competitive market.
+
+Sarah: Absolutely, Mike. Let me start by giving our listeners an overview of ${name}'s background. ${summary || 'This professional has built a remarkable career with diverse experiences across multiple domains.'}
+
+Mike: That's a great foundation, Sarah. What really catches my attention is the progression we see in their work experience. ${name} has demonstrated consistent growth and increasing responsibility throughout their career.
+
+Sarah: Exactly! Let's break down their professional journey. ${experience.length > 0 ? `Starting with their role as ${experience[0]?.role || 'their early position'}, we can see how they've built their expertise step by step.` : 'Their career shows a clear trajectory of professional development.'}
+
+Mike: The experience really tells a story of evolution. ${experience.length > 1 ? `Moving from ${experience[0]?.role || 'their initial role'} to ${experience[1]?.role || 'their next position'} shows strategic career planning.` : 'Each role has contributed to their overall professional development.'}
+
+Sarah: What I find particularly impressive is the depth of their technical and professional skills. ${skills.length > 0 ? `They've mastered ${skills.slice(0, 3).join(', ')}${skills.length > 3 ? ` and several other key competencies` : ''}.` : 'Their skill set demonstrates both breadth and depth of expertise.'}
+
+Mike: Those skills are exactly what today's employers are looking for. The combination of technical proficiency and professional acumen makes them a valuable asset to any organization.
+
+Sarah: Let's talk about their educational foundation. ${education.length > 0 ? `With their background in ${education[0]?.degree || 'their field of study'}, they've built a solid academic foundation that clearly supports their professional achievements.` : 'Their educational background provides the theoretical foundation for their practical expertise.'}
+
+Mike: Education is important, but what really stands out is how they've applied that knowledge in real-world situations. The practical experience they've gained demonstrates their ability to translate learning into results.
+
+Sarah: That's such an important point, Mike. In today's rapidly evolving workplace, it's not just about what you know, but how you apply that knowledge to solve problems and drive innovation.
+
+Mike: Absolutely. Looking at their career progression, I see someone who doesn't just follow trends but actively contributes to shaping their field. This kind of forward-thinking approach is exactly what organizations need.
+
+Sarah: The diversity of their experience is also noteworthy. ${experience.length > 2 ? `Having worked in multiple roles and possibly different industries gives them a unique perspective that many employers highly value.` : 'Their varied experience provides a well-rounded perspective that benefits any team.'}
+
+Mike: And let's not forget the soft skills that come through in their professional presentation. Communication, leadership, problem-solving - these are the intangibles that often make the difference between a good candidate and a great one.
+
+Sarah: Communication skills, in particular, are becoming increasingly important. In our interconnected world, the ability to collaborate across teams, departments, and even continents is crucial for success.
+
+Mike: What advice would you give to someone looking to build a similar career trajectory, Sarah?
+
+Sarah: Great question, Mike. I think the key takeaway from ${name}'s journey is the importance of continuous learning and strategic career moves. Each position has clearly built upon the previous one, creating a compelling narrative of professional growth.
+
+Mike: I completely agree. It's also worth noting the importance of developing both technical expertise and leadership capabilities. The most successful professionals are those who can not only execute but also inspire and guide others.
+
+Sarah: As we wrap up today's episode, I want to emphasize that ${name} represents the kind of candidate that forward-thinking organizations should actively seek out. Their combination of experience, skills, and demonstrated growth potential makes them an excellent investment for any company.
+
+Mike: Well said, Sarah. To our listeners, thank you for joining us on another episode of "Career Spotlight." We hope this deep dive into ${name}'s professional journey has provided valuable insights into what makes a standout candidate in today's market.
+
+Sarah: Don't forget to subscribe to our podcast for more career insights and professional success stories. Until next time, keep growing and keep inspiring!
+
+Mike: This has been Sarah and Mike with "Career Spotlight." Thanks for listening, and we'll see you next episode!
+`;
+
+  console.log('Enhanced script generated, length:', script.length);
+  return script.trim();
+}
+
+// Helper functions for content extraction
+function extractName(content: string): string | null {
+  const namePatterns = [
+    /^([A-Z][a-z]+ [A-Z][a-z]+)/m,
+    /Name:?\s*([A-Z][a-z]+ [A-Z][a-z]+)/i,
+    /([A-Z][A-Z\s]+)\s*\n/
+  ];
   
-  script += ` That's absolutely right, Sarah! What we have here is a truly fascinating professional profile that showcases not just technical expertise, but real growth and adaptability in today's dynamic workplace. Let's take our listeners through this incredible journey.`;
+  for (const pattern of namePatterns) {
+    const match = content.match(pattern);
+    if (match) {
+      return match[1].trim();
+    }
+  }
+  return null;
+}
+
+function extractSummary(content: string): string {
+  const summaryPatterns = [
+    /(?:summary|profile|objective)[:\s]*([^.\n]*(?:\.[^.\n]*){0,2})/i,
+    /(?:about|overview)[:\s]*([^.\n]*(?:\.[^.\n]*){0,2})/i
+  ];
   
-  // Opening segment - Personal introduction
-  script += ` So Mike, when you first look at ${name}'s background, what immediately catches your attention?`;
-  script += ` Well Sarah, what strikes me first is the comprehensive nature of their professional development. This isn't just someone who's been going through the motions - this is a professional who has been intentionally building their career with purpose and direction.`;
+  for (const pattern of summaryPatterns) {
+    const match = content.match(pattern);
+    if (match && match[1].trim().length > 20) {
+      return match[1].trim();
+    }
+  }
+  return '';
+}
+
+function extractExperience(content: string): Array<{role: string, company?: string}> {
+  const experiences: Array<{role: string, company?: string}> = [];
+  const lines = content.split('\n');
   
-  // Professional Summary deep dive
-  if (summary) {
-    script += ` Let's start with their professional summary, which really sets the stage for everything we're about to discuss. ${summary}`;
-    script += ` You know what I love about that summary, Sarah? It's not just a list of buzzwords. You can see the strategic thinking behind their career choices, and it shows someone who understands not just what they do, but why they do it.`;
-    script += ` Exactly, Mike! And that kind of self-awareness is what separates good professionals from truly exceptional ones. It's clear that ${name} has taken the time to reflect on their journey and articulate their value proposition clearly.`;
+  for (const line of lines) {
+    const roleMatch = line.match(/(?:^|\s)((?:Senior\s+)?(?:Lead\s+)?(?:Principal\s+)?[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+Engineer|\s+Manager|\s+Director|\s+Analyst|\s+Coordinator|\s+Specialist))/i);
+    if (roleMatch) {
+      experiences.push({ role: roleMatch[1] });
+      if (experiences.length >= 3) break;
+    }
   }
   
-  // Experience analysis - detailed breakdown
-  if (experience.length > 0) {
-    script += ` Now let's dive into the meat of their experience. This is where we really see the progression and growth that defines a successful career trajectory.`;
-    
-    experience.slice(0, 4).forEach((exp, index) => {
-      script += ` ${exp}`;
-      
-      if (index === 0) {
-        script += ` Mike, this first role really shows us their foundation. You can see how they built the core competencies that would serve them throughout their career.`;
-        script += ` Absolutely, Sarah. What I find impressive is how they didn't just perform their duties - they clearly took ownership and initiative. That's the kind of mindset that leads to real career advancement.`;
-      } else if (index === 1) {
-        script += ` And here we see the natural progression, Sarah. They're taking on more responsibility, tackling more complex challenges.`;
-        script += ` Right, Mike. This is where we see them transitioning from execution to strategy, from following directions to providing direction. That's a crucial evolution in any professional's journey.`;
-      } else if (index === 2) {
-        script += ` This role really demonstrates their leadership capabilities emerging. They're not just managing tasks anymore - they're managing outcomes and people.`;
-        script += ` And you can see how each role has built upon the previous one, Sarah. There's a clear thread of continuous learning and growth that runs through their entire career story.`;
-      }
-    });
+  return experiences;
+}
+
+function extractSkills(content: string): string[] {
+  const skillKeywords = [
+    'JavaScript', 'Python', 'Java', 'React', 'Node.js', 'TypeScript', 'SQL', 'AWS', 'Docker', 'Kubernetes',
+    'Project Management', 'Leadership', 'Agile', 'Scrum', 'Communication', 'Problem Solving', 'Analytics',
+    'Machine Learning', 'Data Science', 'UI/UX', 'Design', 'Marketing', 'Sales', 'Strategy'
+  ];
+  
+  const foundSkills = skillKeywords.filter(skill => 
+    content.toLowerCase().includes(skill.toLowerCase())
+  );
+  
+  return foundSkills.slice(0, 8);
+}
+
+function extractEducation(content: string): Array<{degree: string}> {
+  const educationPatterns = [
+    /(Bachelor|Master|PhD|B\.S\.|M\.S\.|B\.A\.|M\.A\.)[\s\w]*/gi,
+    /(Computer Science|Engineering|Business|Marketing|Finance|Psychology|Economics)/gi
+  ];
+  
+  const education: Array<{degree: string}> = [];
+  
+  for (const pattern of educationPatterns) {
+    const matches = content.match(pattern);
+    if (matches) {
+      education.push({ degree: matches[0] });
+      break;
+    }
   }
   
-  // Skills and competencies analysis
-  script += ` Let's talk about the skill set we see here, Mike. This isn't just about technical abilities - we're looking at a well-rounded professional toolkit.`;
-  script += ` You're absolutely right, Sarah. What impresses me most is the balance between hard technical skills and the soft skills that make someone truly effective in today's collaborative workplace.`;
-  script += ` And that's so important because technical skills can be taught, but the ability to communicate, lead, and adapt - those are the differentiators that employers are really looking for.`;
-  
-  // Industry insights and relevance
-  script += ` When we look at ${name}'s background in the context of current industry trends, what do you see, Mike?`;
-  script += ` This is someone who's positioned themselves incredibly well for the future of work, Sarah. They've developed expertise that's not just relevant today, but will continue to be valuable as industries evolve.`;
-  script += ` That forward-thinking approach is evident throughout their career choices. They haven't just been reactive to opportunities - they've been proactive in building capabilities that open doors.`;
-  
-  // Career trajectory and achievements
-  script += ` Let's talk about the overall trajectory we see here. This isn't a random collection of jobs - this is a carefully constructed career path.`;
-  script += ` Exactly, Sarah. Each move has been strategic, building on previous experience while expanding into new areas of expertise. That shows real career intelligence and planning.`;
-  script += ` And the achievements we see aren't just individual wins - they demonstrate someone who understands how their success contributes to organizational success. That's the kind of systems thinking that makes for effective leadership.`;
-  
-  // Value proposition and fit
-  script += ` So Mike, when we put it all together, what's the value proposition that ${name} brings to a potential employer or collaborator?`;
-  script += ` Sarah, what we have here is a proven performer with a track record of growth, adaptation, and results. But more than that, we have someone who brings both depth and breadth to their work.`;
-  script += ` The depth comes from their specialized expertise, but the breadth comes from their ability to see the bigger picture and work effectively across different contexts and with different stakeholders.`;
-  
-  // Future potential and opportunities
-  script += ` Looking ahead, where do you see someone with this background making their next impact, Mike?`;
-  script += ` The beauty of a profile like this, Sarah, is its versatility. Whether they're looking to go deeper in their area of expertise or expand into new domains, they have the foundation to succeed.`;
-  script += ` And in today's rapidly changing business environment, that adaptability is invaluable. Employers aren't just hiring for today's needs - they're hiring for tomorrow's challenges.`;
-  
-  // Closing thoughts
-  script += ` As we wrap up today's episode, what would you say is the key takeaway from ${name}'s career story, Mike?`;
-  script += ` I think the biggest lesson here, Sarah, is that successful careers aren't accidents. They're the result of intentional choices, continuous learning, and the courage to take on new challenges.`;
-  script += ` Beautifully said, Mike. This has been another inspiring episode of Career Spotlight. To our listeners, if ${name}'s story resonates with you, remember that every successful career is built one strategic decision at a time.`;
-  script += ` That's right, Sarah. Thank you to everyone for joining us today. Keep building those careers with purpose and intention, and we'll see you next time on Career Spotlight!`;
-  
-  console.log('Enhanced script generated successfully, length:', script.length);
-  return script;
+  return education;
 }
