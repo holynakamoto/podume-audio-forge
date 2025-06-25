@@ -26,7 +26,7 @@ export const LinkedInPodcastForm: React.FC = () => {
     resolver: zodResolver(linkedInFormSchema),
     defaultValues: {
       title: 'My Podumé',
-      linkedin_url: 'https://linkedin.com/in/',
+      linkedin_url: 'https://www.kickresume.com/edit/16086325/preview/',
       package_type: 'core',
       voice_clone: false,
       premium_assets: false,
@@ -42,26 +42,21 @@ export const LinkedInPodcastForm: React.FC = () => {
 
     setIsLoading(true);
     setIsExtracting(true);
-    toast.info('Extracting LinkedIn profile and generating podcast...');
+    toast.info('Extracting resume content and generating podcast...');
 
     try {
-      // First, extract content from LinkedIn profile
+      // First, extract content from Kickresume
       const extractResult = await FirecrawlService.scrapeUrl(values.linkedin_url);
       
       if (!extractResult.success || !extractResult.data) {
-        // Show manual option if LinkedIn scraping fails
-        if (extractResult.error?.includes('LinkedIn scraping requires special account activation')) {
-          setShowManualOption(true);
-          toast.error(extractResult.error);
-          return;
-        }
-        
-        toast.error(extractResult.error || 'Failed to extract LinkedIn profile content');
+        // Show manual option if extraction fails
+        setShowManualOption(true);
+        toast.error(extractResult.error || 'Failed to extract resume content');
         return;
       }
 
       setIsExtracting(false);
-      toast.info('Profile extracted! Now generating podcast...');
+      toast.info('Resume extracted! Now generating podcast...');
 
       // Get the current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -72,7 +67,7 @@ export const LinkedInPodcastForm: React.FC = () => {
         return;
       }
 
-      // Generate podcast with extracted LinkedIn content
+      // Generate podcast with extracted resume content
       const { data, error } = await supabase.functions.invoke('generate-podcast', {
         body: {
           title: values.title,
@@ -92,10 +87,10 @@ export const LinkedInPodcastForm: React.FC = () => {
         return;
       }
 
-      toast.success('Your LinkedIn podcast has been created!');
+      toast.success('Your resume podcast has been created!');
       navigate(`/podcast/${data.podcast.id}`);
     } catch (error: any) {
-      console.error('Error creating LinkedIn podcast:', error);
+      console.error('Error creating resume podcast:', error);
       toast.error(`Failed to create podcast: ${error.message || 'Unknown error'}`);
     } finally {
       setIsLoading(false);
@@ -108,7 +103,7 @@ export const LinkedInPodcastForm: React.FC = () => {
       <Card className="w-full max-w-lg mx-auto shadow-sm border-0 bg-white/80 backdrop-blur-sm">
         <CardContent className="text-center pb-4 pt-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign In Required</h2>
-          <p className="text-gray-600">You must be signed in to create a podcast from LinkedIn.</p>
+          <p className="text-gray-600">You must be signed in to create a podcast from your resume.</p>
         </CardContent>
       </Card>
     );
@@ -121,7 +116,7 @@ export const LinkedInPodcastForm: React.FC = () => {
           Create Your Podcast
         </h1>
         <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
-          Transform your LinkedIn profile into an engaging audio resume
+          Transform your Kickresume into an engaging audio resume
         </p>
       </div>
 

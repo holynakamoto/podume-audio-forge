@@ -38,9 +38,9 @@ export class FirecrawlService {
       console.log('=== FireCrawl Debug Start ===');
       console.log('Calling FireCrawl edge function for URL:', url);
       
-      // Check if it's a LinkedIn URL and warn about restrictions
-      if (url.includes('linkedin.com')) {
-        console.log('LinkedIn URL detected - may require special account activation');
+      // Check if it's a Kickresume URL and provide specific guidance
+      if (url.includes('kickresume.com')) {
+        console.log('Kickresume URL detected - should work with FireCrawl');
       }
       
       // Call our edge function instead of using the client directly
@@ -59,11 +59,11 @@ export class FirecrawlService {
         const errorText = await response.text();
         console.error('HTTP error response:', errorText);
         
-        // Handle specific LinkedIn restriction error
+        // Handle specific restriction errors
         if (response.status === 403 || errorText.includes('Forbidden') || errorText.includes('no longer supported')) {
           return { 
             success: false, 
-            error: 'LinkedIn scraping requires special account activation. Please contact help@firecrawl.com to activate LinkedIn scraping for your account, or try using the "Paste Text" option instead.' 
+            error: 'Unable to access this resume URL. Please ensure your Kickresume is publicly accessible or try using the "Paste Text" option instead.' 
           };
         }
         
@@ -88,11 +88,11 @@ export class FirecrawlService {
       if (responseText.trim().startsWith('<')) {
         console.error('Received HTML instead of JSON - likely an error page');
         
-        // Check for specific LinkedIn restriction message
+        // Check for specific restriction message
         if (responseText.includes('no longer supported') || responseText.includes('Forbidden')) {
           return { 
             success: false, 
-            error: 'LinkedIn scraping is restricted and requires special account activation. Please contact help@firecrawl.com to activate LinkedIn scraping for your account, or use the "Paste Text" option to manually enter your LinkedIn profile content.' 
+            error: 'Unable to access this resume URL. Please ensure your Kickresume is publicly accessible or use the "Paste Text" option to manually enter your resume content.' 
           };
         }
         
@@ -119,11 +119,11 @@ export class FirecrawlService {
       if (!result.success) {
         console.error('FireCrawl scraping failed:', result.error);
         
-        // Handle LinkedIn-specific errors in the response
+        // Handle restriction errors in the response
         if (result.error?.includes('Forbidden') || result.error?.includes('no longer supported')) {
           return { 
             success: false, 
-            error: 'LinkedIn scraping requires special account activation. Please contact help@firecrawl.com to activate LinkedIn scraping for your account, or use the "Paste Text" option instead.' 
+            error: 'Unable to access this resume URL. Please ensure your Kickresume is publicly accessible or use the "Paste Text" option instead.' 
           };
         }
         
@@ -147,11 +147,11 @@ export class FirecrawlService {
       console.error('Error stack:', error.stack);
       console.error('=== End FireCrawl Error ===');
       
-      // Handle LinkedIn-specific network errors
+      // Handle restriction network errors
       if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
         return { 
           success: false, 
-          error: 'LinkedIn scraping requires special account activation. Please contact help@firecrawl.com to activate LinkedIn scraping for your account, or use the "Paste Text" option instead.' 
+          error: 'Unable to access this resume URL. Please ensure your Kickresume is publicly accessible or use the "Paste Text" option instead.' 
         };
       }
       

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Globe } from 'lucide-react';
+import { Loader2, FileText } from 'lucide-react';
 
 interface LinkedInSubmitButtonProps {
   isLoading: boolean;
@@ -21,11 +21,11 @@ export const LinkedInSubmitButton: React.FC<LinkedInSubmitButtonProps> = ({
       {isLoading ? (
         <>
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          {isExtracting ? 'Extracting Profile...' : 'Generating Podcast...'}
+          {isExtracting ? 'Extracting Resume...' : 'Generating Podcast...'}
         </>
       ) : (
         <>
-          <Globe className="w-4 h-4 mr-2" />
+          <FileText className="w-4 h-4 mr-2" />
           Create Podcast
         </>
       )}
