@@ -38,15 +38,22 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       size: file.size
     });
 
-    if (file.type !== 'application/pdf') {
-      console.log('Invalid file type:', file.type);
-      toast.error('Please upload a PDF file.');
+    // More comprehensive file type validation
+    if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
+      console.log('Invalid file type:', file.type, file.name);
+      toast.error('Please upload a PDF file. Other file formats are not supported.');
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit as per PRD
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
       console.log('File too large:', file.size);
-      toast.error('File size must be less than 5MB.');
+      toast.error('File size must be less than 10MB. Please try a smaller PDF file.');
+      return;
+    }
+
+    if (file.size < 100) { // Very small file
+      console.log('File too small:', file.size);
+      toast.error('This file appears to be too small to be a valid PDF. Please check your file.');
       return;
     }
 
@@ -67,9 +74,9 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       setUploadProgress(100);
       setExtractionResult(result);
       
-      if (result.text.length < 50) {
+      if (result.text.length < 20) {
         console.log('Extracted text too short:', result.text.length);
-        toast.error('Could not extract readable text from this PDF. Please try pasting your resume text instead.');
+        toast.error('Could not extract enough readable text from this PDF. Please try pasting your resume text instead.');
         setShowPasteRecommendation(true);
         return;
       }
@@ -83,7 +90,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       } else if (result.metadata.confidence > 0.6) {
         toast.success(`PDF processed with good results. Some sections may need manual review.`);
       } else {
-        toast.success(`PDF processed. Consider using "Paste Text" mode for better results with complex layouts.`);
+        toast.success(`PDF processed. You may want to review the extracted text below and use "Paste Text" mode if needed.`);
       }
       
       console.log('=== ENHANCED FILE UPLOAD HANDLER SUCCESS ===');
@@ -97,9 +104,10 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       if (error instanceof Error) {
         errorMessage = error.message;
         
-        if (error.message.includes('Please try pasting') ||
-            error.message.includes('paste your text directly')) {
-          shouldRecommendPaste = true;
+        // Don't recommend paste for basic file issues
+        if (error.message.includes('does not appear to be a valid PDF') ||
+            error.message.includes('appears to be empty')) {
+          shouldRecommendPaste = false;
         }
       }
       
@@ -118,7 +126,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       setTimeout(() => {
         console.log('Resetting progress to 0');
         setUploadProgress(0);
-      }, 2000);
+      }, 3000);
     }
   };
 
@@ -139,7 +147,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Having trouble with PDF upload? Try switching to "Paste Text" mode above for more reliable results.
+            Having trouble with PDF upload? Try switching to "Paste Text" mode above for more reliable results, or try saving your PDF in a different format.
           </AlertDescription>
         </Alert>
       )}
@@ -159,6 +167,9 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
               {extractionResult.structured.sections.skills.length > 0 && (
                 <div>• Skills identified: {extractionResult.structured.sections.skills.length}</div>
               )}
+              <div className="text-sm text-muted-foreground mt-2">
+                You can review the extracted text below. If it looks incomplete, try using "Paste Text" mode.
+              </div>
             </div>
           </AlertDescription>
         </Alert>
@@ -178,6 +189,20 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
           resumeContent={resumeContent}
           onResumeContentChange={onResumeContentChange}
         />
+      )}
+
+      {/* Show extracted text preview for review */}
+      {resumeContent && uploadMode === 'upload' && (
+        <div className="mt-4">
+          <Label className="font-semibold">Extracted Text Preview</Label>
+          <div className="mt-2 p-3 bg-muted rounded-md max-h-40 overflow-y-auto text-sm">
+            {resumeContent.substring(0, 500)}
+            {resumeContent.length > 500 && '...'}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {resumeContent.length} characters extracted. If this doesn't look right, try "Paste Text" mode.
+          </p>
+        </div>
       )}
     </div>
   );
