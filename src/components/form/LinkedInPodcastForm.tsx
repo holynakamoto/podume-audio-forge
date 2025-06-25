@@ -108,7 +108,7 @@ export const LinkedInPodcastForm: React.FC = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto px-4 sm:px-0">
-      <div className="text-center mb-8">
+      <div className="text-center mb-8 mt-16 sm:mt-20">
         <h1 className="text-2xl sm:text-3xl font-semibold text-white mb-2">
           Create Your Podcast
         </h1>
