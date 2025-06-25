@@ -14,43 +14,6 @@ const SampleSection = () => {
             Listen to a sample episode generated from a real resume. This could be you.
           </p>
         </div>
-        
-        {/* Premium Audio Equipment Display */}
-        <div className="grid md:grid-cols-2 gap-8 mb-16">
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-yellow-400/20 rounded-xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-            <div className="relative bg-card/80 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 hover:border-yellow-400/50 transition-all duration-300">
-              <img 
-                src="/lovable-uploads/4253ea4e-a6e4-47ba-a43e-d17cc47a16a5.png" 
-                alt="Podumé Premium Audio Equipment" 
-                className="w-full h-auto rounded-lg"
-              />
-              <div className="mt-4 text-center">
-                <h3 className="text-xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-yellow-400 bg-clip-text">
-                  Professional Grade Equipment
-                </h3>
-                <p className="text-muted-foreground mt-2">Studio-quality sound for your career story</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-purple-600/20 rounded-xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-            <div className="relative bg-card/80 backdrop-blur-sm border border-yellow-400/30 rounded-xl p-6 hover:border-purple-500/50 transition-all duration-300">
-              <img 
-                src="/lovable-uploads/7e304183-92dc-46c7-9da9-1f941d0c7cd0.png" 
-                alt="Podumé Luxury Headphones" 
-                className="w-full h-auto rounded-lg"
-              />
-              <div className="mt-4 text-center">
-                <h3 className="text-xl font-bold text-transparent bg-gradient-to-r from-yellow-400 to-purple-400 bg-clip-text">
-                  Luxury Experience
-                </h3>
-                <p className="text-muted-foreground mt-2">Premium quality that stands out</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Spotify Embed Player */}
         <div className="max-w-2xl mx-auto relative">
@@ -69,7 +32,7 @@ const SampleSection = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-transparent bg-gradient-to-r from-purple-400 to-yellow-400 bg-clip-text">
-                  Disney Actress to Entertainment Pro
+                  Professional Vocalist to International Stage
                 </h3>
                 <p className="text-muted-foreground">Carmi Harris's Career Journey</p>
                 <div className="flex items-center gap-2 mt-2">
