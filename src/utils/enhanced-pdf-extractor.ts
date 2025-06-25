@@ -52,9 +52,28 @@ export const extractTextFromPDFEnhanced = async (
       throw new Error('File does not appear to be a valid PDF. Please ensure you are uploading a PDF file.');
     }
 
-    // Load PDF document
+    // Load PDF document with better error handling
     console.log('Loading PDF document...');
-    const pdf = await getDocument({ data: arrayBuffer }).promise;
+    let pdf;
+    try {
+      pdf = await getDocument({ 
+        data: arrayBuffer,
+        useSystemFonts: true,
+        disableFontFace: false,
+        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+        cMapPacked: true
+      }).promise;
+    } catch (pdfError) {
+      console.error('PDF loading error:', pdfError);
+      if (pdfError.message?.includes('Invalid PDF structure')) {
+        throw new Error('This PDF file appears to be corrupted or uses an unsupported format. Please try saving your resume as a new PDF or use the "Paste Text" option instead.');
+      } else if (pdfError.message?.includes('password')) {
+        throw new Error('This PDF is password protected. Please remove the password or use the "Paste Text" option instead.');
+      } else {
+        throw new Error('Unable to read this PDF file. Please try using the "Paste Text" option instead.');
+      }
+    }
+    
     console.log('PDF loaded successfully, pages:', pdf.numPages);
     onProgress?.(25);
 
@@ -71,22 +90,25 @@ export const extractTextFromPDFEnhanced = async (
         
         // Enhanced text extraction with positioning data
         const pageText = extractStructuredTextFromPage(textContent);
-        fullText += pageText + '\n\n';
+        if (pageText.trim()) {
+          fullText += pageText + '\n\n';
+        }
         
         // Update progress
         const progress = 25 + ((pageNum / maxPages) * 50);
         onProgress?.(progress);
       } catch (pageError) {
         console.warn(`Failed to extract text from page ${pageNum}:`, pageError);
-        // Continue with other pages
+        // Continue with other pages - don't fail completely
       }
     }
 
     console.log('PDF extraction completed. Total text length:', fullText.length);
     onProgress?.(80);
 
-    if (fullText.trim().length < 50) {
-      throw new Error('Could not extract sufficient text from this PDF. The file may be image-based, password protected, or corrupted. Please try pasting your resume text directly instead.');
+    // Be more lenient with text length requirements
+    if (fullText.trim().length < 20) {
+      throw new Error('Could not extract enough readable text from this PDF. This might be a scanned document or image-based PDF. Please try using the "Paste Text" option to enter your resume content directly.');
     }
 
     // Structure the extracted data
@@ -107,23 +129,19 @@ export const extractTextFromPDFEnhanced = async (
 
   } catch (error) {
     console.error('PDF extraction failed:', error);
-    let userMessage = 'Could not process PDF. Please try pasting your text directly.';
-
+    
     if (error instanceof Error) {
-      console.error('Error details:', { message: error.message, stack: error.stack });
-      
-      if (error.message.includes('Invalid PDF') || error.message.includes('password')) {
-        userMessage = 'Invalid or password-protected PDF file. Please upload a valid PDF or paste the text directly.';
-      } else if (error.message.includes('Could not extract sufficient text')) {
-        userMessage = error.message;
-      } else if (error.message.includes('File does not appear to be a valid PDF')) {
-        userMessage = error.message;
-      } else if (error.message.includes('AbortError') || error.message.includes('network')) {
-        userMessage = 'Network error while processing PDF. Please check your connection and try again.';
+      // Re-throw our custom error messages
+      if (error.message.includes('Please try using the "Paste Text"') ||
+          error.message.includes('File does not appear to be a valid PDF') ||
+          error.message.includes('password protected') ||
+          error.message.includes('corrupted')) {
+        throw error;
       }
     }
 
-    throw new Error(userMessage);
+    // Generic fallback error
+    throw new Error('Unable to process this PDF file. Please try using the "Paste Text" option to enter your resume content directly.');
   }
 };
 
@@ -150,21 +168,24 @@ function extractStructuredTextFromPage(textContent: any): string {
       if (!item.str || !item.transform) continue;
       
       const y = item.transform[5];
+      const text = item.str.trim();
+      
+      if (!text) continue;
       
       // Add line break if significant Y position change
       if (currentY !== null && Math.abs(currentY - y) > 10) {
         pageText += '\n';
       }
       
-      pageText += item.str + ' ';
+      pageText += text + ' ';
       currentY = y;
     }
   } catch (sortError) {
     console.warn('Error sorting text items, using fallback extraction:', sortError);
     // Fallback: just concatenate all text items
     for (const item of items) {
-      if (item.str) {
-        pageText += item.str + ' ';
+      if (item.str && item.str.trim()) {
+        pageText += item.str.trim() + ' ';
       }
     }
   }
