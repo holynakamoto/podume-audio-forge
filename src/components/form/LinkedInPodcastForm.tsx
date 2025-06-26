@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +38,9 @@ export const LinkedInPodcastForm: React.FC = () => {
   // Handle OAuth callback and profile extraction
   useEffect(() => {
     const handleOAuthCallback = async () => {
+      console.log('=== OAuth Callback Debug ===');
+      console.log('Current URL:', window.location.href);
+      console.log('URL params:', window.location.search);
       console.log('Checking for LinkedIn OAuth session...');
       
       try {
@@ -49,34 +51,59 @@ export const LinkedInPodcastForm: React.FC = () => {
           return;
         }
 
+        console.log('Session data:', session ? 'Session exists' : 'No session');
+        console.log('Provider:', session?.user?.app_metadata?.provider);
+        console.log('Provider token exists:', !!session?.provider_token);
+
         if (session?.provider_token && session.user.app_metadata?.provider === 'linkedin_oidc') {
-          console.log('LinkedIn OAuth session found, processing profile...');
+          console.log('=== LinkedIn OAuth Session Found ===');
+          console.log('Processing LinkedIn profile...');
           setIsProcessingProfile(true);
           
           // Extract profile data using the provider token
           const profileData = await extractLinkedInProfile(session.provider_token);
           
           if (profileData) {
+            console.log('Profile data extracted successfully, length:', profileData.length);
             setLinkedInContent(profileData);
             toast.success('LinkedIn profile imported successfully!');
-            console.log('Profile data extracted:', profileData.substring(0, 200) + '...');
           } else {
+            console.error('Failed to extract LinkedIn profile data');
             toast.error('Failed to extract LinkedIn profile data');
           }
           
           setIsProcessingProfile(false);
+        } else {
+          console.log('No LinkedIn OAuth session found');
         }
       } catch (error) {
         console.error('Error processing OAuth callback:', error);
         setIsProcessingProfile(false);
+        toast.error('Error processing LinkedIn authentication');
       }
     };
 
+    // Run the callback handler
     handleOAuthCallback();
+
+    // Also listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('=== Auth State Change ===');
+      console.log('Event:', event);
+      console.log('Session provider:', session?.user?.app_metadata?.provider);
+      
+      if (event === 'SIGNED_IN' && session?.user?.app_metadata?.provider === 'linkedin_oidc') {
+        console.log('LinkedIn sign-in detected, processing profile...');
+        handleOAuthCallback();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const extractLinkedInProfile = async (accessToken: string): Promise<string | null> => {
     try {
+      console.log('=== LinkedIn Profile Extraction ===');
       console.log('Calling linkedin-profile function...');
       
       const { data, error } = await supabase.functions.invoke('linkedin-profile', {
@@ -85,23 +112,33 @@ export const LinkedInPodcastForm: React.FC = () => {
 
       if (error) {
         console.error('LinkedIn profile function error:', error);
+        toast.error(`Failed to extract LinkedIn profile: ${error.message}`);
         return null;
       }
 
+      console.log('LinkedIn function response:', data);
+
       if (data?.success && data?.data) {
-        console.log('LinkedIn profile data received successfully');
+        console.log('LinkedIn profile data received successfully, length:', data.data.length);
         return data.data;
       } else {
-        console.error('LinkedIn profile function returned no data');
+        console.error('LinkedIn profile function returned no data:', data);
+        toast.error('No profile data received from LinkedIn');
         return null;
       }
     } catch (error) {
       console.error('Error calling LinkedIn profile function:', error);
+      toast.error('Error processing LinkedIn profile');
       return null;
     }
   };
 
   const onSubmit = async (values: LinkedInFormValues) => {
+    console.log('=== Form Submission Debug ===');
+    console.log('Form values:', values);
+    console.log('LinkedIn content length:', linkedInContent.length);
+    console.log('User signed in:', isSignedIn);
+
     if (!isSignedIn || !user) {
       toast.error('You must be signed in to create a podcast');
       navigate('/auth');
@@ -127,7 +164,10 @@ export const LinkedInPodcastForm: React.FC = () => {
         return;
       }
 
-      console.log('Creating podcast with content length:', resumeContent.length);
+      console.log('=== Podcast Generation Debug ===');
+      console.log('Calling generate-podcast function...');
+      console.log('Resume content length:', resumeContent.length);
+      console.log('Will use Claude Sonnet for script generation');
 
       const { data, error } = await supabase.functions.invoke('generate-podcast', {
         body: {
@@ -147,6 +187,8 @@ export const LinkedInPodcastForm: React.FC = () => {
         toast.error(`Failed to create podcast: ${error.message}`);
         return;
       }
+
+      console.log('Podcast generation response:', data);
 
       if (data?.podcast?.id) {
         toast.success('Your LinkedIn podcast has been created!');

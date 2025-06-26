@@ -15,14 +15,20 @@ export const LinkedInOAuthButton: React.FC<LinkedInOAuthButtonProps> = ({ onProf
   const handleLinkedInAuth = async () => {
     setIsLoading(true);
     try {
+      console.log('=== LinkedIn OAuth Debug ===');
       console.log('Starting LinkedIn OAuth...');
       console.log('Current URL:', window.location.href);
+      console.log('Origin:', window.location.origin);
       
-      // Use Supabase OAuth for LinkedIn with redirect back to create page
+      // Construct the redirect URL to ensure we return to the create page
+      const redirectUrl = `${window.location.origin}/create`;
+      console.log('Redirect URL set to:', redirectUrl);
+      
+      // Use Supabase OAuth for LinkedIn with explicit redirect to create page
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${window.location.origin}/create`
+          redirectTo: redirectUrl
         }
       });
 
@@ -32,7 +38,7 @@ export const LinkedInOAuthButton: React.FC<LinkedInOAuthButtonProps> = ({ onProf
         return;
       }
 
-      console.log('OAuth initiated successfully');
+      console.log('OAuth initiated successfully, should redirect to:', redirectUrl);
       toast.info('Redirecting to LinkedIn...');
       
     } catch (error: any) {
