@@ -36,8 +36,7 @@ export const LinkedInOAuthButton: React.FC<LinkedInOAuthButtonProps> = ({ onProf
           scopes: 'openid profile email',
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
-            redirect_uri: redirectUrl
+            prompt: 'consent'
           }
         }
       });
