@@ -14,6 +14,7 @@ import { PackageTypeSelector } from './PackageTypeSelector';
 import { LinkedInSubmitButton } from './LinkedInSubmitButton';
 import { LinkedInProfileSection } from './LinkedInProfileSection';
 import { LinkedInDebugInfo } from './LinkedInDebugInfo';
+import { LinkedInAPITester } from './LinkedInAPITester';
 import { useLinkedInOAuth } from './hooks/useLinkedInOAuth';
 import { useScriptGeneration } from './hooks/useScriptGeneration';
 
@@ -145,6 +146,8 @@ export const LinkedInPodcastForm: React.FC = () => {
           Import your LinkedIn profile and transform it into an engaging audio experience
         </p>
       </div>
+
+      <LinkedInAPITester />
 
       <LinkedInDebugInfo 
         linkedInContent={linkedInContent}
