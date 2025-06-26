@@ -38,12 +38,16 @@ export const LinkedInPodcastForm: React.FC = () => {
   // Handle OAuth callback and profile extraction
   useEffect(() => {
     const handleOAuthCallback = async () => {
-      console.log('=== OAuth Callback Debug ===');
+      console.log('=== LinkedIn OAuth Callback Handler ===');
       console.log('Current URL:', window.location.href);
       console.log('URL params:', window.location.search);
-      console.log('Checking for LinkedIn OAuth session...');
+      console.log('URL hash:', window.location.hash);
+      
+      // Small delay to ensure auth state is settled
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       try {
+        console.log('Checking for LinkedIn OAuth session...');
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -51,9 +55,11 @@ export const LinkedInPodcastForm: React.FC = () => {
           return;
         }
 
-        console.log('Session data:', session ? 'Session exists' : 'No session');
-        console.log('Provider:', session?.user?.app_metadata?.provider);
-        console.log('Provider token exists:', !!session?.provider_token);
+        console.log('Session check result:');
+        console.log('- Session exists:', !!session);
+        console.log('- Provider:', session?.user?.app_metadata?.provider);
+        console.log('- Provider token exists:', !!session?.provider_token);
+        console.log('- User ID:', session?.user?.id);
 
         if (session?.provider_token && session.user.app_metadata?.provider === 'linkedin_oidc') {
           console.log('=== LinkedIn OAuth Session Found ===');
@@ -74,7 +80,12 @@ export const LinkedInPodcastForm: React.FC = () => {
           
           setIsProcessingProfile(false);
         } else {
-          console.log('No LinkedIn OAuth session found');
+          console.log('No LinkedIn OAuth session found or invalid session');
+          console.log('Session details:', {
+            hasSession: !!session,
+            provider: session?.user?.app_metadata?.provider,
+            hasProviderToken: !!session?.provider_token
+          });
         }
       } catch (error) {
         console.error('Error processing OAuth callback:', error);
@@ -83,18 +94,21 @@ export const LinkedInPodcastForm: React.FC = () => {
       }
     };
 
-    // Run the callback handler
+    // Run immediately and also listen for auth state changes
     handleOAuthCallback();
 
-    // Also listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('=== Auth State Change ===');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('=== Auth State Change Event ===');
       console.log('Event:', event);
       console.log('Session provider:', session?.user?.app_metadata?.provider);
+      console.log('Provider token exists:', !!session?.provider_token);
       
       if (event === 'SIGNED_IN' && session?.user?.app_metadata?.provider === 'linkedin_oidc') {
         console.log('LinkedIn sign-in detected, processing profile...');
-        handleOAuthCallback();
+        // Small delay to ensure everything is ready
+        setTimeout(() => {
+          handleOAuthCallback();
+        }, 500);
       }
     });
 
@@ -104,11 +118,17 @@ export const LinkedInPodcastForm: React.FC = () => {
   const extractLinkedInProfile = async (accessToken: string): Promise<string | null> => {
     try {
       console.log('=== LinkedIn Profile Extraction ===');
+      console.log('Access token exists:', !!accessToken);
+      console.log('Access token length:', accessToken?.length);
       console.log('Calling linkedin-profile function...');
       
       const { data, error } = await supabase.functions.invoke('linkedin-profile', {
         body: { access_token: accessToken }
       });
+
+      console.log('LinkedIn function response received');
+      console.log('Error:', error);
+      console.log('Data:', data);
 
       if (error) {
         console.error('LinkedIn profile function error:', error);
@@ -116,10 +136,10 @@ export const LinkedInPodcastForm: React.FC = () => {
         return null;
       }
 
-      console.log('LinkedIn function response:', data);
-
       if (data?.success && data?.data) {
-        console.log('LinkedIn profile data received successfully, length:', data.data.length);
+        console.log('LinkedIn profile data received successfully');
+        console.log('Profile data length:', data.data.length);
+        console.log('Profile data preview:', data.data.substring(0, 200) + '...');
         return data.data;
       } else {
         console.error('LinkedIn profile function returned no data:', data);
