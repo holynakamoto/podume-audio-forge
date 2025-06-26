@@ -33,18 +33,33 @@ const Create = () => {
             console.log('Hash params:', Object.fromEntries(hashParams.entries()));
             
             // Check if this is a LinkedIn OAuth callback
-            if (urlParams.get('code') || hashParams.get('access_token')) {
+            const hasOAuthCallback = urlParams.get('code') || 
+                                   hashParams.get('access_token') || 
+                                   urlParams.get('state') ||
+                                   hashParams.get('state');
+            
+            if (hasOAuthCallback) {
                 console.log('OAuth callback detected on create page');
+                console.log('Waiting for session to be established...');
+                
+                // Wait a bit longer for OAuth session to be processed
+                await new Promise(resolve => setTimeout(resolve, 3000));
                 
                 try {
                     const { data: { session }, error } = await supabase.auth.getSession();
-                    console.log('Session after OAuth:', session ? 'Session exists' : 'No session', error);
+                    console.log('Session after OAuth callback:');
+                    console.log('- Session exists:', !!session);
+                    console.log('- Provider:', session?.user?.app_metadata?.provider);
+                    console.log('- Provider token exists:', !!session?.provider_token);
+                    console.log('- Error:', error);
                     
                     if (session && session.provider_token) {
-                        console.log('LinkedIn session found, will be processed by LinkedInPodcastForm');
+                        console.log('LinkedIn OAuth session established successfully');
+                    } else {
+                        console.warn('OAuth callback detected but no valid session found');
                     }
                 } catch (error) {
-                    console.error('Error checking session:', error);
+                    console.error('Error checking session after OAuth:', error);
                 }
             }
         };

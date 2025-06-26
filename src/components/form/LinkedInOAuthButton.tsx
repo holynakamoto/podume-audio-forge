@@ -23,16 +23,20 @@ export const LinkedInOAuthButton: React.FC<LinkedInOAuthButtonProps> = ({ onProf
       // Store the current path in localStorage to return to it after auth
       localStorage.setItem('linkedin_auth_return_path', '/create');
       
-      // Use the deployed URL for redirect to ensure it works
-      const redirectUrl = `https://podume-your-resume.lovable.app/create`;
+      // Use dynamic redirect URL based on current environment
+      const redirectUrl = `${window.location.origin}/create`;
       console.log('Redirect URL set to:', redirectUrl);
       
-      // Use Supabase OAuth for LinkedIn with explicit redirect
+      // Use Supabase OAuth for LinkedIn with dynamic redirect
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
           redirectTo: redirectUrl,
-          scopes: 'openid profile email'
+          scopes: 'openid profile email',
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       });
 

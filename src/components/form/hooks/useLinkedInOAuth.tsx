@@ -14,8 +14,15 @@ export const useLinkedInOAuth = (onProfileData: (data: string) => void) => {
       console.log('URL params:', window.location.search);
       console.log('URL hash:', window.location.hash);
       
-      // Small delay to ensure auth state is settled
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Check if we're coming from OAuth (has specific URL params or hash)
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const hasOAuthParams = urlParams.get('code') || hashParams.get('access_token') || 
+                           urlParams.get('state') || hashParams.get('state');
+      
+      // Small delay to ensure auth state is settled, especially after OAuth redirect
+      const delay = hasOAuthParams ? 2000 : 1000;
+      await new Promise(resolve => setTimeout(resolve, delay));
       
       try {
         console.log('Checking for LinkedIn OAuth session...');
@@ -30,9 +37,15 @@ export const useLinkedInOAuth = (onProfileData: (data: string) => void) => {
         console.log('- Session exists:', !!session);
         console.log('- Provider:', session?.user?.app_metadata?.provider);
         console.log('- Provider token exists:', !!session?.provider_token);
+        console.log('- Provider token length:', session?.provider_token?.length || 0);
         console.log('- User ID:', session?.user?.id);
+        console.log('- User email:', session?.user?.email);
 
-        if (session?.provider_token && session.user.app_metadata?.provider === 'linkedin_oidc') {
+        // More flexible check for LinkedIn session
+        const isLinkedInSession = session?.user?.app_metadata?.provider === 'linkedin_oidc' ||
+                                session?.user?.app_metadata?.provider === 'linkedin';
+
+        if (session?.provider_token && isLinkedInSession) {
           console.log('=== LinkedIn OAuth Session Found ===');
           console.log('Processing LinkedIn profile...');
           setIsProcessingProfile(true);
@@ -44,6 +57,11 @@ export const useLinkedInOAuth = (onProfileData: (data: string) => void) => {
             console.log('Profile data extracted successfully, length:', profileData.length);
             onProfileData(profileData);
             toast.success('LinkedIn profile imported successfully!');
+            
+            // Clear OAuth params from URL
+            if (hasOAuthParams) {
+              window.history.replaceState({}, document.title, '/create');
+            }
           } else {
             console.error('Failed to extract LinkedIn profile data');
             toast.error('Failed to extract LinkedIn profile data');
@@ -55,7 +73,8 @@ export const useLinkedInOAuth = (onProfileData: (data: string) => void) => {
           console.log('Session details:', {
             hasSession: !!session,
             provider: session?.user?.app_metadata?.provider,
-            hasProviderToken: !!session?.provider_token
+            hasProviderToken: !!session?.provider_token,
+            providerTokenPreview: session?.provider_token?.substring(0, 20) + '...'
           });
         }
       } catch (error) {
@@ -65,21 +84,24 @@ export const useLinkedInOAuth = (onProfileData: (data: string) => void) => {
       }
     };
 
-    // Run immediately and also listen for auth state changes
+    // Run the callback handler
     handleOAuthCallback();
 
+    // Also listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('=== Auth State Change Event ===');
       console.log('Event:', event);
       console.log('Session provider:', session?.user?.app_metadata?.provider);
       console.log('Provider token exists:', !!session?.provider_token);
       
-      if (event === 'SIGNED_IN' && session?.user?.app_metadata?.provider === 'linkedin_oidc') {
+      if (event === 'SIGNED_IN' && 
+          (session?.user?.app_metadata?.provider === 'linkedin_oidc' || 
+           session?.user?.app_metadata?.provider === 'linkedin')) {
         console.log('LinkedIn sign-in detected, processing profile...');
         // Small delay to ensure everything is ready
         setTimeout(() => {
           handleOAuthCallback();
-        }, 500);
+        }, 1000);
       }
     });
 
@@ -91,6 +113,7 @@ export const useLinkedInOAuth = (onProfileData: (data: string) => void) => {
       console.log('=== LinkedIn Profile Extraction ===');
       console.log('Access token exists:', !!accessToken);
       console.log('Access token length:', accessToken?.length);
+      console.log('Access token preview:', accessToken?.substring(0, 30) + '...');
       console.log('Calling linkedin-profile function...');
       
       const { data, error } = await supabase.functions.invoke('linkedin-profile', {
@@ -99,7 +122,7 @@ export const useLinkedInOAuth = (onProfileData: (data: string) => void) => {
 
       console.log('LinkedIn function response received');
       console.log('Error:', error);
-      console.log('Data:', data);
+      console.log('Data keys:', data ? Object.keys(data) : 'No data');
 
       if (error) {
         console.error('LinkedIn profile function error:', error);
