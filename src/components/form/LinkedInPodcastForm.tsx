@@ -11,16 +11,13 @@ import { useAuth } from '@/auth/ClerkAuthProvider';
 import { linkedInFormSchema, LinkedInFormValues } from './schemas/linkedInFormSchema';
 import { LinkedInAlerts } from './LinkedInAlerts';
 import { LinkedInTitleInput } from './LinkedInTitleInput';
-import { LinkedInUrlInput } from './LinkedInUrlInput';
 import { PackageTypeSelector } from './PackageTypeSelector';
 import { LinkedInSubmitButton } from './LinkedInSubmitButton';
 import { LinkedInOAuthButton } from './LinkedInOAuthButton';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [showManualOption, setShowManualOption] = useState(false);
   const [linkedInContent, setLinkedInContent] = useState<string>('');
-  const [useOAuth, setUseOAuth] = useState(true);
   const [isProcessingProfile, setIsProcessingProfile] = useState(false);
   const [generatedScript, setGeneratedScript] = useState<string>('');
   const [showDebugInfo, setShowDebugInfo] = useState(false);
@@ -31,7 +28,6 @@ export const LinkedInPodcastForm: React.FC = () => {
     resolver: zodResolver(linkedInFormSchema),
     defaultValues: {
       title: 'My Podumé',
-      linkedin_url: '',
       package_type: 'core',
       voice_clone: false,
       premium_assets: false,
@@ -223,7 +219,7 @@ export const LinkedInPodcastForm: React.FC = () => {
     const resumeContent = linkedInContent || '';
     
     if (!resumeContent || resumeContent.length < 10) {
-      toast.error('Please import your LinkedIn profile first or use a LinkedIn URL');
+      toast.error('Please import your LinkedIn profile first');
       return;
     }
 
@@ -350,7 +346,7 @@ export const LinkedInPodcastForm: React.FC = () => {
 
       <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-6 sm:p-8">
-          <LinkedInAlerts showManualOption={showManualOption} />
+          <LinkedInAlerts showManualOption={false} />
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <LinkedInTitleInput 
@@ -371,31 +367,9 @@ export const LinkedInPodcastForm: React.FC = () => {
               )}
               
               {!linkedInContent && !isProcessingProfile ? (
-                <div className="space-y-4">
-                  <LinkedInOAuthButton 
-                    onProfileData={setLinkedInContent}
-                  />
-                  
-                  <div className="text-center">
-                    <span className="text-gray-500">or</span>
-                  </div>
-                  
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    onClick={() => setUseOAuth(false)}
-                    className="w-full"
-                  >
-                    Use LinkedIn URL Instead
-                  </Button>
-                  
-                  {!useOAuth && (
-                    <LinkedInUrlInput
-                      register={form.register}
-                      errors={form.formState.errors}
-                    />
-                  )}
-                </div>
+                <LinkedInOAuthButton 
+                  onProfileData={setLinkedInContent}
+                />
               ) : linkedInContent && (
                 <div className="space-y-4">
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -408,7 +382,6 @@ export const LinkedInPodcastForm: React.FC = () => {
                       size="sm"
                       onClick={() => {
                         setLinkedInContent('');
-                        setUseOAuth(true);
                         setGeneratedScript('');
                       }}
                       className="mt-2"
@@ -436,7 +409,7 @@ export const LinkedInPodcastForm: React.FC = () => {
             <LinkedInSubmitButton 
               isLoading={isLoading}
               isExtracting={isProcessingProfile}
-              disabled={!linkedInContent && !form.watch('linkedin_url')}
+              disabled={!linkedInContent}
             />
           </form>
         </CardContent>
