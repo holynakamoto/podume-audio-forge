@@ -21,6 +21,7 @@ export const LinkedInPodcastForm: React.FC = () => {
   const [showManualOption, setShowManualOption] = useState(false);
   const [linkedInContent, setLinkedInContent] = useState<string>('');
   const [useOAuth, setUseOAuth] = useState(true);
+  const [isProcessingProfile, setIsProcessingProfile] = useState(false);
   const navigate = useNavigate();
   const { user, isSignedIn } = useAuth();
 
@@ -35,38 +36,70 @@ export const LinkedInPodcastForm: React.FC = () => {
     },
   });
 
-  // Handle OAuth callback
+  // Handle OAuth callback and profile extraction
   useEffect(() => {
     const handleOAuthCallback = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Checking for LinkedIn OAuth session...');
       
-      if (session?.provider_token && session.user.app_metadata?.provider === 'linkedin_oidc') {
-        console.log('LinkedIn OAuth successful, fetching profile...');
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        try {
-          const { data, error } = await supabase.functions.invoke('linkedin-profile', {
-            body: { access_token: session.provider_token }
-          });
-
-          if (error) {
-            console.error('Error fetching LinkedIn profile:', error);
-            toast.error('Failed to fetch LinkedIn profile');
-            return;
-          }
-
-          if (data?.success && data?.data) {
-            setLinkedInContent(data.data);
-            toast.success('LinkedIn profile imported successfully!');
-          }
-        } catch (error) {
-          console.error('Error processing LinkedIn profile:', error);
-          toast.error('Failed to process LinkedIn profile');
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          return;
         }
+
+        if (session?.provider_token && session.user.app_metadata?.provider === 'linkedin_oidc') {
+          console.log('LinkedIn OAuth session found, processing profile...');
+          setIsProcessingProfile(true);
+          
+          // Extract profile data using the provider token
+          const profileData = await extractLinkedInProfile(session.provider_token);
+          
+          if (profileData) {
+            setLinkedInContent(profileData);
+            toast.success('LinkedIn profile imported successfully!');
+            console.log('Profile data extracted:', profileData.substring(0, 200) + '...');
+          } else {
+            toast.error('Failed to extract LinkedIn profile data');
+          }
+          
+          setIsProcessingProfile(false);
+        }
+      } catch (error) {
+        console.error('Error processing OAuth callback:', error);
+        setIsProcessingProfile(false);
       }
     };
 
     handleOAuthCallback();
   }, []);
+
+  const extractLinkedInProfile = async (accessToken: string): Promise<string | null> => {
+    try {
+      console.log('Calling linkedin-profile function...');
+      
+      const { data, error } = await supabase.functions.invoke('linkedin-profile', {
+        body: { access_token: accessToken }
+      });
+
+      if (error) {
+        console.error('LinkedIn profile function error:', error);
+        return null;
+      }
+
+      if (data?.success && data?.data) {
+        console.log('LinkedIn profile data received successfully');
+        return data.data;
+      } else {
+        console.error('LinkedIn profile function returned no data');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error calling LinkedIn profile function:', error);
+      return null;
+    }
+  };
 
   const onSubmit = async (values: LinkedInFormValues) => {
     if (!isSignedIn || !user) {
@@ -78,7 +111,7 @@ export const LinkedInPodcastForm: React.FC = () => {
     const resumeContent = linkedInContent || '';
     
     if (!resumeContent || resumeContent.length < 10) {
-      toast.error('Please import your LinkedIn profile first');
+      toast.error('Please import your LinkedIn profile first or use a LinkedIn URL');
       return;
     }
 
@@ -93,6 +126,8 @@ export const LinkedInPodcastForm: React.FC = () => {
         navigate('/auth');
         return;
       }
+
+      console.log('Creating podcast with content length:', resumeContent.length);
 
       const { data, error } = await supabase.functions.invoke('generate-podcast', {
         body: {
@@ -113,8 +148,12 @@ export const LinkedInPodcastForm: React.FC = () => {
         return;
       }
 
-      toast.success('Your LinkedIn podcast has been created!');
-      navigate(`/podcast/${data.podcast.id}`);
+      if (data?.podcast?.id) {
+        toast.success('Your LinkedIn podcast has been created!');
+        navigate(`/podcast/${data.podcast.id}`);
+      } else {
+        toast.error('Podcast was created but navigation failed');
+      }
     } catch (error: any) {
       console.error('Error creating LinkedIn podcast:', error);
       toast.error(`Failed to create podcast: ${error.message || 'Unknown error'}`);
@@ -159,7 +198,15 @@ export const LinkedInPodcastForm: React.FC = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-gray-900">Import LinkedIn Profile</h3>
               
-              {!linkedInContent ? (
+              {isProcessingProfile && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-blue-800 text-sm">
+                    Processing your LinkedIn profile...
+                  </p>
+                </div>
+              )}
+              
+              {!linkedInContent && !isProcessingProfile ? (
                 <div className="space-y-4">
                   <LinkedInOAuthButton 
                     onProfileData={setLinkedInContent}
@@ -185,7 +232,7 @@ export const LinkedInPodcastForm: React.FC = () => {
                     />
                   )}
                 </div>
-              ) : (
+              ) : linkedInContent && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <p className="text-green-800 text-sm">
                     ✓ LinkedIn profile imported successfully! ({linkedInContent.length} characters)
@@ -194,7 +241,10 @@ export const LinkedInPodcastForm: React.FC = () => {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setLinkedInContent('')}
+                    onClick={() => {
+                      setLinkedInContent('');
+                      setUseOAuth(true);
+                    }}
                     className="mt-2"
                   >
                     Import Different Profile
@@ -207,8 +257,8 @@ export const LinkedInPodcastForm: React.FC = () => {
 
             <LinkedInSubmitButton 
               isLoading={isLoading}
-              isExtracting={false}
-              disabled={!linkedInContent}
+              isExtracting={isProcessingProfile}
+              disabled={!linkedInContent && !form.watch('linkedin_url')}
             />
           </form>
         </CardContent>
