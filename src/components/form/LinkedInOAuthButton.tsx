@@ -26,6 +26,7 @@ export const LinkedInOAuthButton: React.FC<LinkedInOAuthButtonProps> = ({ onProf
       
       // Store current page in session storage to ensure we return here
       sessionStorage.setItem('linkedin_auth_redirect', '/create');
+      sessionStorage.setItem('linkedin_auth_origin', window.location.origin);
       
       // Use Supabase OAuth for LinkedIn with explicit redirect
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -35,7 +36,8 @@ export const LinkedInOAuthButton: React.FC<LinkedInOAuthButtonProps> = ({ onProf
           scopes: 'openid profile email',
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
+            prompt: 'consent',
+            redirect_uri: redirectUrl
           }
         }
       });

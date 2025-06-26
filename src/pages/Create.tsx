@@ -36,12 +36,22 @@ const Create = () => {
             
             // Check if we were redirected here from LinkedIn OAuth
             const storedRedirect = sessionStorage.getItem('linkedin_auth_redirect');
+            const storedOrigin = sessionStorage.getItem('linkedin_auth_origin');
+            
+            // Force redirect to /create if we're not already there after OAuth
+            if ((hasOAuthCallback || storedRedirect === '/create') && window.location.pathname !== '/create') {
+                console.log('OAuth detected but not on /create page, redirecting...');
+                const targetUrl = `${storedOrigin || window.location.origin}/create${window.location.search}${window.location.hash}`;
+                window.location.href = targetUrl;
+                return;
+            }
             
             if (hasOAuthCallback || storedRedirect === '/create') {
                 console.log('OAuth callback detected, processing...');
                 
                 // Clear the stored redirect
                 sessionStorage.removeItem('linkedin_auth_redirect');
+                sessionStorage.removeItem('linkedin_auth_origin');
                 
                 // Wait for OAuth session to be established
                 await new Promise(resolve => setTimeout(resolve, 2000));
