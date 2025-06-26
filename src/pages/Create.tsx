@@ -17,33 +17,34 @@ const Create = () => {
         }
     }, [isSignedIn, isLoading, navigate]);
 
-    // Handle LinkedIn OAuth callback on page load
+    // Handle LinkedIn OAuth callback and redirect logic
     useEffect(() => {
-        const handleLinkedInCallback = async () => {
-            console.log('=== Create Page OAuth Check ===');
+        const handleAuthCallback = async () => {
+            console.log('=== Create Page Auth Callback Handler ===');
             console.log('Current URL:', window.location.href);
             console.log('URL hash:', window.location.hash);
             console.log('URL search:', window.location.search);
             
-            // Check if we have OAuth tokens in the URL
+            // Check for OAuth callback parameters
             const urlParams = new URLSearchParams(window.location.search);
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             
-            console.log('URL params:', Object.fromEntries(urlParams.entries()));
-            console.log('Hash params:', Object.fromEntries(hashParams.entries()));
-            
-            // Check if this is a LinkedIn OAuth callback
             const hasOAuthCallback = urlParams.get('code') || 
                                    hashParams.get('access_token') || 
                                    urlParams.get('state') ||
                                    hashParams.get('state');
             
-            if (hasOAuthCallback) {
-                console.log('OAuth callback detected on create page');
-                console.log('Waiting for session to be established...');
+            // Check if we were redirected here from LinkedIn OAuth
+            const storedRedirect = sessionStorage.getItem('linkedin_auth_redirect');
+            
+            if (hasOAuthCallback || storedRedirect === '/create') {
+                console.log('OAuth callback detected, processing...');
                 
-                // Wait a bit longer for OAuth session to be processed
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                // Clear the stored redirect
+                sessionStorage.removeItem('linkedin_auth_redirect');
+                
+                // Wait for OAuth session to be established
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
                 try {
                     const { data: { session }, error } = await supabase.auth.getSession();
@@ -51,10 +52,12 @@ const Create = () => {
                     console.log('- Session exists:', !!session);
                     console.log('- Provider:', session?.user?.app_metadata?.provider);
                     console.log('- Provider token exists:', !!session?.provider_token);
-                    console.log('- Error:', error);
+                    console.log('- User ID:', session?.user?.id);
                     
                     if (session && session.provider_token) {
                         console.log('LinkedIn OAuth session established successfully');
+                        // Clean up URL parameters
+                        window.history.replaceState({}, document.title, '/create');
                     } else {
                         console.warn('OAuth callback detected but no valid session found');
                     }
@@ -64,7 +67,8 @@ const Create = () => {
             }
         };
 
-        handleLinkedInCallback();
+        // Run the callback handler
+        handleAuthCallback();
     }, []);
 
     if (isLoading || !isSignedIn) {

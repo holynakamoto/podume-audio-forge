@@ -20,14 +20,14 @@ export const LinkedInOAuthButton: React.FC<LinkedInOAuthButtonProps> = ({ onProf
       console.log('Current URL:', window.location.href);
       console.log('Origin:', window.location.origin);
       
-      // Store the current path in localStorage to return to it after auth
-      localStorage.setItem('linkedin_auth_return_path', '/create');
-      
-      // Use fixed redirect URL to create page
+      // Create explicit redirect URL to create page
       const redirectUrl = `${window.location.origin}/create`;
       console.log('Redirect URL set to:', redirectUrl);
       
-      // Use Supabase OAuth for LinkedIn with fixed redirect to create page
+      // Store current page in session storage to ensure we return here
+      sessionStorage.setItem('linkedin_auth_redirect', '/create');
+      
+      // Use Supabase OAuth for LinkedIn with explicit redirect
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
