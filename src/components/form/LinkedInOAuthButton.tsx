@@ -23,11 +23,11 @@ export const LinkedInOAuthButton: React.FC<LinkedInOAuthButtonProps> = ({ onProf
       // Store the current path in localStorage to return to it after auth
       localStorage.setItem('linkedin_auth_return_path', '/create');
       
-      // Use dynamic redirect URL based on current environment
+      // Use fixed redirect URL to create page
       const redirectUrl = `${window.location.origin}/create`;
       console.log('Redirect URL set to:', redirectUrl);
       
-      // Use Supabase OAuth for LinkedIn with dynamic redirect
+      // Use Supabase OAuth for LinkedIn with fixed redirect to create page
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
