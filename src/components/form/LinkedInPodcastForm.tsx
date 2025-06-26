@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +22,8 @@ export const LinkedInPodcastForm: React.FC = () => {
   const [linkedInContent, setLinkedInContent] = useState<string>('');
   const [useOAuth, setUseOAuth] = useState(true);
   const [isProcessingProfile, setIsProcessingProfile] = useState(false);
+  const [generatedScript, setGeneratedScript] = useState<string>('');
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   const navigate = useNavigate();
   const { user, isSignedIn } = useAuth();
 
@@ -153,6 +156,58 @@ export const LinkedInPodcastForm: React.FC = () => {
     }
   };
 
+  const generateScriptPreview = async () => {
+    if (!linkedInContent || linkedInContent.length < 10) {
+      toast.error('Please import your LinkedIn profile first');
+      return;
+    }
+
+    setIsLoading(true);
+    toast.info('Generating script preview with Claude Sonnet...');
+
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast.error('Please sign in again');
+        return;
+      }
+
+      console.log('=== Script Preview Generation ===');
+      console.log('Calling generate-podcast function for preview...');
+
+      const { data, error } = await supabase.functions.invoke('generate-podcast', {
+        body: {
+          title: form.getValues('title'),
+          resume_content: linkedInContent,
+          package_type: form.getValues('package_type'),
+          voice_clone: false,
+          premium_assets: false,
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error('Script generation error:', error);
+        toast.error(`Failed to generate script: ${error.message}`);
+        return;
+      }
+
+      console.log('Script generated successfully');
+      if (data?.podcast?.transcript) {
+        setGeneratedScript(data.podcast.transcript);
+        toast.success('Script preview generated with Claude Sonnet!');
+      }
+    } catch (error: any) {
+      console.error('Error generating script preview:', error);
+      toast.error(`Failed to generate script: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const onSubmit = async (values: LinkedInFormValues) => {
     console.log('=== Form Submission Debug ===');
     console.log('Form values:', values);
@@ -236,7 +291,7 @@ export const LinkedInPodcastForm: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-lg mx-auto px-4 sm:px-0">
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-0">
       <div className="text-center mb-8 mt-16 sm:mt-20">
         <h1 className="text-2xl sm:text-3xl font-semibold text-white mb-2">
           Create Your Podcast
@@ -245,6 +300,53 @@ export const LinkedInPodcastForm: React.FC = () => {
           Import your LinkedIn profile and transform it into an engaging audio experience
         </p>
       </div>
+
+      {/* Debug Toggle */}
+      {(linkedInContent || generatedScript) && (
+        <div className="mb-4">
+          <Button 
+            type="button"
+            variant="outline"
+            onClick={() => setShowDebugInfo(!showDebugInfo)}
+            className="w-full bg-gray-100 hover:bg-gray-200"
+          >
+            {showDebugInfo ? 'Hide' : 'Show'} Debug Information
+          </Button>
+        </div>
+      )}
+
+      {/* Debug Information */}
+      {showDebugInfo && (
+        <div className="space-y-4 mb-6">
+          {linkedInContent && (
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">LinkedIn Profile Data</h3>
+                <div className="bg-white p-3 rounded border text-sm overflow-auto max-h-40">
+                  <pre className="whitespace-pre-wrap">{linkedInContent}</pre>
+                </div>
+                <p className="text-blue-700 text-sm mt-2">
+                  Length: {linkedInContent.length} characters
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {generatedScript && (
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-green-900 mb-2">Claude Sonnet Generated Script</h3>
+                <div className="bg-white p-3 rounded border text-sm overflow-auto max-h-60">
+                  <pre className="whitespace-pre-wrap">{generatedScript}</pre>
+                </div>
+                <p className="text-green-700 text-sm mt-2">
+                  Length: {generatedScript.length} characters
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-6 sm:p-8">
@@ -295,21 +397,35 @@ export const LinkedInPodcastForm: React.FC = () => {
                   )}
                 </div>
               ) : linkedInContent && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-green-800 text-sm">
-                    ✓ LinkedIn profile imported successfully! ({linkedInContent.length} characters)
-                  </p>
+                <div className="space-y-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-green-800 text-sm">
+                      ✓ LinkedIn profile imported successfully! ({linkedInContent.length} characters)
+                    </p>
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setLinkedInContent('');
+                        setUseOAuth(true);
+                        setGeneratedScript('');
+                      }}
+                      className="mt-2"
+                    >
+                      Import Different Profile
+                    </Button>
+                  </div>
+
+                  {/* Script Preview Button */}
                   <Button 
                     type="button"
                     variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setLinkedInContent('');
-                      setUseOAuth(true);
-                    }}
-                    className="mt-2"
+                    onClick={generateScriptPreview}
+                    disabled={isLoading}
+                    className="w-full bg-purple-50 hover:bg-purple-100 border-purple-200"
                   >
-                    Import Different Profile
+                    {isLoading ? 'Generating Preview...' : 'Generate Script Preview with Claude Sonnet'}
                   </Button>
                 </div>
               )}
