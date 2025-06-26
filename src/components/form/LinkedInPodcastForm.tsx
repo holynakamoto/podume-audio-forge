@@ -10,7 +10,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { linkedInFormSchema, LinkedInFormValues } from './schemas/linkedInFormSchema';
 import { LinkedInAlerts } from './LinkedInAlerts';
 import { LinkedInTitleInput } from './LinkedInTitleInput';
-import { PackageTypeSelector } from './PackageTypeSelector';
 import { LinkedInSubmitButton } from './LinkedInSubmitButton';
 import { LinkedInProfileSection } from './LinkedInProfileSection';
 import { LinkedInDebugInfo } from './LinkedInDebugInfo';
@@ -174,8 +173,6 @@ export const LinkedInPodcastForm: React.FC = () => {
               onClearProfile={handleClearProfile}
               onGeneratePreview={handleGeneratePreview}
             />
-
-            <PackageTypeSelector register={form.register} />
 
             <LinkedInSubmitButton 
               isLoading={isLoading}
