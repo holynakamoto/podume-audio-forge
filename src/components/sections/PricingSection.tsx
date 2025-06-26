@@ -6,39 +6,46 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
-const tiers = [
+const subscriptionTiers = [
   {
-    name: 'Core Package',
-    price: 99,
-    description: 'Perfect for getting started and making an impact.',
+    name: 'Monthly Plan',
+    price: 7.99,
+    period: 'month',
+    description: 'Perfect for getting started with your personal brand.',
     features: [
-      'One 5-10 min AI Podcast Episode',
+      '1 AI Podcast Episode (5-10 minutes)',
       'Professional TTS Voice',
       'Auto-edited & Mixed',
-      'Basic Social Media Asset Pack',
+      '3 Social Media Clips',
       'Distribution to Major Platforms',
+      'Cancel anytime',
     ],
     isPopular: false,
   },
   {
-    name: 'Upsell Package',
-    price: 199,
-    description: 'For those who want to build a narrative.',
+    name: 'Yearly Plan',
+    price: 79.90,
+    period: 'year',
+    monthlyEquivalent: 6.66,
+    savings: '17% off',
+    description: 'Best value for building your narrative consistently.',
     features: [
-      'Everything in Core, plus:',
-      '3-Episode Podcast Series',
-      'OR Video Podcast with AI Visuals',
-      'Premium Social Media Assets',
-      'Personalized Intro/Outro',
+      'Everything in Monthly Plan',
+      '12 Episodes per year',
+      '36 Social Media Clips annually',
+      'Priority Support',
+      'Advanced Analytics',
+      '2 months free (17% savings)',
     ],
     isPopular: true,
   },
 ];
 
 const addons = [
-    { name: 'Custom AI Voice Cloning', price: 29, description: 'Mimic your own voice for a personal touch.'},
-    { name: 'Premium Social Assets', price: 19, description: 'Extra animated graphics and audiograms.'}
-]
+  { name: 'Custom AI Voice Cloning', price: 29, description: 'One-time setup - mimic your own voice for all future episodes.' },
+  { name: 'Premium Social Assets', price: 19, description: 'Extra animated graphics and audiograms per episode.' },
+  { name: 'Additional Episode', price: 49, description: 'Extra episode outside your plan allowance.' }
+];
 
 const PricingSection = () => {
   return (
@@ -47,16 +54,16 @@ const PricingSection = () => {
         {/* Apple-style centered header */}
         <div className="text-center max-w-4xl mx-auto mb-20">
           <h2 className="text-5xl md:text-7xl font-black tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-amber-200">
-            Choose your plan
+            Simple subscription pricing
           </h2>
           <p className="text-xl md:text-2xl text-slate-300 font-medium leading-relaxed max-w-3xl mx-auto">
-            Simple, transparent pricing designed to help you share your story with the world.
+            Choose the plan that fits your personal branding journey. Start building your narrative today.
           </p>
         </div>
 
         {/* Apple-style pricing grid */}
         <div className="grid lg:grid-cols-2 gap-12 items-stretch max-w-5xl mx-auto mb-20">
-          {tiers.map((tier) => (
+          {subscriptionTiers.map((tier) => (
             <div key={tier.name} className="relative group">
               {/* Apple-style glow effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-amber-600/10 rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700"></div>
@@ -68,7 +75,7 @@ const PricingSection = () => {
                 {tier.isPopular && (
                   <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
                     <div className="px-8 py-3 text-sm font-bold text-black bg-gradient-to-r from-purple-400 to-amber-400 rounded-full shadow-lg">
-                      Most Popular
+                      Most Popular - {tier.savings}
                     </div>
                   </div>
                 )}
@@ -89,8 +96,18 @@ const PricingSection = () => {
                       <span className="text-6xl md:text-7xl font-black tracking-tighter text-white">
                         ${tier.price}
                       </span>
+                      <div className="text-left">
+                        <div className="text-slate-400 text-lg">/{tier.period}</div>
+                        {tier.monthlyEquivalent && (
+                          <div className="text-slate-500 text-sm">
+                            ~${tier.monthlyEquivalent}/month
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-slate-400 text-lg">one-time payment</p>
+                    {tier.savings && (
+                      <p className="text-amber-400 text-lg font-semibold">{tier.savings}</p>
+                    )}
                   </div>
 
                   {/* Apple-style feature list */}
@@ -117,7 +134,7 @@ const PricingSection = () => {
                           : 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/40'
                       )}
                     >
-                      Get {tier.name}
+                      Start {tier.name}
                     </Button>
                   </Link>
                 </CardFooter>
@@ -129,26 +146,32 @@ const PricingSection = () => {
         {/* Apple-style add-ons section */}
         <div className="max-w-5xl mx-auto">
           <h3 className="text-4xl md:text-5xl font-black text-center mb-16 text-white">
-            Add-ons
+            Optional Add-ons
           </h3>
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             {addons.map(addon => (
               <div key={addon.name} className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-amber-600/5 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
                 <Card className="relative bg-card/20 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-2xl transition-all duration-300 hover:-translate-y-1">
-                  <CardContent className="p-8 flex justify-between items-center">
-                    <div>
-                      <p className="font-bold text-xl text-white mb-2">{addon.name}</p>
-                      <p className="text-slate-300 leading-relaxed">{addon.description}</p>
-                    </div>
-                    <div className="text-3xl font-black text-transparent bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text ml-6">
+                  <CardContent className="p-8 text-center">
+                    <div className="text-3xl font-black text-transparent bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text mb-4">
                       ${addon.price}
                     </div>
+                    <p className="font-bold text-xl text-white mb-3">{addon.name}</p>
+                    <p className="text-slate-300 leading-relaxed text-sm">{addon.description}</p>
                   </CardContent>
                 </Card>
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Value proposition */}
+        <div className="text-center mt-20 max-w-3xl mx-auto">
+          <p className="text-lg text-slate-300 leading-relaxed">
+            Join thousands of professionals who've transformed their careers with AI-powered personal branding. 
+            <span className="text-purple-400 font-semibold"> Cancel anytime, no hidden fees.</span>
+          </p>
         </div>
       </div>
     </section>
