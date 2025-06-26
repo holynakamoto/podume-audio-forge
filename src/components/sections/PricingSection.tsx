@@ -24,7 +24,7 @@ const subscriptionTiers = [
   },
   {
     name: 'Yearly Plan',
-    price: 79.90,
+    price: 79.99,
     period: 'year',
     monthlyEquivalent: 6.66,
     savings: '17% off',
@@ -42,9 +42,7 @@ const subscriptionTiers = [
 ];
 
 const addons = [
-  { name: 'Custom AI Voice Cloning', price: 29, description: 'One-time setup - mimic your own voice for all future episodes.' },
-  { name: 'Premium Social Assets', price: 19, description: 'Extra animated graphics and audiograms per episode.' },
-  { name: 'Additional Episode', price: 49, description: 'Extra episode outside your plan allowance.' }
+  { name: 'Custom AI Voice Cloning', price: 29, description: 'One-time setup - mimic your own voice for all future episodes.' }
 ];
 
 const PricingSection = () => {
@@ -146,11 +144,11 @@ const PricingSection = () => {
         {/* Apple-style add-ons section */}
         <div className="max-w-5xl mx-auto">
           <h3 className="text-4xl md:text-5xl font-black text-center mb-16 text-white">
-            Optional Add-ons
+            Optional Add-on
           </h3>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="flex justify-center">
             {addons.map(addon => (
-              <div key={addon.name} className="relative group">
+              <div key={addon.name} className="relative group max-w-sm">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-amber-600/5 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
                 <Card className="relative bg-card/20 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-2xl transition-all duration-300 hover:-translate-y-1">
                   <CardContent className="p-8 text-center">
