@@ -1,7 +1,24 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+
+// Define TypeScript interfaces for type safety
+interface LinkedInProfileResponse {
+  success: boolean;
+  data: string | null;
+  raw_profile?: unknown;
+}
+
+interface SupabaseSession {
+  provider_token?: string;
+  user?: {
+    id: string;
+    email?: string;
+    app_metadata: {
+      provider?: string;
+    };
+  };
+}
 
 export const useLinkedInOAuth = (
   onProfileData: (data: string) => void,
@@ -9,183 +26,102 @@ export const useLinkedInOAuth = (
 ) => {
   const [isProcessingProfile, setIsProcessingProfile] = useState(false);
 
-  // Handle OAuth callback and profile extraction
+  // Conditional logging for development only
+  const log = process.env.NODE_ENV === 'development' ? console.log : () => {};
+
   useEffect(() => {
+    // Move extractLinkedInProfile inside useEffect to clarify dependency
+    const extractLinkedInProfile = async (accessToken: string): Promise<{
+      profileData: string | null;
+      rawJSON: string | null;
+    }> => {
+      try {
+        log('[LinkedInOAuth] Extracting LinkedIn profile...');
+        log('[LinkedInOAuth] Access token exists:', !!accessToken);
+        log('[LinkedInOAuth] Access token length:', accessToken?.length);
+        log('[LinkedInOAuth] Access token preview:', accessToken?.substring(0, 5) + '...[truncated]');
+
+        const maxRetries = 3;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            log('[LinkedInOAuth] Calling linkedin-profile edge function, attempt:', attempt);
+            const { data, error } = await supabase.functions.invoke<LinkedInProfileResponse>('linkedin-profile', {
+              body: { access_token: accessToken }
+            });
+
+            log('[LinkedInOAuth] LinkedIn function response received');
+            log('[LinkedInOAuth] Error:', error);
+            log('[LinkedInOAuth] Data:', data);
+            log('[LinkedInOAuth] Data keys:', data ? Object.keys(data) : 'No data');
+
+            if (error) {
+              console.warn(`[LinkedInOAuth] Attempt ${attempt} failed: ${error.message}`);
+              if (attempt === maxRetries) {
+                throw new Error(`Failed after ${maxRetries} attempts: ${error.message}`);
+              }
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+              continue;
+            }
+
+            if (data?.success && data?.data) {
+              log('[LinkedInOAuth] LinkedIn profile data received successfully');
+              log('[LinkedInOAuth] Profile data length:', data.data.length);
+              log('[LinkedInOAuth] Profile data preview:', data.data.substring(0, 200) + '...');
+
+              const rawJSON = data?.raw_profile ? JSON.stringify(data.raw_profile) : null;
+              log('[LinkedInOAuth] Raw JSON available:', !!rawJSON);
+              log('[LinkedInOAuth] Raw JSON length:', rawJSON?.length || 0);
+
+              return { 
+                profileData: data.data,
+                rawJSON
+              };
+            } else {
+              console.error('[LinkedInOAuth] LinkedIn profile function returned no data:', data);
+              toast.error('No profile data received from LinkedIn');
+              return { profileData: null, rawJSON: null };
+            }
+          } catch (error: any) {
+            console.error('[LinkedInOAuth] Retry failed:', error);
+            if (attempt === maxRetries) {
+              toast.error(`Failed to extract LinkedIn profile after ${maxRetries} attempts: ${error.message || 'Unknown error'}`);
+              return { profileData: null, rawJSON: null };
+            }
+          }
+        }
+        return { profileData: null, rawJSON: null };
+      } catch (error: any) {
+        console.error('[LinkedInOAuth] Error calling LinkedIn profile function:', error);
+        toast.error(`Error processing LinkedIn profile: ${error.message || 'Unknown error'}`);
+        return { profileData: null, rawJSON: null };
+      }
+    };
+
     const handleOAuthCallback = async () => {
-      console.log('=== LinkedIn OAuth Callback Handler ===');
-      console.log('Current URL:', window.location.href);
-      console.log('URL params:', window.location.search);
-      console.log('URL hash:', window.location.hash);
-      
-      // Check if we're coming from OAuth (has specific URL params or hash)
+      log('[LinkedInOAuth] === LinkedIn OAuth Callback Handler ===');
+      log('[LinkedInOAuth] Current URL:', window.location.href);
+      log('[LinkedInOAuth] URL params:', window.location.search);
+      log('[LinkedInOAuth] URL hash:', window.location.hash);
+
+      // Check for OAuth params in query or hash
       const urlParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const hasOAuthParams = urlParams.get('code') || hashParams.get('access_token') || 
                            urlParams.get('state') || hashParams.get('state');
-      
-      console.log('Has OAuth params:', hasOAuthParams);
-      
-      // Small delay to ensure auth state is settled, especially after OAuth redirect
-      const delay = hasOAuthParams ? 2000 : 1000;
-      console.log(`Waiting ${delay}ms for auth state to settle...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      
+
+      log('[LinkedInOAuth] Has OAuth params:', hasOAuthParams);
+
       try {
-        console.log('Checking for LinkedIn OAuth session...');
+        log('[LinkedInOAuth] Checking for LinkedIn OAuth session...');
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
+
         if (sessionError) {
-          console.error('Session error:', sessionError);
+          console.error('[LinkedInOAuth] Session error:', sessionError);
+          toast.error(`Error retrieving session: ${sessionError.message || 'Unknown error'}`);
           return;
         }
 
-        console.log('Session check result:');
-        console.log('- Session exists:', !!session);
-        console.log('- Provider:', session?.user?.app_metadata?.provider);
-        console.log('- Provider token exists:', !!session?.provider_token);
-        console.log('- Provider token length:', session?.provider_token?.length || 0);
-        console.log('- User ID:', session?.user?.id);
-        console.log('- User email:', session?.user?.email);
-
-        // More flexible check for LinkedIn session
-        const isLinkedInSession = session?.user?.app_metadata?.provider === 'linkedin_oidc' ||
-                                session?.user?.app_metadata?.provider === 'linkedin';
-
-        console.log('Is LinkedIn session:', isLinkedInSession);
-
-        if (session?.provider_token && isLinkedInSession) {
-          console.log('=== LinkedIn OAuth Session Found ===');
-          console.log('Processing LinkedIn profile...');
-          setIsProcessingProfile(true);
-          
-          // Extract profile data using the provider token
-          console.log('Calling extractLinkedInProfile function...');
-          const { profileData, rawJSON } = await extractLinkedInProfile(session.provider_token);
-          
-          console.log('extractLinkedInProfile returned:', {
-            hasProfileData: !!profileData,
-            profileDataLength: profileData?.length || 0,
-            hasRawJSON: !!rawJSON,
-            rawJSONLength: rawJSON?.length || 0
-          });
-          
-          if (profileData) {
-            console.log('Profile data extracted successfully, length:', profileData.length);
-            console.log('Profile data preview:', profileData.substring(0, 200) + '...');
-            onProfileData(profileData);
-            
-            if (rawJSON && onRawJSON) {
-              console.log('Raw JSON data extracted, length:', rawJSON.length);
-              console.log('Raw JSON preview:', rawJSON.substring(0, 300) + '...');
-              onRawJSON(rawJSON);
-            } else {
-              console.log('No raw JSON data or no onRawJSON callback');
-            }
-            
-            toast.success('LinkedIn profile imported successfully!');
-            
-            // Clear OAuth params from URL
-            if (hasOAuthParams) {
-              console.log('Clearing OAuth params from URL');
-              window.history.replaceState({}, document.title, '/create');
-            }
-          } else {
-            console.error('Failed to extract LinkedIn profile data');
-            toast.error('Failed to extract LinkedIn profile data');
-          }
-          
-          setIsProcessingProfile(false);
-        } else {
-          console.log('No LinkedIn OAuth session found or invalid session');
-          console.log('Session details:', {
-            hasSession: !!session,
-            provider: session?.user?.app_metadata?.provider,
-            hasProviderToken: !!session?.provider_token,
-            providerTokenPreview: session?.provider_token?.substring(0, 20) + '...'
-          });
-        }
-      } catch (error) {
-        console.error('Error processing OAuth callback:', error);
-        setIsProcessingProfile(false);
-        toast.error('Error processing LinkedIn authentication');
-      }
-    };
-
-    // Run the callback handler
-    handleOAuthCallback();
-
-    // Also listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('=== Auth State Change Event ===');
-      console.log('Event:', event);
-      console.log('Session provider:', session?.user?.app_metadata?.provider);
-      console.log('Provider token exists:', !!session?.provider_token);
-      
-      if (event === 'SIGNED_IN' && 
-          (session?.user?.app_metadata?.provider === 'linkedin_oidc' || 
-           session?.user?.app_metadata?.provider === 'linkedin')) {
-        console.log('LinkedIn sign-in detected, processing profile...');
-        // Small delay to ensure everything is ready
-        setTimeout(() => {
-          handleOAuthCallback();
-        }, 1000);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [onProfileData, onRawJSON]);
-
-  const extractLinkedInProfile = async (accessToken: string): Promise<{
-    profileData: string | null;
-    rawJSON: string | null;
-  }> => {
-    try {
-      console.log('=== LinkedIn Profile Extraction ===');
-      console.log('Access token exists:', !!accessToken);
-      console.log('Access token length:', accessToken?.length);
-      console.log('Access token preview:', accessToken?.substring(0, 30) + '...');
-      console.log('Calling linkedin-profile edge function...');
-      
-      const { data, error } = await supabase.functions.invoke('linkedin-profile', {
-        body: { access_token: accessToken }
-      });
-
-      console.log('LinkedIn function response received');
-      console.log('Error:', error);
-      console.log('Data:', data);
-      console.log('Data keys:', data ? Object.keys(data) : 'No data');
-
-      if (error) {
-        console.error('LinkedIn profile function error:', error);
-        toast.error(`Failed to extract LinkedIn profile: ${error.message}`);
-        return { profileData: null, rawJSON: null };
-      }
-
-      if (data?.success && data?.data) {
-        console.log('LinkedIn profile data received successfully');
-        console.log('Profile data length:', data.data.length);
-        console.log('Profile data preview:', data.data.substring(0, 200) + '...');
-        
-        // Store raw JSON if available
-        const rawJSON = data?.raw_profile ? JSON.stringify(data.raw_profile) : null;
-        console.log('Raw JSON available:', !!rawJSON);
-        console.log('Raw JSON length:', rawJSON?.length || 0);
-        
-        return { 
-          profileData: data.data,
-          rawJSON: rawJSON
-        };
-      } else {
-        console.error('LinkedIn profile function returned no data:', data);
-        toast.error('No profile data received from LinkedIn');
-        return { profileData: null, rawJSON: null };
-      }
-    } catch (error) {
-      console.error('Error calling LinkedIn profile function:', error);
-      toast.error('Error processing LinkedIn profile');
-      return { profileData: null, rawJSON: null };
-    }
-  };
-
-  return { isProcessingProfile };
-};
+        log('[LinkedInOAuth] Session check result:');
+        log('[LinkedInOAuth] - Session exists:', !!session);
+        log('[LinkedInOAuth] - Provider:', session?.user?.app_metadata?.provider);
+        log('[LinkedInOAuth] - Provider token exists:', !!session从未
