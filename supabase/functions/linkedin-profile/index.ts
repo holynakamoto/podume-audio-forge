@@ -119,7 +119,8 @@ serve(async (req: Request) => {
     
     return new Response(JSON.stringify({ 
       success: true, 
-      data: resumeContent 
+      data: resumeContent,
+      raw_profile: profileData
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

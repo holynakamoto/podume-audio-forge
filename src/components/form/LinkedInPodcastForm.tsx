@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,11 +13,13 @@ import { LinkedInSubmitButton } from './LinkedInSubmitButton';
 import { LinkedInProfileSection } from './LinkedInProfileSection';
 import { LinkedInDebugInfo } from './LinkedInDebugInfo';
 import { LinkedInAPITester } from './LinkedInAPITester';
+import { LinkedInJSONOutput } from './LinkedInJSONOutput';
 import { useLinkedInOAuth } from './hooks/useLinkedInOAuth';
 import { useScriptGeneration } from './hooks/useScriptGeneration';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [linkedInContent, setLinkedInContent] = useState<string>('');
+  const [linkedInRawJSON, setLinkedInRawJSON] = useState<string>('');
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const navigate = useNavigate();
   const { user, isSignedIn } = useAuth();
@@ -33,7 +34,7 @@ export const LinkedInPodcastForm: React.FC = () => {
     },
   });
 
-  const { isProcessingProfile } = useLinkedInOAuth(setLinkedInContent);
+  const { isProcessingProfile } = useLinkedInOAuth(setLinkedInContent, setLinkedInRawJSON);
   const { 
     isLoading: isScriptLoading, 
     generatedScript, 
@@ -47,7 +48,12 @@ export const LinkedInPodcastForm: React.FC = () => {
 
   const handleClearProfile = () => {
     setLinkedInContent('');
+    setLinkedInRawJSON('');
     setGeneratedScript('');
+  };
+
+  const handleClearJSON = () => {
+    setLinkedInRawJSON('');
   };
 
   const onSubmit = async (values: LinkedInFormValues) => {
@@ -147,6 +153,11 @@ export const LinkedInPodcastForm: React.FC = () => {
       </div>
 
       <LinkedInAPITester />
+
+      <LinkedInJSONOutput 
+        jsonData={linkedInRawJSON}
+        onClear={handleClearJSON}
+      />
 
       <LinkedInDebugInfo 
         linkedInContent={linkedInContent}

@@ -3,7 +3,10 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useLinkedInOAuth = (onProfileData: (data: string) => void) => {
+export const useLinkedInOAuth = (
+  onProfileData: (data: string) => void,
+  onRawJSON?: (json: string) => void
+) => {
   const [isProcessingProfile, setIsProcessingProfile] = useState(false);
 
   // Handle OAuth callback and profile extraction
@@ -51,11 +54,17 @@ export const useLinkedInOAuth = (onProfileData: (data: string) => void) => {
           setIsProcessingProfile(true);
           
           // Extract profile data using the provider token
-          const profileData = await extractLinkedInProfile(session.provider_token);
+          const { profileData, rawJSON } = await extractLinkedInProfile(session.provider_token);
           
           if (profileData) {
             console.log('Profile data extracted successfully, length:', profileData.length);
             onProfileData(profileData);
+            
+            if (rawJSON && onRawJSON) {
+              console.log('Raw JSON data extracted, length:', rawJSON.length);
+              onRawJSON(rawJSON);
+            }
+            
             toast.success('LinkedIn profile imported successfully!');
             
             // Clear OAuth params from URL
@@ -106,9 +115,12 @@ export const useLinkedInOAuth = (onProfileData: (data: string) => void) => {
     });
 
     return () => subscription.unsubscribe();
-  }, [onProfileData]);
+  }, [onProfileData, onRawJSON]);
 
-  const extractLinkedInProfile = async (accessToken: string): Promise<string | null> => {
+  const extractLinkedInProfile = async (accessToken: string): Promise<{
+    profileData: string | null;
+    rawJSON: string | null;
+  }> => {
     try {
       console.log('=== LinkedIn Profile Extraction ===');
       console.log('Access token exists:', !!accessToken);
@@ -127,23 +139,30 @@ export const useLinkedInOAuth = (onProfileData: (data: string) => void) => {
       if (error) {
         console.error('LinkedIn profile function error:', error);
         toast.error(`Failed to extract LinkedIn profile: ${error.message}`);
-        return null;
+        return { profileData: null, rawJSON: null };
       }
 
       if (data?.success && data?.data) {
         console.log('LinkedIn profile data received successfully');
         console.log('Profile data length:', data.data.length);
         console.log('Profile data preview:', data.data.substring(0, 200) + '...');
-        return data.data;
+        
+        // Store raw JSON if available
+        const rawJSON = data?.raw_profile ? JSON.stringify(data.raw_profile) : null;
+        
+        return { 
+          profileData: data.data,
+          rawJSON: rawJSON
+        };
       } else {
         console.error('LinkedIn profile function returned no data:', data);
         toast.error('No profile data received from LinkedIn');
-        return null;
+        return { profileData: null, rawJSON: null };
       }
     } catch (error) {
       console.error('Error calling LinkedIn profile function:', error);
       toast.error('Error processing LinkedIn profile');
-      return null;
+      return { profileData: null, rawJSON: null };
     }
   };
 
