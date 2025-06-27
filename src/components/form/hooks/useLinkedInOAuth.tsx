@@ -23,8 +23,11 @@ export const useLinkedInOAuth = (
       const hasOAuthParams = urlParams.get('code') || hashParams.get('access_token') || 
                            urlParams.get('state') || hashParams.get('state');
       
+      console.log('Has OAuth params:', hasOAuthParams);
+      
       // Small delay to ensure auth state is settled, especially after OAuth redirect
       const delay = hasOAuthParams ? 2000 : 1000;
+      console.log(`Waiting ${delay}ms for auth state to settle...`);
       await new Promise(resolve => setTimeout(resolve, delay));
       
       try {
@@ -48,27 +51,42 @@ export const useLinkedInOAuth = (
         const isLinkedInSession = session?.user?.app_metadata?.provider === 'linkedin_oidc' ||
                                 session?.user?.app_metadata?.provider === 'linkedin';
 
+        console.log('Is LinkedIn session:', isLinkedInSession);
+
         if (session?.provider_token && isLinkedInSession) {
           console.log('=== LinkedIn OAuth Session Found ===');
           console.log('Processing LinkedIn profile...');
           setIsProcessingProfile(true);
           
           // Extract profile data using the provider token
+          console.log('Calling extractLinkedInProfile function...');
           const { profileData, rawJSON } = await extractLinkedInProfile(session.provider_token);
+          
+          console.log('extractLinkedInProfile returned:', {
+            hasProfileData: !!profileData,
+            profileDataLength: profileData?.length || 0,
+            hasRawJSON: !!rawJSON,
+            rawJSONLength: rawJSON?.length || 0
+          });
           
           if (profileData) {
             console.log('Profile data extracted successfully, length:', profileData.length);
+            console.log('Profile data preview:', profileData.substring(0, 200) + '...');
             onProfileData(profileData);
             
             if (rawJSON && onRawJSON) {
               console.log('Raw JSON data extracted, length:', rawJSON.length);
+              console.log('Raw JSON preview:', rawJSON.substring(0, 300) + '...');
               onRawJSON(rawJSON);
+            } else {
+              console.log('No raw JSON data or no onRawJSON callback');
             }
             
             toast.success('LinkedIn profile imported successfully!');
             
             // Clear OAuth params from URL
             if (hasOAuthParams) {
+              console.log('Clearing OAuth params from URL');
               window.history.replaceState({}, document.title, '/create');
             }
           } else {
@@ -126,7 +144,7 @@ export const useLinkedInOAuth = (
       console.log('Access token exists:', !!accessToken);
       console.log('Access token length:', accessToken?.length);
       console.log('Access token preview:', accessToken?.substring(0, 30) + '...');
-      console.log('Calling linkedin-profile function...');
+      console.log('Calling linkedin-profile edge function...');
       
       const { data, error } = await supabase.functions.invoke('linkedin-profile', {
         body: { access_token: accessToken }
@@ -134,6 +152,7 @@ export const useLinkedInOAuth = (
 
       console.log('LinkedIn function response received');
       console.log('Error:', error);
+      console.log('Data:', data);
       console.log('Data keys:', data ? Object.keys(data) : 'No data');
 
       if (error) {
@@ -149,6 +168,8 @@ export const useLinkedInOAuth = (
         
         // Store raw JSON if available
         const rawJSON = data?.raw_profile ? JSON.stringify(data.raw_profile) : null;
+        console.log('Raw JSON available:', !!rawJSON);
+        console.log('Raw JSON length:', rawJSON?.length || 0);
         
         return { 
           profileData: data.data,
