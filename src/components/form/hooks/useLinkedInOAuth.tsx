@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,7 +31,6 @@ export const useLinkedInOAuth = (
   const log = process.env.NODE_ENV === 'development' ? console.log : () => {};
 
   useEffect(() => {
-    // Move extractLinkedInProfile inside useEffect to clarify dependency
     const extractLinkedInProfile = async (accessToken: string): Promise<{
       profileData: string | null;
       rawJSON: string | null;
@@ -38,8 +38,6 @@ export const useLinkedInOAuth = (
       try {
         log('[LinkedInOAuth] Extracting LinkedIn profile...');
         log('[LinkedInOAuth] Access token exists:', !!accessToken);
-        log('[LinkedInOAuth] Access token length:', accessToken?.length);
-        log('[LinkedInOAuth] Access token preview:', accessToken?.substring(0, 5) + '...[truncated]');
 
         const maxRetries = 3;
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -52,7 +50,6 @@ export const useLinkedInOAuth = (
             log('[LinkedInOAuth] LinkedIn function response received');
             log('[LinkedInOAuth] Error:', error);
             log('[LinkedInOAuth] Data:', data);
-            log('[LinkedInOAuth] Data keys:', data ? Object.keys(data) : 'No data');
 
             if (error) {
               console.warn(`[LinkedInOAuth] Attempt ${attempt} failed: ${error.message}`);
@@ -65,12 +62,9 @@ export const useLinkedInOAuth = (
 
             if (data?.success && data?.data) {
               log('[LinkedInOAuth] LinkedIn profile data received successfully');
-              log('[LinkedInOAuth] Profile data length:', data.data.length);
-              log('[LinkedInOAuth] Profile data preview:', data.data.substring(0, 200) + '...');
-
+              
               const rawJSON = data?.raw_profile ? JSON.stringify(data.raw_profile) : null;
               log('[LinkedInOAuth] Raw JSON available:', !!rawJSON);
-              log('[LinkedInOAuth] Raw JSON length:', rawJSON?.length || 0);
 
               return { 
                 profileData: data.data,
@@ -97,31 +91,73 @@ export const useLinkedInOAuth = (
       }
     };
 
-    const handleOAuthCallback = async () => {
-      log('[LinkedInOAuth] === LinkedIn OAuth Callback Handler ===');
-      log('[LinkedInOAuth] Current URL:', window.location.href);
-      log('[LinkedInOAuth] URL params:', window.location.search);
-      log('[LinkedInOAuth] URL hash:', window.location.hash);
-
-      // Check for OAuth params in query or hash
-      const urlParams = new URLSearchParams(window.location.search);
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const hasOAuthParams = urlParams.get('code') || hashParams.get('access_token') || 
-                           urlParams.get('state') || hashParams.get('state');
-
-      log('[LinkedInOAuth] Has OAuth params:', hasOAuthParams);
-
+    const handleLinkedInSession = async () => {
       try {
         log('[LinkedInOAuth] Checking for LinkedIn OAuth session...');
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError) {
           console.error('[LinkedInOAuth] Session error:', sessionError);
-          toast.error(`Error retrieving session: ${sessionError.message || 'Unknown error'}`);
           return;
         }
 
         log('[LinkedInOAuth] Session check result:');
         log('[LinkedInOAuth] - Session exists:', !!session);
         log('[LinkedInOAuth] - Provider:', session?.user?.app_metadata?.provider);
-        log('[LinkedInOAuth] - Provider token exists:', !!session从未
+        log('[LinkedInOAuth] - Provider token exists:', !!session?.provider_token);
+
+        const isLinkedInSession = session?.user?.app_metadata?.provider === 'linkedin_oidc';
+        log('[LinkedInOAuth] Is LinkedIn session:', isLinkedInSession);
+
+        if (isLinkedInSession && session?.provider_token) {
+          log('[LinkedInOAuth] Processing LinkedIn profile...');
+          setIsProcessingProfile(true);
+          
+          const { profileData, rawJSON } = await extractLinkedInProfile(session.provider_token);
+          
+          if (profileData) {
+            onProfileData(profileData);
+            toast.success('LinkedIn profile imported successfully!');
+          }
+          
+          if (rawJSON && onRawJSON) {
+            onRawJSON(rawJSON);
+          }
+          
+          setIsProcessingProfile(false);
+        } else {
+          log('[LinkedInOAuth] No LinkedIn OAuth session found');
+        }
+      } catch (error: any) {
+        console.error('[LinkedInOAuth] Error processing LinkedIn session:', error);
+        setIsProcessingProfile(false);
+        toast.error(`Error processing LinkedIn profile: ${error.message || 'Unknown error'}`);
+      }
+    };
+
+    // Check for LinkedIn session on component mount
+    handleLinkedInSession();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      log('[LinkedInOAuth] === Auth State Change Event ===');
+      log('[LinkedInOAuth] Event:', event);
+      log('[LinkedInOAuth] Session provider:', session?.user?.app_metadata?.provider);
+
+      if (event === 'SIGNED_IN' && session?.user?.app_metadata?.provider === 'linkedin_oidc') {
+        log('[LinkedInOAuth] LinkedIn sign-in detected, processing profile...');
+        
+        // Small delay to ensure session is fully established
+        setTimeout(() => {
+          handleLinkedInSession();
+        }, 1000);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [onProfileData, onRawJSON]);
+
+  return { isProcessingProfile };
+};

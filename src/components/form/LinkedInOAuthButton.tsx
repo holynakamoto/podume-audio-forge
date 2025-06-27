@@ -18,15 +18,19 @@ export const LinkedInOAuthButton: React.FC<LinkedInOAuthButtonProps> = ({ onProf
       console.log('=== LinkedIn OAuth Debug ===');
       console.log('Starting LinkedIn OAuth...');
       console.log('Current URL:', window.location.href);
-      console.log('Origin:', window.location.origin);
       
       // Create explicit redirect URL to create page
       const redirectUrl = `${window.location.origin}/create`;
       console.log('Redirect URL set to:', redirectUrl);
       
-      // Store current page in session storage to ensure we return here
-      sessionStorage.setItem('linkedin_auth_redirect', '/create');
-      sessionStorage.setItem('linkedin_auth_origin', window.location.origin);
+      // Check if user is already signed in with email
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user?.app_metadata?.provider !== 'linkedin_oidc') {
+        console.log('User signed in with different provider, signing out first...');
+        await supabase.auth.signOut();
+        // Wait a bit for signout to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
       
       // Use Supabase OAuth for LinkedIn with explicit redirect
       const { data, error } = await supabase.auth.signInWithOAuth({
