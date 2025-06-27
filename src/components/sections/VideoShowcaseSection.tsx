@@ -31,40 +31,16 @@ const VideoShowcaseSection = () => {
         <div className="relative max-w-5xl mx-auto">
           <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-purple-500/30 border-4 border-gradient-to-r from-purple-400 to-amber-400 p-1">
             <div className="relative bg-black rounded-2xl overflow-hidden aspect-video">
-              {/* Placeholder for video - replace with actual video once uploaded */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 to-amber-900/50 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600/30 to-amber-400/30 blur-3xl rounded-full scale-150"></div>
-                    <div className="relative w-24 h-24 mx-auto bg-gradient-to-r from-purple-600 to-amber-500 rounded-full flex items-center justify-center">
-                      <Play className="w-8 h-8 text-white ml-1" />
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">McLaren Speedtail × Podumé</h3>
-                  <p className="text-slate-300">Purple & Gold. Speed & Precision.</p>
-                  
-                  {/* Upload instructions for when you have the video */}
-                  <div className="mt-8 p-4 bg-slate-800/50 rounded-lg border border-purple-400/20">
-                    <p className="text-sm text-slate-400 mb-2">
-                      Replace this placeholder by uploading your McLaren video:
-                    </p>
-                    <code className="text-xs text-amber-300">
-                      /public/videos/mclaren-speedtail.mp4
-                    </code>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Video element (hidden until you upload the actual video) */}
+              {/* McLaren Speedtail Video */}
               <video 
-                className="w-full h-full object-cover hidden"
+                className="w-full h-full object-cover"
                 autoPlay 
                 muted 
                 loop 
                 playsInline
-                poster="/placeholder-mclaren.jpg"
+                poster="/placeholder.svg"
               >
-                <source src="/videos/mclaren-speedtail.mp4" type="video/mp4" />
+                <source src="/social_holynakamoto_httpss.mj.run_81FNI7mL8s_create_a_cool_10_second_99b66743-ee67-4c2a-88c5-4ab18c2a94e3_2.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               
@@ -88,7 +64,7 @@ const VideoShowcaseSection = () => {
                 </div>
                 
                 <div className="text-white text-sm bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm">
-                  0:05
+                  0:10
                 </div>
               </div>
             </div>
