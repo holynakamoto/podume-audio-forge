@@ -5,15 +5,15 @@ import { Play, Volume2 } from 'lucide-react';
 
 const VideoShowcaseSection = () => {
   return (
-    <section id="video-showcase" className="relative w-full py-20 overflow-hidden">
+    <section id="video-showcase" className="relative w-full h-screen overflow-hidden">
       {/* Background with purple/gold gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-slate-900 to-amber-900">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-transparent to-amber-400/20"></div>
       </div>
       
-      <div className="container relative z-10 px-4 md:px-6">
+      <div className="container relative z-10 px-4 md:px-6 h-full flex flex-col justify-center">
         {/* Section Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-6">
             <span className="block bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-amber-300">
               Experience the
@@ -28,8 +28,8 @@ const VideoShowcaseSection = () => {
         </div>
 
         {/* Video Container */}
-        <div className="relative max-w-5xl mx-auto">
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-purple-500/30 border-4 border-gradient-to-r from-purple-400 to-amber-400 p-1">
+        <div className="relative max-w-6xl mx-auto flex-1 flex items-center">
+          <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl shadow-purple-500/30 border-4 border-gradient-to-r from-purple-400 to-amber-400 p-1">
             <div className="relative bg-black rounded-2xl overflow-hidden aspect-video">
               {/* McLaren Speedtail Video */}
               <video 
@@ -76,7 +76,7 @@ const VideoShowcaseSection = () => {
         </div>
 
         {/* Call to Action */}
-        <div className="text-center mt-12">
+        <div className="text-center mt-8">
           <p className="text-lg text-slate-300 mb-6">
             Ready to accelerate your career with the same precision?
           </p>
