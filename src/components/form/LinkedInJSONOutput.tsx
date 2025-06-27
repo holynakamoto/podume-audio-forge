@@ -36,7 +36,25 @@ export const LinkedInJSONOutput: React.FC<LinkedInJSONOutputProps> = ({
     toast.success('JSON file downloaded!');
   };
 
-  if (!jsonData) return null;
+  // Show placeholder when no data
+  if (!jsonData) {
+    return (
+      <Card className="mb-6 bg-gray-50 border-gray-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-semibold text-gray-700">
+            LinkedIn Profile JSON
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-white p-4 rounded border border-gray-300 text-center">
+            <p className="text-gray-500 text-sm">
+              No LinkedIn profile data yet. Complete the LinkedIn OAuth to see JSON data here.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="mb-6 bg-green-50 border-green-200">
