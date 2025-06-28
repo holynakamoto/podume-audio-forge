@@ -12,8 +12,8 @@ const VideoShowcaseSection = () => {
       </div>
       
       <div className="container relative z-10 px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center">
-        {/* Section Header */}
-        <div className="text-center mb-6 sm:mb-8">
+        {/* Section Header - Hidden on mobile */}
+        <div className="text-center mb-6 sm:mb-8 hidden sm:block">
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-4 sm:mb-6">
             <span className="block bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-amber-300">
               Experience the
@@ -75,9 +75,9 @@ const VideoShowcaseSection = () => {
           <div className="absolute -bottom-8 -right-8 w-20 h-20 bg-gradient-to-r from-amber-500 to-purple-600 rounded-full opacity-40 blur-xl hidden sm:block"></div>
         </div>
 
-        {/* Call to Action */}
+        {/* Call to Action - Hidden McLaren text on mobile */}
         <div className="text-center mt-6 sm:mt-8">
-          <p className="text-base sm:text-lg text-slate-300 mb-4 sm:mb-6 px-4">
+          <p className="text-base sm:text-lg text-slate-300 mb-4 sm:mb-6 px-4 hidden sm:block">
             Ready to accelerate your career with the same precision?
           </p>
           <Button 
