@@ -29,8 +29,8 @@ const VideoShowcaseSection = () => {
 
         {/* Video Container */}
         <div className="relative max-w-6xl mx-auto flex-1 flex items-center w-full">
-          <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl shadow-purple-500/30 border-2 sm:border-4 border-gradient-to-r from-purple-400 to-amber-400 p-0.5 sm:p-1">
-            <div className="relative bg-black rounded-xl sm:rounded-2xl overflow-hidden aspect-video">
+          <div className="relative w-full rounded-xl sm:rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl shadow-purple-500/30 border border-purple-400/50 sm:border-2 sm:border-gradient-to-r sm:from-purple-400 sm:to-amber-400 p-0.5 sm:p-1">
+            <div className="relative bg-black rounded-lg sm:rounded-xl lg:rounded-2xl overflow-hidden aspect-video">
               {/* McLaren Speedtail Video */}
               <video 
                 className="w-full h-full object-cover"
@@ -45,25 +45,25 @@ const VideoShowcaseSection = () => {
               </video>
               
               {/* Video controls overlay */}
-              <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 flex justify-between items-center">
-                <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 flex justify-between items-center">
+                <div className="flex items-center space-x-3 sm:space-x-4">
                   <Button 
                     size="sm" 
-                    className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm border border-white/20 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+                    className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm border border-white/20 text-sm px-3 py-2"
                   >
-                    <Play className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    <Play className="w-4 h-4 mr-2" />
                     Play
                   </Button>
                   <Button 
                     size="sm" 
                     variant="ghost" 
-                    className="text-white hover:bg-white/10 p-1 sm:p-2"
+                    className="text-white hover:bg-white/10 p-2"
                   >
-                    <Volume2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <Volume2 className="w-4 h-4" />
                   </Button>
                 </div>
                 
-                <div className="text-white text-xs sm:text-sm bg-black/30 px-2 sm:px-3 py-1 rounded-full backdrop-blur-sm">
+                <div className="text-white text-sm bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm">
                   0:10
                 </div>
               </div>
