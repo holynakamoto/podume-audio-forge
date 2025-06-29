@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Hero = () => {
   return (
@@ -41,9 +42,11 @@ const Hero = () => {
           </a>
         </div>
         
-        <button className="bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-amber-400/20 hover:border-amber-300/50 text-white rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 hover:scale-105">
-          Watch Trailer
-        </button>
+        <Link to="/our-podcasts">
+          <button className="bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-amber-400/20 hover:border-amber-300/50 text-white rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 hover:scale-105">
+            View Our Podcasts
+          </button>
+        </Link>
       </nav>
       
       {/* Main Content Area - Anchored to Bottom */}

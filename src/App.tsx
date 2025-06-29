@@ -12,6 +12,7 @@ import { ClerkAuthProvider } from "./auth/ClerkAuthProvider";
 import AuthPage from "./pages/Auth";
 import PodcastPage from "./pages/PodcastPage";
 import ZooToolsDemo from "./pages/ZooToolsDemo";
+import OurPodcasts from "./pages/OurPodcasts";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/podcast/:id" element={<PodcastPage />} />
             <Route path="/zootools" element={<ZooToolsDemo />} />
+            <Route path="/our-podcasts" element={<OurPodcasts />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
