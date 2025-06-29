@@ -1,30 +1,12 @@
 
-import Header from '@/components/layout/Header';
-import HeroSection from '@/components/sections/HeroSection';
-import HowItWorksSection from '@/components/sections/HowItWorksSection';
-import SampleSection from '@/components/sections/SampleSection';
-import VideoShowcaseSection from '@/components/sections/VideoShowcaseSection';
-import PricingSection from '@/components/sections/PricingSection';
-import FaqSection from '@/components/sections/FaqSection';
-import WaitlistSection from '@/components/sections/WaitlistSection';
-import Footer from '@/components/layout/Footer';
-import ChatBot from '@/components/chat/ChatBot';
+import Hero from '@/components/Hero';
+import SecondarySection from '@/components/SecondarySection';
 
 const Index = () => {
   return (
-    <div className="bg-background text-foreground flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-grow">
-        <VideoShowcaseSection />
-        <HeroSection />
-        <HowItWorksSection />
-        <SampleSection />
-        <PricingSection />
-        <WaitlistSection />
-        <FaqSection />
-      </main>
-      <Footer />
-      <ChatBot />
+    <div className="bg-background text-foreground">
+      <Hero />
+      <SecondarySection />
     </div>
   );
 };
