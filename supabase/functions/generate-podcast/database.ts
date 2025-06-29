@@ -2,7 +2,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { PodcastRequest } from './types.ts';
 import { generateAudioWithDeepgram } from './deepgram-tts.ts';
-import { processAudioWithAuphonic } from './auphonic-api.ts';
 import { triggerZapierMCP, notifyZapierCompletion } from './zapier-mcp.ts';
 
 export async function savePodcastToDatabase(
@@ -46,6 +45,7 @@ export async function savePodcastToDatabase(
     console.log('Podcast created successfully with ID:', data.id);
     
     // Trigger Zapier MCP workflow early for parallel processing
+    // This will handle both audio generation with Deepgram and post-processing with Auphonic
     await triggerZapierMCP(data);
     
     console.log('Starting audio generation with Deepgram Aura-2...');
@@ -55,19 +55,14 @@ export async function savePodcastToDatabase(
     
     if (audioDataUrl) {
       console.log('Deepgram audio generation successful');
+      console.log('Audio will be post-processed by Auphonic via Zapier MCP workflow');
       
-      // Process audio with Auphonic for enhancement
-      console.log('Starting Auphonic audio post-processing...');
-      const processedAudioUrl = await processAudioWithAuphonic(audioDataUrl, data.title);
-      
-      const finalAudioUrl = processedAudioUrl || audioDataUrl;
-      console.log('Final audio URL:', finalAudioUrl ? 'Generated' : 'None');
-      
-      // Update the podcast with the processed audio URL
+      // Update the podcast with the raw audio URL
+      // Zapier MCP will handle Auphonic processing and update with final URL
       const { error: updateError } = await supabaseAdminClient
         .from('podcasts')
         .update({
-          audio_url: finalAudioUrl,
+          audio_url: audioDataUrl,
           status: 'completed',
         })
         .eq('id', data.id);
@@ -75,8 +70,8 @@ export async function savePodcastToDatabase(
       if (updateError) {
         console.error('Failed to update podcast with audio URL:', updateError);
       } else {
-        console.log('Podcast updated with processed audio URL successfully');
-        data.audio_url = finalAudioUrl;
+        console.log('Podcast updated with raw audio URL successfully');
+        data.audio_url = audioDataUrl;
         data.status = 'completed';
         
         // Notify Zapier of completion
