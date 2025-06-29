@@ -27,18 +27,18 @@ const Hero = () => {
         </div>
         
         <div className="hidden lg:flex items-center space-x-8">
-          <a href="#features" className="text-white hover:text-white/80 transition-colors duration-300 text-sm font-medium bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20 hover:bg-white/20">
+          <a href="#hero" className="text-white hover:text-amber-300 transition-colors duration-300 text-sm font-medium bg-white/20 px-6 py-3 rounded-full backdrop-blur-sm border border-white/30 hover:bg-amber-400/20 hover:border-amber-300/50">
             Features
           </a>
-          <a href="#sample" className="text-white hover:text-white/80 transition-colors duration-300 text-sm font-medium bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20 hover:bg-white/20">
+          <a href="#sample" className="text-white hover:text-amber-300 transition-colors duration-300 text-sm font-medium bg-white/20 px-6 py-3 rounded-full backdrop-blur-sm border border-white/30 hover:bg-amber-400/20 hover:border-amber-300/50">
             Sample
           </a>
-          <a href="#pricing" className="text-white hover:text-white/80 transition-colors duration-300 text-sm font-medium bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20 hover:bg-white/20">
+          <a href="#pricing" className="text-white hover:text-amber-300 transition-colors duration-300 text-sm font-medium bg-white/20 px-6 py-3 rounded-full backdrop-blur-sm border border-white/30 hover:bg-amber-400/20 hover:border-amber-300/50">
             Pricing
           </a>
         </div>
         
-        <button className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:border-white/30 text-white rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 hover:scale-105">
+        <button className="bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-amber-400/20 hover:border-amber-300/50 text-white rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 hover:scale-105">
           Watch Trailer
         </button>
       </nav>
