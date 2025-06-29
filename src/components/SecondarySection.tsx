@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Award, Users, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const SecondarySection = () => {
   return (
@@ -75,12 +76,14 @@ const SecondarySection = () => {
 
         {/* Call to Action */}
         <div className="text-center">
-          <Button 
-            size="lg"
-            className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold px-12 py-6 rounded-2xl text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-purple-500/25"
-          >
-            Begin Your Transformation
-          </Button>
+          <Link to="/create">
+            <Button 
+              size="lg"
+              className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold px-12 py-6 rounded-2xl text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-purple-500/25"
+            >
+              Begin Your Transformation
+            </Button>
+          </Link>
           <p className="text-white/60 mt-6 text-lg">
             Join the exclusive circle of professionals who command attention
           </p>
