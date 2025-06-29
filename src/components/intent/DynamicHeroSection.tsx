@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,9 +18,11 @@ export const DynamicHeroSection = () => {
         headline: "Welcome Back!",
         subheadline: "Ready to create your next podcast episode?",
         primaryCTA: "Continue Creating",
-        secondaryCTA: "View Your Podcasts",
+        secondaryCTA: "View Our Podcasts",
         primaryIcon: Sparkles,
-        secondaryIcon: MoveRight
+        secondaryIcon: MoveRight,
+        primaryLink: "/create",
+        secondaryLink: "/our-podcasts"
       };
     }
 
@@ -31,7 +34,9 @@ export const DynamicHeroSection = () => {
           primaryCTA: "See Pricing Plans",
           secondaryCTA: "Hear Sample First",
           primaryIcon: DollarSign,
-          secondaryIcon: MoveRight
+          secondaryIcon: MoveRight,
+          primaryLink: "#pricing",
+          secondaryLink: "#sample"
         };
       
       case 'join_community':
@@ -41,7 +46,9 @@ export const DynamicHeroSection = () => {
           primaryCTA: "Join Community",
           secondaryCTA: "Create Your Story",
           primaryIcon: Users,
-          secondaryIcon: Sparkles
+          secondaryIcon: Sparkles,
+          primaryLink: "#community",
+          secondaryLink: "/create"
         };
       
       case 'create_podcast':
@@ -51,7 +58,9 @@ export const DynamicHeroSection = () => {
           primaryCTA: "Create Your Podcast",
           secondaryCTA: "See How It Works",
           primaryIcon: Sparkles,
-          secondaryIcon: MoveRight
+          secondaryIcon: MoveRight,
+          primaryLink: "/create",
+          secondaryLink: "#sample"
         };
       
       default:
@@ -61,7 +70,9 @@ export const DynamicHeroSection = () => {
           primaryCTA: "Create Your Podcast Now",
           secondaryCTA: "Hear The Difference",
           primaryIcon: Sparkles,
-          secondaryIcon: MoveRight
+          secondaryIcon: MoveRight,
+          primaryLink: "/create",
+          secondaryLink: "#sample"
         };
     }
   };
@@ -113,27 +124,45 @@ export const DynamicHeroSection = () => {
         
         {/* Dynamic CTAs */}
         <div className="flex flex-col sm:flex-row justify-center gap-6 mb-16">
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 rounded-2xl blur-lg opacity-60 group-hover:opacity-80 transition-all duration-300 group-hover:scale-110"></div>
-            <Button 
-              size="lg" 
-              className="relative w-full sm:w-auto bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-500 hover:via-pink-500 hover:to-amber-400 text-white font-bold px-10 py-8 rounded-2xl text-xl transition-all duration-300 ease-out hover:scale-105 shadow-2xl shadow-purple-500/30 border-2 border-white/20 hover:border-white/40"
-              onClick={handlePrimaryCTA}
-            >
-              <PrimaryIcon className="mr-3 h-6 w-6" />
-              {content.primaryCTA}
-            </Button>
-          </div>
+          <Link to={content.primaryLink}>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 rounded-2xl blur-lg opacity-60 group-hover:opacity-80 transition-all duration-300 group-hover:scale-110"></div>
+              <Button 
+                size="lg" 
+                className="relative w-full sm:w-auto bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:from-purple-500 hover:via-pink-500 hover:to-amber-400 text-white font-bold px-10 py-8 rounded-2xl text-xl transition-all duration-300 ease-out hover:scale-105 shadow-2xl shadow-purple-500/30 border-2 border-white/20 hover:border-white/40"
+                onClick={handlePrimaryCTA}
+              >
+                <PrimaryIcon className="mr-3 h-6 w-6" />
+                {content.primaryCTA}
+              </Button>
+            </div>
+          </Link>
           
-          <Button 
-            size="lg" 
-            variant="outline" 
-            className="w-full sm:w-auto font-bold px-10 py-8 rounded-2xl text-xl transition-all duration-300 ease-out hover:scale-105 border-3 border-amber-400/60 hover:bg-amber-400/20 hover:border-amber-300 text-amber-200 hover:text-amber-100 backdrop-blur-sm bg-white/5 shadow-xl"
-            onClick={handleSecondaryCTA}
-          >
-            <SecondaryIcon className="mr-3 h-6 w-6" />
-            {content.secondaryCTA}
-          </Button>
+          {content.secondaryLink.startsWith('#') ? (
+            <a href={content.secondaryLink}>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="w-full sm:w-auto font-bold px-10 py-8 rounded-2xl text-xl transition-all duration-300 ease-out hover:scale-105 border-3 border-amber-400/60 hover:bg-amber-400/20 hover:border-amber-300 text-amber-200 hover:text-amber-100 backdrop-blur-sm bg-white/5 shadow-xl"
+                onClick={handleSecondaryCTA}
+              >
+                <SecondaryIcon className="mr-3 h-6 w-6" />
+                {content.secondaryCTA}
+              </Button>
+            </a>
+          ) : (
+            <Link to={content.secondaryLink}>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="w-full sm:w-auto font-bold px-10 py-8 rounded-2xl text-xl transition-all duration-300 ease-out hover:scale-105 border-3 border-amber-400/60 hover:bg-amber-400/20 hover:border-amber-300 text-amber-200 hover:text-amber-100 backdrop-blur-sm bg-white/5 shadow-xl"
+                onClick={handleSecondaryCTA}
+              >
+                <SecondaryIcon className="mr-3 h-6 w-6" />
+                {content.secondaryCTA}
+              </Button>
+            </Link>
+          )}
         </div>
         
         {/* Progressive disclosure - social proof */}
