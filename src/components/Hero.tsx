@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Award } from 'lucide-react';
 
 const Hero = () => {
   return (
@@ -14,54 +13,55 @@ const Hero = () => {
         playsInline
         poster="/placeholder.svg"
       >
-        <source src="https://github.com/holynakamoto/podume-audio-forge/blob/main/public/social_holynakamoto_httpss.mj.run_81FNI7mL8s_create_a_cool_10_second_99b66743-ee67-4c2a-88c5-4ab18c2a94e3_2.mp4" type="video/mp4" />
+        <source src="/social_holynakamoto_httpss.mj.run_81FNI7mL8s_create_a_cool_10_second_99b66743-ee67-4c2a-88c5-4ab18c2a94e3_2.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
       
       {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-black/50 z-10"></div>
+      <div className="absolute inset-0 bg-black/60 z-10"></div>
       
       {/* Navigation Bar */}
-      <nav className="relative z-30 flex items-center justify-between p-8 lg:p-12">
-        <div className="text-white font-light tracking-wide text-xl">
-          Sandstorm®
+      <nav className="relative z-30 flex items-center justify-between p-6 md:p-8 lg:p-12">
+        <div className="text-white font-light tracking-wide text-xl md:text-2xl">
+          Podume®
         </div>
         
-        <div className="hidden md:flex items-center space-x-8">
-          <a href="#mission" className="text-white/80 hover:text-white transition-colors duration-300">
-            Mission
+        <div className="hidden lg:flex items-center space-x-8">
+          <a href="#features" className="text-white/80 hover:text-white transition-colors duration-300 text-sm font-medium">
+            Features
           </a>
-          <a href="#chapter" className="text-white/80 hover:text-white transition-colors duration-300">
-            Chapter
+          <a href="#sample" className="text-white/80 hover:text-white transition-colors duration-300 text-sm font-medium">
+            Sample
           </a>
-          <a href="#about" className="text-white/80 hover:text-white transition-colors duration-300">
-            About
+          <a href="#pricing" className="text-white/80 hover:text-white transition-colors duration-300 text-sm font-medium">
+            Pricing
           </a>
         </div>
         
-        <button className="border border-white/30 hover:border-white/50 text-white/80 hover:text-white rounded-full px-6 py-2 transition-all duration-300">
+        <button className="bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 hover:border-white/30 text-white rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 hover:scale-105">
           Watch Trailer
         </button>
       </nav>
       
-      {/* Main Content Area */}
-      <div className="relative z-20 flex-1 flex items-end pb-8 px-8 lg:pb-12 lg:px-12 mt-24">
-        <div className="max-w-4xl">
-          {/* Tagline */}
-          <p className="text-white/60 text-sm font-light tracking-wide mb-6">
-            The heat is nothing compared to what's coming.
+      {/* Main Content Area - Anchored to Bottom */}
+      <div className="relative z-20 flex-1 flex items-end pb-12 px-6 md:pb-16 md:px-8 lg:pb-20 lg:px-12">
+        <div className="max-w-5xl w-full">
+          {/* Moody Tagline */}
+          <p className="text-white/60 text-sm md:text-base font-light tracking-wide mb-6 md:mb-8">
+            There is no competition, your story is a limited edition
           </p>
           
-          {/* Headline */}
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-light leading-none mb-8">
-            <div className="text-white">Survive the Storm.</div>
-            <div className="text-white/90">Rule the Desert.</div>
+          {/* Bold Two-Line Headline */}
+          <h1 className="text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-light leading-none mb-8 md:mb-12">
+            <div className="text-white mb-2">Purple Reign.</div>
+            <div className="text-white/75">Majesty.</div>
           </h1>
           
-          {/* Paragraph */}
-          <p className="lg:max-w-md text-white/70 font-light leading-relaxed text-lg">
-            When the sand settles and the dust clears, only the strongest remain standing. 
-            In this wasteland, survival isn't just about endurance—it's about domination.
+          {/* Story Paragraph */}
+          <p className="max-w-xl text-white/70 font-light leading-relaxed text-lg md:text-xl">
+            In a world where voices blend into the noise, yours cuts through like lightning. 
+            This isn't just about being heard—it's about commanding attention, owning your narrative, 
+            and turning your story into an empire.
           </p>
         </div>
       </div>
