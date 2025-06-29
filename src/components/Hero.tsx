@@ -13,7 +13,7 @@ const Hero = () => {
         playsInline
         poster="/placeholder.svg"
       >
-        <source src="/social_holynakamoto_httpss.mj.run_81FNI7mL8s_create_a_cool_10_second_99b66743-ee67-4c2a-88c5-4ab18c2a94e3_2.mp4" type="video/mp4" />
+        <source src="https://cdn.midjourney.com/video/189e6117-bc79-48af-8c64-8acc4840b271/0.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
       
