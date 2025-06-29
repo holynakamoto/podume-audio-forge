@@ -1,105 +1,79 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Headphones } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { UserButton } from '@clerk/clerk-react';
+import { useAuth } from '@/auth/ClerkAuthProvider';
+import { Menu, X } from 'lucide-react';
 
-const MobileNav = () => {
+export const MobileNav = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { isSignedIn } = useAuth();
 
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const closeMenu = () => {
-    setIsOpen(false);
-  };
-
-  const navLinks = [
-    { href: "/#features", label: "Features" },
-    { href: "/#sample", label: "Sample" },
-    { href: "/#pricing", label: "Pricing" },
-    { href: "/#faq", label: "FAQ" },
-  ];
+  const closeMenu = () => setIsOpen(false);
 
   return (
-    <div className="relative md:hidden">
-      {/* Hamburger Menu Button */}
-      <button
-        className="relative z-50 p-2 rounded-lg bg-gradient-to-r from-purple-600 to-purple-700 shadow-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-300"
-        onClick={toggleMenu}
-        aria-label="Toggle menu"
-      >
-        <div className="w-5 h-5 flex flex-col justify-center space-y-1">
-          <span className={cn(
-            "block h-0.5 w-5 bg-amber-400 transition-all duration-300 transform origin-center",
-            isOpen ? "rotate-45 translate-y-1" : ""
-          )} />
-          <span className={cn(
-            "block h-0.5 w-5 bg-amber-400 transition-all duration-300",
-            isOpen ? "opacity-0" : ""
-          )} />
-          <span className={cn(
-            "block h-0.5 w-5 bg-amber-400 transition-all duration-300 transform origin-center",
-            isOpen ? "-rotate-45 -translate-y-1" : ""
-          )} />
-        </div>
-      </button>
-
-      {/* Dropdown Menu */}
-      <div className={cn(
-        "absolute top-full right-0 mt-2 w-64 bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 rounded-xl shadow-2xl border border-purple-600/30 backdrop-blur-xl transition-all duration-300 transform origin-top-right z-40",
-        isOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
-      )}>
-        {/* Logo */}
-        <div className="flex items-center gap-2 p-4 border-b border-purple-600/30">
-          <Headphones className="w-5 h-5 text-amber-400" />
-          <span className="text-lg font-bold text-white tracking-tight">
-            Podumé
-          </span>
-        </div>
-
-        {/* Navigation Links */}
-        <nav className="p-2">
-          {navLinks.map((link, index) => (
-            <a
-              key={link.href}
-              href={link.href}
-              onClick={closeMenu}
-              className="group block px-4 py-3 text-sm font-medium text-slate-300 hover:text-white hover:bg-purple-700/50 rounded-lg transition-all duration-200 relative overflow-hidden"
-            >
-              <span className="relative z-10">{link.label}</span>
-              {/* Hover effect */}
-              <span className="absolute inset-0 bg-gradient-to-r from-amber-400/10 to-amber-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></span>
-            </a>
-          ))}
-        </nav>
-
-        {/* CTA Button */}
-        <div className="p-4 border-t border-purple-600/30">
-          <Link to="/create" onClick={closeMenu}>
-            <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold py-2 px-4 rounded-lg text-sm transition-all duration-300 hover:scale-105">
-              Create Podcast
-            </Button>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
+          <Menu className="h-5 w-5" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="bg-gray-900 border-gray-800">
+        <div className="flex flex-col space-y-6 mt-6">
+          <Link 
+            to="/" 
+            onClick={closeMenu}
+            className="text-gray-300 hover:text-white transition-colors duration-200 text-lg"
+          >
+            Home
           </Link>
+          <Link 
+            to="/create" 
+            onClick={closeMenu}
+            className="text-gray-300 hover:text-white transition-colors duration-200 text-lg"
+          >
+            Create
+          </Link>
+          <Link 
+            to="/financial" 
+            onClick={closeMenu}
+            className="text-gray-300 hover:text-white transition-colors duration-200 text-lg"
+          >
+            Financial
+          </Link>
+          
+          <div className="pt-6 border-t border-gray-800">
+            {isSignedIn ? (
+              <div className="flex items-center space-x-3">
+                <UserButton 
+                  afterSignOutUrl="/"
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-8 h-8"
+                    }
+                  }}
+                />
+                <span className="text-gray-300">Account</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Link to="/auth" onClick={closeMenu}>
+                  <Button variant="ghost" className="w-full text-white hover:bg-white/10">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/create" onClick={closeMenu}>
+                  <Button className="w-full bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700">
+                    Get Started
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Decorative elements */}
-        <div className="absolute top-2 right-2 opacity-10">
-          <Headphones className="w-6 h-6 text-amber-400" />
-        </div>
-      </div>
-
-      {/* Backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 z-30"
-          onClick={closeMenu}
-        />
-      )}
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 };
-
-export default MobileNav;
