@@ -168,9 +168,12 @@ const CommunitySection = () => {
             <Button 
               size="lg"
               className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold px-8 py-6 rounded-2xl text-lg transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-purple-500/25"
+              asChild
             >
-              Join Community
-              <ArrowRight className="ml-2 h-5 w-5" />
+              <a href="https://podume.circle.so/join?invitation_token=10b044bc1f8428d4d2bd8529219c45bbc56d3dfa-7eafbbb4-d82d-4de4-8c67-b77f4b5d3893" target="_blank" rel="noopener noreferrer">
+                Join Community
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </a>
             </Button>
             
             <Button 
