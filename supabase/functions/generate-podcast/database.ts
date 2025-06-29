@@ -2,6 +2,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { PodcastRequest } from './types.ts';
 import { generateAudioWithDeepgram } from './deepgram-tts.ts';
+import { processAudioWithAuphonic } from './auphonic-api.ts';
+import { triggerZapierMCP, notifyZapierCompletion } from './zapier-mcp.ts';
 
 export async function savePodcastToDatabase(
   user: any,
@@ -42,19 +44,30 @@ export async function savePodcastToDatabase(
     }
     
     console.log('Podcast created successfully with ID:', data.id);
+    
+    // Trigger Zapier MCP workflow early for parallel processing
+    await triggerZapierMCP(data);
+    
     console.log('Starting audio generation with Deepgram Aura-2...');
 
     // Generate audio with Deepgram Aura-2
     const audioDataUrl = await generateAudioWithDeepgram(generatedScript);
     
     if (audioDataUrl) {
-      console.log('Deepgram audio generation successful, updating podcast with audio URL');
+      console.log('Deepgram audio generation successful');
       
-      // Update the podcast with the audio URL
+      // Process audio with Auphonic for enhancement
+      console.log('Starting Auphonic audio post-processing...');
+      const processedAudioUrl = await processAudioWithAuphonic(audioDataUrl, data.title);
+      
+      const finalAudioUrl = processedAudioUrl || audioDataUrl;
+      console.log('Final audio URL:', finalAudioUrl ? 'Generated' : 'None');
+      
+      // Update the podcast with the processed audio URL
       const { error: updateError } = await supabaseAdminClient
         .from('podcasts')
         .update({
-          audio_url: audioDataUrl,
+          audio_url: finalAudioUrl,
           status: 'completed',
         })
         .eq('id', data.id);
@@ -62,9 +75,12 @@ export async function savePodcastToDatabase(
       if (updateError) {
         console.error('Failed to update podcast with audio URL:', updateError);
       } else {
-        console.log('Podcast updated with audio URL successfully');
-        data.audio_url = audioDataUrl;
+        console.log('Podcast updated with processed audio URL successfully');
+        data.audio_url = finalAudioUrl;
         data.status = 'completed';
+        
+        // Notify Zapier of completion
+        await notifyZapierCompletion(data);
       }
     } else {
       console.log('Deepgram audio generation failed, keeping podcast without audio');
@@ -74,6 +90,9 @@ export async function savePodcastToDatabase(
         .update({ status: 'completed' })
         .eq('id', data.id);
       data.status = 'completed';
+      
+      // Still notify Zapier even without audio
+      await notifyZapierCompletion(data);
     }
     
     return data;
