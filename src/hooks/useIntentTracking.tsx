@@ -57,7 +57,7 @@ export const useIntentTracking = () => {
   }, []);
 
   // Determine primary goal based on behavior
-  const determinePrimaryGoal = useCallback((intent: UserIntent) => {
+  const determinePrimaryGoal = useCallback((intent: UserIntent): UserIntent['primaryGoal'] => {
     if (intent.sectionsViewed.includes('pricing') && intent.scrollDepth > 60) {
       return 'pricing';
     }
@@ -74,7 +74,7 @@ export const useIntentTracking = () => {
   }, []);
 
   // Determine engagement level
-  const determineEngagementLevel = useCallback((intent: UserIntent) => {
+  const determineEngagementLevel = useCallback((intent: UserIntent): UserIntent['engagementLevel'] => {
     const score = intent.timeOnSite * 0.1 + intent.scrollDepth * 0.3 + intent.interactionCount * 10;
     if (score > 50) return 'high';
     if (score > 20) return 'medium';
@@ -86,7 +86,7 @@ export const useIntentTracking = () => {
     const interval = setInterval(() => {
       const timeOnSite = Math.round((Date.now() - sessionStartTime) / 1000);
       setUserIntent(prev => {
-        const updated = {
+        const updated: UserIntent = {
           ...prev,
           timeOnSite,
           primaryGoal: determinePrimaryGoal({ ...prev, timeOnSite }),
