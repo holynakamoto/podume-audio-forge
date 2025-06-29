@@ -27,13 +27,13 @@ const Hero = () => {
         </div>
         
         <div className="hidden lg:flex items-center space-x-8">
-          <a href="#features" className="text-white/80 hover:text-white transition-colors duration-300 text-sm font-medium">
+          <a href="#features" className="text-white hover:text-white/80 transition-colors duration-300 text-sm font-medium bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20 hover:bg-white/20">
             Features
           </a>
-          <a href="#sample" className="text-white/80 hover:text-white transition-colors duration-300 text-sm font-medium">
+          <a href="#sample" className="text-white hover:text-white/80 transition-colors duration-300 text-sm font-medium bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20 hover:bg-white/20">
             Sample
           </a>
-          <a href="#pricing" className="text-white/80 hover:text-white transition-colors duration-300 text-sm font-medium">
+          <a href="#pricing" className="text-white hover:text-white/80 transition-colors duration-300 text-sm font-medium bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20 hover:bg-white/20">
             Pricing
           </a>
         </div>
@@ -53,8 +53,8 @@ const Hero = () => {
           
           {/* Bold Two-Line Headline */}
           <h1 className="text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-light leading-none mb-8 md:mb-12">
-            <div className="text-white mb-2">Purple Reign.</div>
-            <div className="text-white/75">Majesty.</div>
+            <div className="text-white mb-2">Purple Reign</div>
+            <div className="text-white/75">Majesty</div>
           </h1>
           
           {/* Story Paragraph */}
