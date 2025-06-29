@@ -33,6 +33,9 @@ const Hero = () => {
           <a href="#sample" className="text-white hover:text-amber-300 transition-colors duration-300 text-sm font-medium bg-white/20 px-6 py-3 rounded-full backdrop-blur-sm border border-white/30 hover:bg-amber-400/20 hover:border-amber-300/50">
             Sample
           </a>
+          <a href="#community" className="text-white hover:text-amber-300 transition-colors duration-300 text-sm font-medium bg-white/20 px-6 py-3 rounded-full backdrop-blur-sm border border-white/30 hover:bg-amber-400/20 hover:border-amber-300/50">
+            Community
+          </a>
           <a href="#pricing" className="text-white hover:text-amber-300 transition-colors duration-300 text-sm font-medium bg-white/20 px-6 py-3 rounded-full backdrop-blur-sm border border-white/30 hover:bg-amber-400/20 hover:border-amber-300/50">
             Pricing
           </a>
