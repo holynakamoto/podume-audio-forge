@@ -47,55 +47,55 @@ const addons = [
 
 const PricingSection = () => {
   return (
-    <section id="pricing" className="py-24 md:py-32 bg-gradient-to-b from-background to-slate-50/5">
+    <section id="pricing" className="py-16 md:py-24 lg:py-32 bg-gradient-to-b from-background to-slate-50/5">
       <div className="container mx-auto px-4 md:px-6 max-w-7xl">
         {/* Apple-style centered header */}
-        <div className="text-center max-w-4xl mx-auto mb-20">
-          <h2 className="text-5xl md:text-7xl font-black tracking-tight mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-amber-200">
+        <div className="text-center max-w-4xl mx-auto mb-12 md:mb-20">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black tracking-tight mb-6 md:mb-8 bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-amber-200">
             Simple subscription pricing
           </h2>
-          <p className="text-xl md:text-2xl text-slate-300 font-medium leading-relaxed max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl md:text-2xl text-slate-300 font-medium leading-relaxed max-w-3xl mx-auto">
             Choose the plan that fits your personal branding journey. Start building your narrative today.
           </p>
         </div>
 
         {/* Apple-style pricing grid */}
-        <div className="grid lg:grid-cols-2 gap-12 items-stretch max-w-5xl mx-auto mb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-stretch max-w-5xl mx-auto mb-12 md:mb-20">
           {subscriptionTiers.map((tier) => (
             <div key={tier.name} className="relative group">
               {/* Apple-style glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-amber-600/10 rounded-3xl blur-2xl group-hover:blur-3xl transition-all duration-700"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-amber-600/10 rounded-2xl md:rounded-3xl blur-xl md:blur-2xl group-hover:blur-2xl md:group-hover:blur-3xl transition-all duration-700"></div>
               
               <Card className={cn(
-                'relative bg-card/40 backdrop-blur-xl border-2 rounded-3xl p-12 text-center flex flex-col h-full transition-all duration-700 transform hover:-translate-y-2 hover:scale-[1.02] shadow-2xl hover:shadow-purple-500/20',
+                'relative bg-card/40 backdrop-blur-xl border-2 rounded-2xl md:rounded-3xl p-6 sm:p-8 md:p-12 text-center flex flex-col h-full transition-all duration-700 transform hover:-translate-y-2 hover:scale-[1.02] shadow-2xl hover:shadow-purple-500/20',
                 tier.isPopular ? 'border-purple-400/60 ring-2 ring-purple-400/30' : 'border-white/20 hover:border-amber-400/40'
               )}>
                 {tier.isPopular && (
-                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2">
-                    <div className="px-8 py-3 text-sm font-bold text-black bg-gradient-to-r from-purple-400 to-amber-400 rounded-full shadow-lg">
+                  <div className="absolute -top-4 md:-top-6 left-1/2 transform -translate-x-1/2">
+                    <div className="px-4 sm:px-6 md:px-8 py-2 md:py-3 text-xs sm:text-sm font-bold text-black bg-gradient-to-r from-purple-400 to-amber-400 rounded-full shadow-lg">
                       Most Popular - {tier.savings}
                     </div>
                   </div>
                 )}
 
-                <CardHeader className="pb-8">
-                  <CardTitle className="text-3xl md:text-4xl font-black text-white mb-4">
+                <CardHeader className="pb-6 md:pb-8">
+                  <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-3 md:mb-4">
                     {tier.name}
                   </CardTitle>
-                  <CardDescription className="text-lg text-slate-300 leading-relaxed">
+                  <CardDescription className="text-base md:text-lg text-slate-300 leading-relaxed">
                     {tier.description}
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="flex-grow pb-8">
+                <CardContent className="flex-grow pb-6 md:pb-8">
                   {/* Apple-style price display */}
-                  <div className="mb-12">
+                  <div className="mb-8 md:mb-12">
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      <span className="text-6xl md:text-7xl font-black tracking-tighter text-white">
+                      <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter text-white">
                         ${tier.price}
                       </span>
                       <div className="text-left">
-                        <div className="text-slate-400 text-lg">/{tier.period}</div>
+                        <div className="text-slate-400 text-base md:text-lg">/{tier.period}</div>
                         {tier.monthlyEquivalent && (
                           <div className="text-slate-500 text-sm">
                             ~${tier.monthlyEquivalent}/month
@@ -104,18 +104,18 @@ const PricingSection = () => {
                       </div>
                     </div>
                     {tier.savings && (
-                      <p className="text-amber-400 text-lg font-semibold">{tier.savings}</p>
+                      <p className="text-amber-400 text-base md:text-lg font-semibold">{tier.savings}</p>
                     )}
                   </div>
 
                   {/* Apple-style feature list */}
-                  <ul className="space-y-6 text-left max-w-sm mx-auto">
+                  <ul className="space-y-4 md:space-y-6 text-left max-w-sm mx-auto">
                     {tier.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gradient-to-r from-purple-400 to-amber-400 flex items-center justify-center mt-0.5">
+                      <li key={feature} className="flex items-start gap-3 md:gap-4">
+                        <div className="flex-shrink-0 w-5 h-5 md:w-6 md:h-6 rounded-full bg-gradient-to-r from-purple-400 to-amber-400 flex items-center justify-center mt-0.5">
                           <Check className="h-3 w-3 text-black font-bold" />
                         </div>
-                        <span className="text-slate-200 text-lg leading-relaxed">{feature}</span>
+                        <span className="text-slate-200 text-base md:text-lg leading-relaxed">{feature}</span>
                       </li>
                     ))}
                   </ul>
@@ -126,7 +126,7 @@ const PricingSection = () => {
                     <Button 
                       size="lg" 
                       className={cn(
-                        'w-full text-lg font-bold py-6 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg',
+                        'w-full text-base md:text-lg font-bold py-4 md:py-6 rounded-xl md:rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg',
                         tier.isPopular 
                           ? 'bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700 text-white' 
                           : 'bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/40'
@@ -143,19 +143,19 @@ const PricingSection = () => {
 
         {/* Apple-style add-ons section */}
         <div className="max-w-5xl mx-auto">
-          <h3 className="text-4xl md:text-5xl font-black text-center mb-16 text-white">
+          <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-center mb-8 md:mb-16 text-white">
             Optional Add-on
           </h3>
           <div className="flex justify-center">
             {addons.map(addon => (
-              <div key={addon.name} className="relative group max-w-sm">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-amber-600/5 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-                <Card className="relative bg-card/20 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-2xl transition-all duration-300 hover:-translate-y-1">
-                  <CardContent className="p-8 text-center">
-                    <div className="text-3xl font-black text-transparent bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text mb-4">
+              <div key={addon.name} className="relative group max-w-sm w-full sm:w-auto">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/5 to-amber-600/5 rounded-xl md:rounded-2xl blur-lg md:blur-xl group-hover:blur-xl md:group-hover:blur-2xl transition-all duration-500"></div>
+                <Card className="relative bg-card/20 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-xl md:rounded-2xl transition-all duration-300 hover:-translate-y-1">
+                  <CardContent className="p-6 md:p-8 text-center">
+                    <div className="text-2xl md:text-3xl font-black text-transparent bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text mb-3 md:mb-4">
                       ${addon.price}
                     </div>
-                    <p className="font-bold text-xl text-white mb-3">{addon.name}</p>
+                    <p className="font-bold text-lg md:text-xl text-white mb-2 md:mb-3">{addon.name}</p>
                     <p className="text-slate-300 leading-relaxed text-sm">{addon.description}</p>
                   </CardContent>
                 </Card>
@@ -165,8 +165,8 @@ const PricingSection = () => {
         </div>
 
         {/* Value proposition */}
-        <div className="text-center mt-20 max-w-3xl mx-auto">
-          <p className="text-lg text-slate-300 leading-relaxed">
+        <div className="text-center mt-12 md:mt-20 max-w-3xl mx-auto">
+          <p className="text-base md:text-lg text-slate-300 leading-relaxed">
             Join thousands of professionals who've transformed their careers with AI-powered personal branding. 
             <span className="text-purple-400 font-semibold"> Cancel anytime, no hidden fees.</span>
           </p>
