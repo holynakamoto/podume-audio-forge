@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Create from "./pages/Create";
 import Financial from "./pages/Financial";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { ClerkAuthProvider } from "./auth/ClerkAuthProvider";
 import AuthPage from "./pages/Auth";
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/create" element={<Create />} />
             <Route path="/financial" element={<Financial />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/podcast/:id" element={<PodcastPage />} />
             <Route path="/zootools" element={<ZooToolsDemo />} />
