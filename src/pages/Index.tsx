@@ -15,8 +15,8 @@ import { ContextAwareAssistant } from '@/components/ai/ContextAwareAssistant';
 
 const Index = () => {
   return (
-    <ContextProvider>
-      <IntentProvider>
+    <IntentProvider>
+      <ContextProvider>
         <div className="bg-background text-foreground">
           {/* Original hero for video background, then dynamic hero */}
           <Hero />
@@ -72,8 +72,8 @@ const Index = () => {
           {/* Context-Aware AI Assistant */}
           <ContextAwareAssistant />
         </div>
-      </IntentProvider>
-    </ContextProvider>
+      </ContextProvider>
+    </IntentProvider>
   );
 };
 
