@@ -17,8 +17,7 @@ export const LinkedInAlerts: React.FC<LinkedInAlertsProps> = ({ showManualOption
       <Alert className="mb-6 border-blue-200 bg-blue-50">
         <Globe className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-800 text-sm">
-          Make sure your LinkedIn profile is set to public visibility for the best results. 
-          Our system will extract your profile information via Zapier automation.
+          Make sure your LinkedIn profile is set to public visibility for the best results.
         </AlertDescription>
       </Alert>
 
