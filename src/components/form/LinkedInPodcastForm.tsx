@@ -5,7 +5,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/auth/ClerkAuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 import { linkedInFormSchema, LinkedInFormValues } from './schemas/linkedInFormSchema';
 import { LinkedInAlerts } from './LinkedInAlerts';
@@ -16,13 +15,12 @@ import { LinkedInSubmitButton } from './LinkedInSubmitButton';
 export const LinkedInPodcastForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, isSignedIn } = useAuth();
 
   const form = useForm<LinkedInFormValues>({
     resolver: zodResolver(linkedInFormSchema),
     defaultValues: {
       title: 'My LinkedIn Podumé',
-      linkedin_url: '',
+      linkedin_url: 'https://linkedin.com/in/',
       package_type: 'core',
       voice_clone: false,
       premium_assets: false,
@@ -33,23 +31,14 @@ export const LinkedInPodcastForm: React.FC = () => {
     console.log('=== LinkedIn Form Submission ===');
     console.log('Form values:', values);
 
-    if (!isSignedIn || !user) {
-      toast.error('You must be signed in to create a podcast');
-      navigate('/auth');
-      return;
-    }
-
     setIsLoading(true);
     toast.info('Creating podcast from LinkedIn profile...');
 
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError || !session) {
-        toast.error('Please sign in again to create a podcast');
-        navigate('/auth');
-        return;
-      }
+      // Allow creation without authentication for now
+      const authToken = session?.access_token || 'anonymous';
 
       console.log('Calling generate-podcast function with LinkedIn URL...');
 
@@ -63,7 +52,7 @@ export const LinkedInPodcastForm: React.FC = () => {
           source_type: 'linkedin_url'
         },
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${authToken}`,
         },
       });
 
@@ -88,17 +77,6 @@ export const LinkedInPodcastForm: React.FC = () => {
       setIsLoading(false);
     }
   };
-
-  if (!isSignedIn) {
-    return (
-      <Card className="w-full max-w-lg mx-auto shadow-sm border-0 bg-white/80 backdrop-blur-sm">
-        <CardContent className="text-center pb-4 pt-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign In Required</h2>
-          <p className="text-gray-600">You must be signed in to create a podcast from LinkedIn.</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-0">
@@ -129,7 +107,7 @@ export const LinkedInPodcastForm: React.FC = () => {
             <LinkedInSubmitButton 
               isLoading={isLoading}
               isExtracting={false}
-              disabled={!form.watch('linkedin_url')}
+              disabled={!form.watch('linkedin_url') || form.watch('linkedin_url') === 'https://linkedin.com/in/'}
             />
           </form>
         </CardContent>
