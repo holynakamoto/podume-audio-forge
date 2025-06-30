@@ -23,7 +23,7 @@ export const LinkedInSubmitButton: React.FC<LinkedInSubmitButtonProps> = ({
       {isLoading ? (
         <>
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          {isExtracting ? 'Processing LinkedIn Profile...' : 'Generating Podcast...'}
+          Creating LinkedIn Podcast...
         </>
       ) : (
         <>

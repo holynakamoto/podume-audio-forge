@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,58 +10,28 @@ import { supabase } from '@/integrations/supabase/client';
 import { linkedInFormSchema, LinkedInFormValues } from './schemas/linkedInFormSchema';
 import { LinkedInAlerts } from './LinkedInAlerts';
 import { LinkedInTitleInput } from './LinkedInTitleInput';
+import { LinkedInUrlInput } from './LinkedInUrlInput';
 import { LinkedInSubmitButton } from './LinkedInSubmitButton';
-import { LinkedInProfileSection } from './LinkedInProfileSection';
-import { LinkedInDebugInfo } from './LinkedInDebugInfo';
-import { LinkedInAPITester } from './LinkedInAPITester';
-import { LinkedInJSONOutput } from './LinkedInJSONOutput';
-import { useLinkedInOAuth } from './hooks/useLinkedInOAuth';
-import { useScriptGeneration } from './hooks/useScriptGeneration';
 
 export const LinkedInPodcastForm: React.FC = () => {
-  const [linkedInContent, setLinkedInContent] = useState<string>('');
-  const [linkedInRawJSON, setLinkedInRawJSON] = useState<string>('');
-  const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { user, isSignedIn } = useAuth();
 
   const form = useForm<LinkedInFormValues>({
     resolver: zodResolver(linkedInFormSchema),
     defaultValues: {
-      title: 'My Podumé',
+      title: 'My LinkedIn Podumé',
+      linkedin_url: '',
       package_type: 'core',
       voice_clone: false,
       premium_assets: false,
     },
   });
 
-  const { isProcessingProfile } = useLinkedInOAuth(setLinkedInContent, setLinkedInRawJSON);
-  const { 
-    isLoading: isScriptLoading, 
-    generatedScript, 
-    generateScriptPreview,
-    setGeneratedScript 
-  } = useScriptGeneration();
-
-  const handleGeneratePreview = () => {
-    generateScriptPreview(linkedInContent, form.getValues());
-  };
-
-  const handleClearProfile = () => {
-    setLinkedInContent('');
-    setLinkedInRawJSON('');
-    setGeneratedScript('');
-  };
-
-  const handleClearJSON = () => {
-    setLinkedInRawJSON('');
-  };
-
   const onSubmit = async (values: LinkedInFormValues) => {
-    console.log('=== Form Submission Debug ===');
+    console.log('=== LinkedIn Form Submission ===');
     console.log('Form values:', values);
-    console.log('LinkedIn content length:', linkedInContent.length);
-    console.log('User signed in:', isSignedIn);
 
     if (!isSignedIn || !user) {
       toast.error('You must be signed in to create a podcast');
@@ -68,16 +39,8 @@ export const LinkedInPodcastForm: React.FC = () => {
       return;
     }
 
-    const resumeContent = linkedInContent || '';
-    
-    if (!resumeContent || resumeContent.length < 10) {
-      toast.error('Please import your LinkedIn profile first');
-      return;
-    }
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    setIsSubmitting(true);
-    toast.info('Generating podcast from LinkedIn profile...');
+    setIsLoading(true);
+    toast.info('Creating podcast from LinkedIn profile...');
 
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -88,18 +51,16 @@ export const LinkedInPodcastForm: React.FC = () => {
         return;
       }
 
-      console.log('=== Podcast Generation Debug ===');
-      console.log('Calling generate-podcast function...');
-      console.log('Resume content length:', resumeContent.length);
-      console.log('Will use Claude Sonnet for script generation');
+      console.log('Calling generate-podcast function with LinkedIn URL...');
 
       const { data, error } = await supabase.functions.invoke('generate-podcast', {
         body: {
           title: values.title,
-          resume_content: resumeContent,
+          linkedin_url: values.linkedin_url,
           package_type: values.package_type,
           voice_clone: values.voice_clone,
           premium_assets: values.premium_assets,
+          source_type: 'linkedin_url'
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -124,7 +85,7 @@ export const LinkedInPodcastForm: React.FC = () => {
       console.error('Error creating LinkedIn podcast:', error);
       toast.error(`Failed to create podcast: ${error.message || 'Unknown error'}`);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
@@ -139,32 +100,16 @@ export const LinkedInPodcastForm: React.FC = () => {
     );
   }
 
-  const isLoading = isScriptLoading;
-
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-0">
       <div className="text-center mb-8 mt-16 sm:mt-20">
         <h1 className="text-2xl sm:text-3xl font-semibold text-white mb-2">
-          Create Your Podcast
+          Create Your LinkedIn Podcast
         </h1>
         <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
-          Import your LinkedIn profile and transform it into an engaging audio experience
+          Enter your LinkedIn profile URL and transform it into an engaging audio experience
         </p>
       </div>
-
-      <LinkedInAPITester />
-
-      <LinkedInJSONOutput 
-        jsonData={linkedInRawJSON}
-        onClear={handleClearJSON}
-      />
-
-      <LinkedInDebugInfo 
-        linkedInContent={linkedInContent}
-        generatedScript={generatedScript}
-        showDebugInfo={showDebugInfo}
-        onToggleDebug={() => setShowDebugInfo(!showDebugInfo)}
-      />
 
       <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-6 sm:p-8">
@@ -176,19 +121,15 @@ export const LinkedInPodcastForm: React.FC = () => {
               errors={form.formState.errors}
             />
 
-            <LinkedInProfileSection 
-              linkedInContent={linkedInContent}
-              isProcessingProfile={isProcessingProfile}
-              isScriptLoading={isScriptLoading}
-              onProfileData={setLinkedInContent}
-              onClearProfile={handleClearProfile}
-              onGeneratePreview={handleGeneratePreview}
+            <LinkedInUrlInput 
+              register={form.register}
+              errors={form.formState.errors}
             />
 
             <LinkedInSubmitButton 
               isLoading={isLoading}
-              isExtracting={isProcessingProfile}
-              disabled={!linkedInContent}
+              isExtracting={false}
+              disabled={!form.watch('linkedin_url')}
             />
           </form>
         </CardContent>
