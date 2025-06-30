@@ -10,7 +10,9 @@ interface PodcastRequest {
   package_type: string;
   voice_clone: boolean;
   premium_assets: boolean;
-  resume_content: string;
+  resume_content?: string;
+  linkedin_url?: string;
+  source_type: 'resume_content' | 'linkedin_url';
 }
 
 export function validateEnvironment(): string | null {
@@ -61,8 +63,9 @@ export function validateRequest(body: any): ValidationResult {
     package_type: body.package_type,
     voice_clone: body.voice_clone,
     premium_assets: body.premium_assets,
+    source_type: body.source_type,
     resume_content_length: body.resume_content?.length || 0,
-    resume_content_preview: body.resume_content?.substring(0, 100) + '...' || 'No content'
+    linkedin_url: body.linkedin_url || 'Not provided'
   });
 
   // Validate required fields
@@ -82,16 +85,34 @@ export function validateRequest(body: any): ValidationResult {
     return { isValid: false, error: 'package_type must be core, premium, or enterprise' };
   }
 
-  if (!body.resume_content || typeof body.resume_content !== 'string') {
-    return { isValid: false, error: 'Resume content is required' };
-  }
+  // Validate source type and content
+  const sourceType = body.source_type || 'resume_content';
+  
+  if (sourceType === 'linkedin_url') {
+    if (!body.linkedin_url || typeof body.linkedin_url !== 'string') {
+      return { isValid: false, error: 'LinkedIn URL is required when source_type is linkedin_url' };
+    }
+    
+    if (body.linkedin_url.length < 10) {
+      return { isValid: false, error: 'LinkedIn URL is too short' };
+    }
+    
+    // For LinkedIn URLs, we'll create placeholder resume content
+    // The actual LinkedIn data will be processed by Zapier MCP
+    body.resume_content = `LinkedIn Profile: ${body.linkedin_url}\n\nThis podcast was generated from a LinkedIn profile. The profile data will be processed and enhanced through our automated systems.`;
+  } else {
+    // Original resume content validation
+    if (!body.resume_content || typeof body.resume_content !== 'string') {
+      return { isValid: false, error: 'Resume content is required' };
+    }
 
-  if (body.resume_content.length < 50) {
-    return { isValid: false, error: 'Resume content is too short (minimum 50 characters)' };
-  }
+    if (body.resume_content.length < 50) {
+      return { isValid: false, error: 'Resume content is too short (minimum 50 characters)' };
+    }
 
-  if (body.resume_content.length > 50000) {
-    return { isValid: false, error: 'Resume content is too long (maximum 50,000 characters)' };
+    if (body.resume_content.length > 50000) {
+      return { isValid: false, error: 'Resume content is too long (maximum 50,000 characters)' };
+    }
   }
 
   // Validate boolean fields
@@ -108,8 +129,13 @@ export function validateRequest(body: any): ValidationResult {
     package_type: body.package_type,
     voice_clone: body.voice_clone,
     premium_assets: body.premium_assets,
-    resume_content: body.resume_content.trim()
+    resume_content: body.resume_content.trim(),
+    source_type: sourceType,
   };
+
+  if (sourceType === 'linkedin_url') {
+    validatedData.linkedin_url = body.linkedin_url.trim();
+  }
 
   console.log('Request validation passed');
   return { isValid: true, data: validatedData };

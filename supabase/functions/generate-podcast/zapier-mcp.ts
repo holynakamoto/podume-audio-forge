@@ -5,6 +5,8 @@ interface ZapierMCPPayload {
   transcript: string;
   audio_url?: string;
   linkedin_profile_data?: string;
+  linkedin_url?: string;
+  source_type?: string;
   created_at: string;
   user_id: string;
 }
@@ -21,6 +23,8 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
       transcript: podcastData.transcript || '',
       audio_url: podcastData.audio_url || '',
       linkedin_profile_data: podcastData.resume_content || '',
+      linkedin_url: podcastData.linkedin_url || '',
+      source_type: podcastData.source_type || 'resume_content',
       created_at: podcastData.created_at || new Date().toISOString(),
       user_id: podcastData.user_id,
     };
@@ -30,6 +34,8 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
       title: payload.title,
       transcript_length: payload.transcript.length,
       has_audio: !!payload.audio_url,
+      linkedin_url: payload.linkedin_url,
+      source_type: payload.source_type,
       linkedin_data_length: payload.linkedin_profile_data.length,
     });
 

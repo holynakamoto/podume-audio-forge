@@ -12,6 +12,8 @@ export async function savePodcastToDatabase(
   console.log('Saving podcast to database...');
   console.log('Generated script length:', generatedScript.length);
   console.log('Generated script preview:', generatedScript.substring(0, 200) + '...');
+  console.log('Source type:', request.source_type);
+  console.log('LinkedIn URL:', request.linkedin_url || 'Not provided');
   
   const supabaseAdminClient = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -29,7 +31,7 @@ export async function savePodcastToDatabase(
         package_type: request.package_type || 'core',
         voice_clone: request.voice_clone || false,
         premium_assets: request.premium_assets || false,
-        description: `Professional podcast generated from resume - ${request.title}`,
+        description: `Professional podcast generated from ${request.source_type === 'linkedin_url' ? 'LinkedIn profile' : 'resume'} - ${request.title}`,
         transcript: generatedScript,
         audio_url: null,
         status: 'processing',
@@ -44,9 +46,16 @@ export async function savePodcastToDatabase(
     
     console.log('Podcast created successfully with ID:', data.id);
     
+    // Enhanced Zapier MCP payload for LinkedIn profiles
+    const zapierPayload = {
+      ...data,
+      linkedin_url: request.linkedin_url,
+      source_type: request.source_type,
+      linkedin_profile_data: request.source_type === 'linkedin_url' ? request.linkedin_url : '',
+    };
+    
     // Trigger Zapier MCP workflow early for parallel processing
-    // This will handle both audio generation with Deepgram and post-processing with Auphonic
-    await triggerZapierMCP(data);
+    await triggerZapierMCP(zapierPayload);
     
     console.log('Starting audio generation with Deepgram Aura-2...');
 
@@ -58,7 +67,6 @@ export async function savePodcastToDatabase(
       console.log('Audio will be post-processed by Auphonic via Zapier MCP workflow');
       
       // Update the podcast with the raw audio URL
-      // Zapier MCP will handle Auphonic processing and update with final URL
       const { error: updateError } = await supabaseAdminClient
         .from('podcasts')
         .update({
