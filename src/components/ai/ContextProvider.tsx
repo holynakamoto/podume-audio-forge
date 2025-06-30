@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext as useReactContext, ReactNode } from 'react';
 import { useContextAwareness, UserContext } from '@/hooks/useContextAwareness';
 
 interface ContextProviderProps {
@@ -27,7 +27,7 @@ export const ContextProvider: React.FC<ContextProviderProps> = ({ children }) =>
 };
 
 export const useContextData = () => {
-  const context = useContext(ContextContext);
+  const context = useReactContext(ContextContext);
   if (!context) {
     throw new Error('useContextData must be used within a ContextProvider');
   }
