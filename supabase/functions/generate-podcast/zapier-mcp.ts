@@ -1,4 +1,3 @@
-
 interface ZapierMCPPayload {
   podcast_id: string;
   title: string;
@@ -18,14 +17,24 @@ interface ZapierMCPPayload {
 }
 
 export async function triggerZapierMCP(podcastData: any): Promise<void> {
-  console.log('=== Triggering Zapier MCP workflow with full processing ===');
+  console.log('🔗 === Triggering Zapier MCP workflow ===');
+  console.log('📊 Podcast data for MCP:', {
+    id: podcastData.id,
+    title: podcastData.title,
+    source_type: podcastData.source_type,
+    linkedin_url: podcastData.linkedin_url
+  });
   
   const zapierMcpUrl = Deno.env.get('ZAPIER_MCP_WEBHOOK_URL');
   
+  console.log('🔍 Environment check:');
+  console.log('- ZAPIER_MCP_WEBHOOK_URL present:', !!zapierMcpUrl);
+  console.log('- Available environment variables:', Object.keys(Deno.env.toObject()).filter(key => key.includes('ZAPIER')));
+  
   if (!zapierMcpUrl) {
     console.error('❌ ZAPIER_MCP_WEBHOOK_URL environment variable not set');
-    console.log('Available environment variables:', Object.keys(Deno.env.toObject()).filter(key => key.includes('ZAPIER')));
     console.log('⚠️ Continuing podcast creation without Zapier MCP trigger');
+    console.log('💡 To enable MCP processing, add ZAPIER_MCP_WEBHOOK_URL to your Supabase secrets');
     return; // Don't throw error - allow podcast creation to succeed
   }
   
@@ -50,7 +59,7 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
       generate_audio: true, // Always generate audio via Deepgram/Auphonic
     };
 
-    console.log('📤 Sending comprehensive payload to Zapier MCP:', {
+    console.log('📤 Sending MCP payload:', {
       podcast_id: payload.podcast_id,
       title: payload.title,
       source_type: payload.source_type,
@@ -58,13 +67,12 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
       resume_content_length: payload.resume_content.length,
       package_type: payload.package_type,
       voice_clone: payload.voice_clone,
-      premium_assets: payload.premium_assets,
-      generate_transcript: payload.generate_transcript,
-      generate_audio: payload.generate_audio,
-      zapier_url: zapierMcpUrl.substring(0, 50) + '...'
+      premium_assets: payload.premium_assets
     });
 
     console.log('🚀 Making HTTP request to Zapier MCP...');
+    const startTime = Date.now();
+    
     const response = await fetch(zapierMcpUrl, {
       method: 'POST',
       headers: {
@@ -74,8 +82,10 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
       body: JSON.stringify(payload),
     });
 
-    console.log('📨 Zapier MCP response status:', response.status);
-    console.log('📨 Zapier MCP response headers:', Object.fromEntries(response.headers.entries()));
+    const responseTime = Date.now() - startTime;
+    console.log('📨 Zapier MCP response received in', responseTime, 'ms');
+    console.log('📨 Response status:', response.status);
+    console.log('📨 Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -87,7 +97,7 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
     let result;
     try {
       result = await response.json();
-      console.log('✅ Zapier MCP triggered successfully for full processing:', result);
+      console.log('✅ Zapier MCP triggered successfully (JSON response):', result);
     } catch (jsonError) {
       const textResult = await response.text();
       console.log('✅ Zapier MCP triggered successfully (non-JSON response):', textResult);
@@ -95,20 +105,17 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
     }
 
     console.log('🎉 Zapier MCP workflow initiated successfully');
-    console.log('The workflow will now:');
-    console.log('1. 📱 Extract LinkedIn profile data (if applicable)');
-    console.log('2. 🤖 Generate podcast transcript using Claude integration');
-    console.log('3. 🎵 Generate audio using Deepgram TTS');
-    console.log('4. 🎧 Post-process audio with Auphonic');
-    console.log('5. 💾 Update the database with final content');
 
   } catch (error) {
     console.error('❌ Error triggering Zapier MCP:', error.message);
-    console.error('Error details:', error);
-    // Don't throw error here - we don't want to fail podcast creation if Zapier fails
-    // The podcast record is already created, so user can still see it
+    console.error('🔍 Error details:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cause: error.cause
+    });
     console.log('⚠️ Continuing podcast creation despite Zapier MCP failure');
-    console.log('Podcast record created successfully, but automated processing failed');
+    console.log('📝 Podcast record created successfully, but automated processing failed');
   }
 }
 

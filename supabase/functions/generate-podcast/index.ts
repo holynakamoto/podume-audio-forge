@@ -15,8 +15,19 @@ const securityHeaders = {
 };
 
 serve(async (req: Request) => {
+  console.log('🚀 === EDGE FUNCTION CALLED ===');
+  console.log('📊 Request details:', {
+    method: req.method,
+    url: req.url,
+    headers: Object.fromEntries(req.headers.entries()),
+    timestamp: new Date().toISOString()
+  });
+
   const corsResponse = handleCORS(req);
-  if (corsResponse) return corsResponse;
+  if (corsResponse) {
+    console.log('✅ Returning CORS response');
+    return corsResponse;
+  }
 
   let step = 'initialization';
   
@@ -29,8 +40,9 @@ serve(async (req: Request) => {
     step = 'rate_limiting';
     // Rate limiting check
     const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    console.log('🔍 Client IP:', clientIp);
     if (!checkRateLimit(clientIp, 5, 60000)) {
-      console.log('Rate limit exceeded for client:', clientIp);
+      console.log('❌ Rate limit exceeded for client:', clientIp);
       return new Response(JSON.stringify({ 
         error: 'Rate limit exceeded',
         details: 'Too many requests. Please try again later.',
@@ -40,6 +52,7 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
       });
     }
+    console.log('✅ Rate limit check passed');
 
     step = 'environment_validation';
     // Validate environment
@@ -63,7 +76,11 @@ serve(async (req: Request) => {
     console.log('=== Step 2: Parsing request body ===');
     let body;
     try {
-      body = await req.json();
+      const rawBody = await req.text();
+      console.log('📝 Raw request body length:', rawBody.length);
+      console.log('📝 Raw request body preview:', rawBody.substring(0, 200));
+      
+      body = JSON.parse(rawBody);
       console.log('✅ Request body parsed successfully:', {
         title: body.title,
         package_type: body.package_type,
@@ -110,6 +127,11 @@ serve(async (req: Request) => {
       console.log('✅ User authenticated successfully:', user.id);
     } catch (authError) {
       console.error('❌ Authentication failed:', authError);
+      console.log('🔍 Auth error details:', {
+        message: authError.message,
+        stack: authError.stack,
+        authHeader: req.headers.get('Authorization')?.substring(0, 20) + '...'
+      });
       return new Response(JSON.stringify({ 
         error: authError.message,
         details: 'User authentication failed',
@@ -163,6 +185,13 @@ Status: Processing via Zapier MCP workflow...`;
     } catch (dbError) {
       console.error('❌ Database save failed:', dbError);
       console.error('Database error stack:', dbError.stack);
+      console.log('🔍 Database error details:', {
+        name: dbError.name,
+        message: dbError.message,
+        code: dbError.code,
+        details: dbError.details,
+        hint: dbError.hint
+      });
       
       return new Response(JSON.stringify({ 
         error: dbError.message,
