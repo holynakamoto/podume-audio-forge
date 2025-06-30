@@ -20,7 +20,15 @@ interface ZapierMCPPayload {
 export async function triggerZapierMCP(podcastData: any): Promise<void> {
   console.log('=== Triggering Zapier MCP workflow with full processing ===');
   
-  const zapierMcpUrl = Deno.env.get('ZAPIER_MCP_WEBHOOK_URL') || 'https://mcp.zapier.com/api/mcp/a/23523145/mcp';
+  const zapierMcpUrl = Deno.env.get('ZAPIER_MCP_WEBHOOK_URL');
+  
+  if (!zapierMcpUrl) {
+    console.error('❌ ZAPIER_MCP_WEBHOOK_URL environment variable not set');
+    console.log('Available environment variables:', Object.keys(Deno.env.toObject()).filter(key => key.includes('ZAPIER')));
+    throw new Error('Zapier MCP webhook URL not configured');
+  }
+  
+  console.log('🔗 Using Zapier MCP URL:', zapierMcpUrl.substring(0, 50) + '...');
   
   try {
     const payload: ZapierMCPPayload = {
@@ -41,7 +49,7 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
       generate_audio: true, // Always generate audio via Deepgram/Auphonic
     };
 
-    console.log('Sending comprehensive payload to Zapier MCP:', {
+    console.log('📤 Sending comprehensive payload to Zapier MCP:', {
       podcast_id: payload.podcast_id,
       title: payload.title,
       source_type: payload.source_type,
@@ -52,8 +60,10 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
       premium_assets: payload.premium_assets,
       generate_transcript: payload.generate_transcript,
       generate_audio: payload.generate_audio,
+      zapier_url: zapierMcpUrl.substring(0, 50) + '...'
     });
 
+    console.log('🚀 Making HTTP request to Zapier MCP...');
     const response = await fetch(zapierMcpUrl, {
       method: 'POST',
       headers: {
@@ -63,19 +73,40 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
       body: JSON.stringify(payload),
     });
 
+    console.log('📨 Zapier MCP response status:', response.status);
+    console.log('📨 Zapier MCP response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Zapier MCP trigger failed:', response.status, errorText);
-      throw new Error(`Zapier MCP failed: ${response.status} ${errorText}`);
+      console.error('❌ Zapier MCP trigger failed:', response.status, errorText);
+      throw new Error(`Zapier MCP failed: ${response.status} - ${errorText}`);
     }
 
-    const result = await response.json();
-    console.log('Zapier MCP triggered successfully for full processing:', result);
+    let result;
+    try {
+      result = await response.json();
+      console.log('✅ Zapier MCP triggered successfully for full processing:', result);
+    } catch (jsonError) {
+      const textResult = await response.text();
+      console.log('✅ Zapier MCP triggered successfully (non-JSON response):', textResult);
+      result = { status: 'success', response: textResult };
+    }
+
+    console.log('🎉 Zapier MCP workflow initiated successfully');
+    console.log('The workflow will now:');
+    console.log('1. 📱 Extract LinkedIn profile data (if applicable)');
+    console.log('2. 🤖 Generate podcast transcript using Claude integration');
+    console.log('3. 🎵 Generate audio using Deepgram TTS');
+    console.log('4. 🎧 Post-process audio with Auphonic');
+    console.log('5. 💾 Update the database with final content');
 
   } catch (error) {
-    console.error('Error triggering Zapier MCP:', error.message);
+    console.error('❌ Error triggering Zapier MCP:', error.message);
+    console.error('Error details:', error);
     // Don't throw error here - we don't want to fail podcast creation if Zapier fails
-    console.log('Continuing podcast creation despite Zapier MCP failure');
+    // The podcast record is already created, so user can still see it
+    console.log('⚠️ Continuing podcast creation despite Zapier MCP failure');
+    console.log('Podcast record created successfully, but automated processing failed');
   }
 }
 
@@ -110,12 +141,12 @@ export async function notifyZapierCompletion(podcastData: any): Promise<void> {
     });
 
     if (response.ok) {
-      console.log('Zapier completion notification sent successfully');
+      console.log('✅ Zapier completion notification sent successfully');
     } else {
-      console.error('Zapier completion notification failed:', response.status);
+      console.error('❌ Zapier completion notification failed:', response.status);
     }
 
   } catch (error) {
-    console.error('Error sending Zapier completion notification:', error.message);
+    console.error('❌ Error sending Zapier completion notification:', error.message);
   }
 }
