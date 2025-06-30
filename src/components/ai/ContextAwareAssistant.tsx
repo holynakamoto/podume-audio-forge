@@ -4,7 +4,7 @@ import { MessageCircle, Brain, Lightbulb, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useContextAwareness } from '@/hooks/useContextAwareness';
+import { useContextData } from '@/components/ai/ContextProvider';
 import { useIntent } from '@/components/intent/IntentProvider';
 
 interface ContextualSuggestion {
@@ -17,7 +17,7 @@ interface ContextualSuggestion {
 }
 
 export const ContextAwareAssistant = () => {
-  const { context, getContextualInsights, trackInteraction } = useContextAwareness();
+  const { context, getContextualInsights, trackInteraction } = useContextData();
   const { userIntent } = useIntent();
   const [suggestions, setSuggestions] = useState<ContextualSuggestion[]>([]);
   const [isVisible, setIsVisible] = useState(false);

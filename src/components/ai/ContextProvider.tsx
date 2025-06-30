@@ -26,10 +26,10 @@ export const ContextProvider: React.FC<ContextProviderProps> = ({ children }) =>
   );
 };
 
-export const useContext = () => {
+export const useContextData = () => {
   const context = useContext(ContextContext);
   if (!context) {
-    throw new Error('useContext must be used within a ContextProvider');
+    throw new Error('useContextData must be used within a ContextProvider');
   }
   return context;
 };
