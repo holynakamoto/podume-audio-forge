@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      podcast_jobs: {
+        Row: {
+          audio_url: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          linkedin_profile_url: string
+          metadata: Json | null
+          profile_data: Json | null
+          status: string
+          transcript: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          linkedin_profile_url: string
+          metadata?: Json | null
+          profile_data?: Json | null
+          status?: string
+          transcript?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          linkedin_profile_url?: string
+          metadata?: Json | null
+          profile_data?: Json | null
+          status?: string
+          transcript?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       podcasts: {
         Row: {
           audio_url: string | null
@@ -148,6 +187,44 @@ export type Database = {
             columns: ["podcast_id"]
             isOneToOne: false
             referencedRelation: "podcasts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_logs: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          execution_time_ms: number | null
+          id: string
+          job_id: string | null
+          status: string
+          step_name: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          execution_time_ms?: number | null
+          id?: string
+          job_id?: string | null
+          status: string
+          step_name: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          execution_time_ms?: number | null
+          id?: string
+          job_id?: string | null
+          status?: string
+          step_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "podcast_jobs"
             referencedColumns: ["id"]
           },
         ]
