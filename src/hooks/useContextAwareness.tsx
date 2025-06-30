@@ -107,8 +107,6 @@ export const useContextAwareness = () => {
     }
   });
 
-  const sessionRef = useRef<any>({});
-
   // Track page views
   const trackPageView = useCallback((page: string) => {
     setContext(prev => ({
@@ -128,48 +126,35 @@ export const useContextAwareness = () => {
       data
     };
 
-    setContext(prev => ({
-      ...prev,
-      currentSession: {
-        ...prev.currentSession,
-        interactions: [...prev.currentSession.interactions, interaction].slice(-50) // Keep last 50
+    setContext(prev => {
+      const newContext = {
+        ...prev,
+        currentSession: {
+          ...prev.currentSession,
+          interactions: [...prev.currentSession.interactions, interaction].slice(-50) // Keep last 50
+        }
+      };
+
+      // Analyze patterns after state update
+      const recentInteractions = newContext.currentSession.interactions.slice(-10);
+      
+      // Infer engagement style
+      const quickActions = recentInteractions.filter(i => 
+        ['button_click', 'quick_nav'].includes(i.type)
+      ).length;
+      const thoroughActions = recentInteractions.filter(i => 
+        ['long_read', 'detailed_view', 'form_fill'].includes(i.type)
+      ).length;
+
+      if (quickActions > thoroughActions * 2) {
+        newContext.preferences.engagementStyle = 'quick';
+      } else if (thoroughActions > quickActions) {
+        newContext.preferences.engagementStyle = 'thorough';
       }
-    }));
 
-    // Analyze interaction patterns
-    analyzeInteractionPatterns(interaction);
+      return newContext;
+    });
   }, []);
-
-  // Analyze interaction patterns to infer preferences
-  const analyzeInteractionPatterns = useCallback((interaction: any) => {
-    const recentInteractions = context.currentSession.interactions.slice(-10);
-    
-    // Infer engagement style
-    const quickActions = recentInteractions.filter(i => 
-      ['button_click', 'quick_nav'].includes(i.type)
-    ).length;
-    const thoroughActions = recentInteractions.filter(i => 
-      ['long_read', 'detailed_view', 'form_fill'].includes(i.type)
-    ).length;
-
-    if (quickActions > thoroughActions * 2) {
-      setContext(prev => ({
-        ...prev,
-        preferences: {
-          ...prev.preferences,
-          engagementStyle: 'quick'
-        }
-      }));
-    } else if (thoroughActions > quickActions) {
-      setContext(prev => ({
-        ...prev,
-        preferences: {
-          ...prev.preferences,
-          engagementStyle: 'thorough'
-        }
-      }));
-    }
-  }, [context.currentSession.interactions]);
 
   // Detect technical capabilities
   useEffect(() => {
@@ -245,6 +230,8 @@ export const useContextAwareness = () => {
 
   // Analyze user journey stage
   useEffect(() => {
+    if (!userIntent) return;
+    
     const journey = userIntent.sectionsViewed.includes('pricing') ? 'consideration' :
                    userIntent.interactionCount > 10 ? 'trial' :
                    userIntent.timeOnSite > 120 ? 'consideration' : 'discovery';
@@ -280,14 +267,14 @@ export const useContextAwareness = () => {
       urgency: context.business.urgency,
       preferredContent: context.preferences.contentType,
       deviceOptimization: context.preferences.deviceUsage,
-      engagementLevel: userIntent.engagementLevel,
+      engagementLevel: userIntent?.engagementLevel || 'medium',
       journeyStage: context.business.userJourney,
       technicalCapabilities: context.technical.browserCapabilities,
       suggestions: [] as string[]
     };
 
     // Generate suggestions based on context
-    if (context.business.userJourney === 'consideration' && userIntent.engagementLevel === 'high') {
+    if (context.business.userJourney === 'consideration' && userIntent?.engagementLevel === 'high') {
       insights.suggestions.push('Show pricing and trial options');
     }
     
