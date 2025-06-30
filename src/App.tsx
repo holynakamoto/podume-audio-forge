@@ -9,6 +9,7 @@ import Create from "./pages/Create";
 import Financial from "./pages/Financial";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import Pricing from "./pages/Pricing";
 import { ClerkAuthProvider } from "./auth/ClerkAuthProvider";
 import AuthPage from "./pages/Auth";
 import PodcastPage from "./pages/PodcastPage";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/podcast/:id" element={<PodcastPage />} />
             <Route path="/zootools" element={<ZooToolsDemo />} />
             <Route path="/our-podcasts" element={<OurPodcasts />} />
+            <Route path="/pricing" element={<Pricing />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
