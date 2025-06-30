@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useIntent } from '@/components/intent/IntentProvider';
 
@@ -61,7 +60,14 @@ export interface UserContext {
 }
 
 export const useContextAwareness = () => {
-  const { userIntent } = useIntent();
+  console.log('useContextAwareness: Hook starting');
+  
+  const intentResult = useIntent();
+  console.log('useContextAwareness: Intent result:', intentResult);
+  
+  const userIntent = intentResult?.userIntent;
+  console.log('useContextAwareness: User intent:', userIntent);
+
   const [context, setContext] = useState<UserContext>({
     currentSession: {
       startTime: Date.now(),
@@ -107,19 +113,23 @@ export const useContextAwareness = () => {
     }
   });
 
+  console.log('useContextAwareness: Context state:', context);
+
   // Track page views
   const trackPageView = useCallback((page: string) => {
+    console.log('useContextAwareness: Tracking page view:', page);
     setContext(prev => ({
       ...prev,
       currentSession: {
         ...prev.currentSession,
-        pageViews: [...prev.currentSession.pageViews, page].slice(-10) // Keep last 10
+        pageViews: [...prev.currentSession.pageViews, page].slice(-10)
       }
     }));
   }, []);
 
   // Track user interactions
   const trackInteraction = useCallback((type: string, data: any = {}) => {
+    console.log('useContextAwareness: Tracking interaction:', type, data);
     const interaction = {
       type,
       timestamp: Date.now(),
@@ -131,7 +141,7 @@ export const useContextAwareness = () => {
         ...prev,
         currentSession: {
           ...prev.currentSession,
-          interactions: [...prev.currentSession.interactions, interaction].slice(-50) // Keep last 50
+          interactions: [...prev.currentSession.interactions, interaction].slice(-50)
         }
       };
 
@@ -158,6 +168,7 @@ export const useContextAwareness = () => {
 
   // Detect technical capabilities
   useEffect(() => {
+    console.log('useContextAwareness: Detecting technical capabilities');
     const detectCapabilities = async () => {
       const capabilities = {
         webAudio: 'AudioContext' in window || 'webkitAudioContext' in window,
@@ -208,6 +219,7 @@ export const useContextAwareness = () => {
 
   // Detect network speed
   useEffect(() => {
+    console.log('useContextAwareness: Detecting network speed');
     const detectNetworkSpeed = () => {
       const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
       
@@ -228,25 +240,37 @@ export const useContextAwareness = () => {
     detectNetworkSpeed();
   }, []);
 
-  // Analyze user journey stage
+  // Analyze user journey stage - SIMPLIFIED to avoid infinite loops
   useEffect(() => {
-    if (!userIntent) return;
+    console.log('useContextAwareness: Analyzing user journey, userIntent:', userIntent);
     
-    const journey = userIntent.sectionsViewed.includes('pricing') ? 'consideration' :
-                   userIntent.interactionCount > 10 ? 'trial' :
-                   userIntent.timeOnSite > 120 ? 'consideration' : 'discovery';
+    if (!userIntent) {
+      console.log('useContextAwareness: No userIntent available');
+      return;
+    }
+    
+    try {
+      const journey = userIntent.sectionsViewed?.includes('pricing') ? 'consideration' :
+                     (userIntent.interactionCount || 0) > 10 ? 'trial' :
+                     (userIntent.timeOnSite || 0) > 120 ? 'consideration' : 'discovery';
 
-    setContext(prev => ({
-      ...prev,
-      business: {
-        ...prev.business,
-        userJourney: journey
-      }
-    }));
-  }, [userIntent]);
+      console.log('useContextAwareness: Calculated journey:', journey);
+
+      setContext(prev => ({
+        ...prev,
+        business: {
+          ...prev.business,
+          userJourney: journey
+        }
+      }));
+    } catch (error) {
+      console.error('useContextAwareness: Error analyzing user journey:', error);
+    }
+  }, [userIntent?.sectionsViewed, userIntent?.interactionCount, userIntent?.timeOnSite]);
 
   // Infer time of use
   useEffect(() => {
+    console.log('useContextAwareness: Setting time of use');
     const hour = new Date().getHours();
     const timeOfUse = hour < 12 ? 'morning' :
                      hour < 17 ? 'afternoon' :
@@ -263,6 +287,8 @@ export const useContextAwareness = () => {
 
   // Generate contextual insights
   const getContextualInsights = useCallback(() => {
+    console.log('useContextAwareness: Generating contextual insights');
+    
     const insights = {
       urgency: context.business.urgency,
       preferredContent: context.preferences.contentType,
@@ -288,6 +314,8 @@ export const useContextAwareness = () => {
 
     return insights;
   }, [context, userIntent]);
+
+  console.log('useContextAwareness: Returning hook values');
 
   return {
     context,
