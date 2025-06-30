@@ -25,7 +25,8 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
   if (!zapierMcpUrl) {
     console.error('❌ ZAPIER_MCP_WEBHOOK_URL environment variable not set');
     console.log('Available environment variables:', Object.keys(Deno.env.toObject()).filter(key => key.includes('ZAPIER')));
-    throw new Error('Zapier MCP webhook URL not configured');
+    console.log('⚠️ Continuing podcast creation without Zapier MCP trigger');
+    return; // Don't throw error - allow podcast creation to succeed
   }
   
   console.log('🔗 Using Zapier MCP URL:', zapierMcpUrl.substring(0, 50) + '...');
@@ -79,7 +80,8 @@ export async function triggerZapierMCP(podcastData: any): Promise<void> {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('❌ Zapier MCP trigger failed:', response.status, errorText);
-      throw new Error(`Zapier MCP failed: ${response.status} - ${errorText}`);
+      console.log('⚠️ Continuing podcast creation despite Zapier MCP failure');
+      return; // Don't throw error - allow podcast creation to succeed
     }
 
     let result;
