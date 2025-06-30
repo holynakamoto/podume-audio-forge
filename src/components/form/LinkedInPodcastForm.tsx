@@ -28,52 +28,79 @@ export const LinkedInPodcastForm: React.FC = () => {
   });
 
   const onSubmit = async (values: LinkedInFormValues) => {
-    console.log('=== LinkedIn Form Submission ===');
+    console.log('=== LinkedIn Form Submission Started ===');
     console.log('Form values:', values);
 
     setIsLoading(true);
     toast.info('Creating podcast from LinkedIn profile...');
 
     try {
+      // Get current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('Session check:', { hasSession: !!session, sessionError });
       
-      // Allow creation without authentication for now
-      const authToken = session?.access_token || 'anonymous';
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+      }
 
-      console.log('Calling generate-podcast function with LinkedIn URL...');
+      // Prepare the request payload
+      const requestPayload = {
+        title: values.title,
+        linkedin_url: values.linkedin_url,
+        package_type: values.package_type,
+        voice_clone: values.voice_clone,
+        premium_assets: values.premium_assets,
+        source_type: 'linkedin_url'
+      };
 
+      console.log('Request payload prepared:', requestPayload);
+      console.log('About to call generate-podcast function...');
+
+      // Call the Edge Function
       const { data, error } = await supabase.functions.invoke('generate-podcast', {
-        body: {
-          title: values.title,
-          linkedin_url: values.linkedin_url,
-          package_type: values.package_type,
-          voice_clone: values.voice_clone,
-          premium_assets: values.premium_assets,
-          source_type: 'linkedin_url'
-        },
+        body: requestPayload,
         headers: {
-          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+          ...(session?.access_token && { Authorization: `Bearer ${session.access_token}` })
         },
       });
 
+      console.log('Edge Function response received:');
+      console.log('- Data:', data);
+      console.log('- Error:', error);
+
       if (error) {
-        console.error('Podcast generation error:', error);
-        toast.error(`Failed to create podcast: ${error.message}`);
+        console.error('Edge Function error details:', {
+          message: error.message,
+          status: error.status,
+          statusText: error.statusText,
+          details: error.details || 'No additional details'
+        });
+        
+        toast.error(`Failed to create podcast: ${error.message || 'Unknown error'}`);
         return;
       }
 
-      console.log('Podcast generation response:', data);
+      console.log('Success! Podcast created:', data);
 
       if (data?.podcast?.id) {
         toast.success('Your LinkedIn podcast has been created!');
+        console.log('Navigating to podcast page:', `/podcast/${data.podcast.id}`);
         navigate(`/podcast/${data.podcast.id}`);
       } else {
-        toast.error('Podcast was created but navigation failed');
+        console.warn('Unexpected response structure:', data);
+        toast.error('Podcast creation response was unexpected');
       }
     } catch (error: any) {
-      console.error('Error creating LinkedIn podcast:', error);
-      toast.error(`Failed to create podcast: ${error.message || 'Unknown error'}`);
+      console.error('=== Catch block error ===');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      console.error('Full error object:', error);
+      
+      toast.error(`Failed to create podcast: ${error.message || 'Network or unknown error'}`);
     } finally {
+      console.log('=== LinkedIn Form Submission Completed ===');
       setIsLoading(false);
     }
   };
