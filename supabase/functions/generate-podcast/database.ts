@@ -46,24 +46,22 @@ export async function savePodcastToDatabase(
     console.log('Podcast created successfully with ID:', data.id);
     console.log('Status: processing - Zapier MCP will handle complete generation');
     
-    // Enhanced Zapier MCP payload with full processing instructions
+    // Enhanced Zapier AI Agent payload
     const zapierPayload = {
       ...data,
       linkedin_url: request.linkedin_url,
       source_type: request.source_type,
-      linkedin_profile_data: request.source_type === 'linkedin_url' ? request.linkedin_url : request.resume_content,
     };
     
-    // Trigger Zapier MCP workflow for complete processing (profile extraction + Claude transcript + audio generation)
+    // Trigger Zapier AI Agent for complete processing
     await triggerZapierMCP(zapierPayload);
     
-    console.log('Zapier MCP workflow triggered successfully');
-    console.log('The workflow will:');
-    console.log('1. Extract LinkedIn profile data (if applicable)');
-    console.log('2. Generate podcast transcript using Claude integration');
+    console.log('Zapier AI Agent triggered successfully');
+    console.log('The AI Agent will:');
+    console.log('1. Extract LinkedIn profile data using LinkedIn API');
+    console.log('2. Generate podcast transcript using Claude');
     console.log('3. Generate audio using Deepgram TTS');
-    console.log('4. Post-process audio with Auphonic');
-    console.log('5. Update the database with final content');
+    console.log('4. Send results back to zapier-completion webhook');
     
     // The workflow will update the podcast record when complete
     // For now, return the initial record
