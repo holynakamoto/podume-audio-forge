@@ -74,12 +74,30 @@ serve(async (req: Request) => {
     step = 'request_parsing';
     // Parse and validate request body
     console.log('=== Step 2: Parsing request body ===');
+    console.log('📝 Content-Type header:', req.headers.get('Content-Type'));
+    console.log('📝 Request method:', req.method);
+    
     let body;
     try {
       const rawBody = await req.text();
       console.log('📝 Raw request body length:', rawBody.length);
-      console.log('📝 Raw request body preview:', rawBody.substring(0, 200));
+      console.log('📝 Raw request body type:', typeof rawBody);
       
+      if (!rawBody || rawBody.length === 0) {
+        console.error('❌ Empty request body received');
+        return new Response(JSON.stringify({ 
+          error: 'Empty request body',
+          details: 'No data was received in the request body',
+          step: 'request_parsing'
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      console.log('📝 Raw request body preview:', rawBody.substring(0, 500));
+      
+      // Try to parse JSON
       body = JSON.parse(rawBody);
       console.log('✅ Request body parsed successfully:', {
         title: body.title,
@@ -92,10 +110,14 @@ serve(async (req: Request) => {
       });
     } catch (parseError) {
       console.error('❌ Failed to parse request body:', parseError);
+      console.error('❌ Parse error type:', parseError.constructor.name);
+      console.error('❌ Parse error details:', parseError.message);
       return new Response(JSON.stringify({ 
         error: 'Invalid JSON in request body',
         details: parseError.message,
-        step: 'request_parsing'
+        step: 'request_parsing',
+        bodyLength: rawBody?.length || 0,
+        bodyPreview: rawBody?.substring(0, 100) || 'No body content'
       }), {
         status: 400,
         headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },

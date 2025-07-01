@@ -105,9 +105,14 @@ export const LinkedInPodcastForm: React.FC = () => {
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       try {
+        console.log('🚀 About to invoke generate-podcast function with payload:', requestPayload);
+        
         const { data, error } = await supabase.functions.invoke('generate-podcast', {
           body: requestPayload,
-          headers,
+          headers: {
+            'Content-Type': 'application/json',
+            ...headers
+          },
         });
 
         clearTimeout(timeoutId);
