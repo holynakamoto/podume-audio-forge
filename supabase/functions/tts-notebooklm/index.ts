@@ -26,7 +26,7 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured (NotebookLM fallback)');
     }
 
-    // Use OpenAI TTS with podcast-style settings
+    // Use OpenAI TTS with high-quality, podcast-style settings
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
@@ -36,9 +36,9 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'tts-1-hd', // Higher quality model
         input: text,
-        voice: voice === 'podcast-host' ? 'nova' : 'alloy', // Female voices work well for podcasts
+        voice: voice === 'interviewer' ? 'echo' : 'nova', // Different voices for different styles
         response_format: 'mp3',
-        speed: 1.0
+        speed: 0.95 // Slightly slower for better clarity
       }),
     });
 
