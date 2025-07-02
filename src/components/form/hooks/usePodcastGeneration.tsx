@@ -25,7 +25,7 @@ export const usePodcastGeneration = () => {
         package_type: values.package_type || 'core',
         voice_clone: values.voice_clone || false,
         premium_assets: values.premium_assets || false,
-        source_type: 'linkedin_oidc',
+        source_type: 'resume_content', // Changed from linkedin_oidc to resume_content
         resume_content: resumeContent || ''
       };
 
