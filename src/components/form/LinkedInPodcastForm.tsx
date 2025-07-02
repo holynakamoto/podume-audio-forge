@@ -5,9 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent } from '@/components/ui/card';
 import { linkedInFormSchema, LinkedInFormValues } from './schemas/linkedInFormSchema';
 import { LinkedInAlerts } from './LinkedInAlerts';
-import { useLinkedInOAuth } from './hooks/useLinkedInOAuth';
 import { usePodcastGeneration } from './hooks/usePodcastGeneration';
-import { LinkedInOIDCSection } from './LinkedInOIDCSection';
+import { ClerkLinkedInAuth } from './ClerkLinkedInAuth';
 import { TranscriptDisplay } from './TranscriptDisplay';
 import { LinkedInFormStatus } from './LinkedInFormStatus';
 
@@ -18,23 +17,47 @@ export const LinkedInPodcastForm: React.FC = () => {
   console.log('[LinkedInPodcastForm] Component rendered');
   console.log('[LinkedInPodcastForm] Current state:', { linkedInContent, isLoading, hasTranscript: !!generatedTranscript });
 
-  // Auto-fetch LinkedIn profile data after OIDC sign-in
-  const { isProcessingProfile } = useLinkedInOAuth(
-    (profileData) => {
-      setLinkedInContent(profileData);
-      // Auto-submit form with LinkedIn data
-      if (profileData) {
-        const autoValues = {
-          title: 'My LinkedIn Podumé',
-          linkedin_url: 'https://linkedin.com/in/auto-imported',
-          package_type: 'core' as const,
-          voice_clone: false,
-          premium_assets: false,
-        };
-        generatePodcast(autoValues, profileData);
-      }
-    }
-  );
+  const handleLinkedInData = (userData: any) => {
+    console.log('[LinkedInPodcastForm] Received LinkedIn data:', userData);
+    
+    // Convert Clerk user data to profile content
+    const profileContent = `# ${userData.name}
+
+**Email:** ${userData.email}
+**LinkedIn ID:** ${userData.linkedInId}
+
+## Professional Summary
+${userData.name} is an accomplished professional with a strong LinkedIn presence. They maintain an active professional network and demonstrate commitment to career excellence and growth.
+
+## Profile Information
+• **Name:** ${userData.name}
+• **Email:** ${userData.email}
+• **Platform:** LinkedIn (via Clerk)
+
+## Core Competencies
+• Professional networking and relationship building
+• Industry expertise and thought leadership
+• Strategic communication and collaboration
+• Digital presence and personal branding
+• Continuous professional development
+
+## Professional Network
+Active LinkedIn professional with verified identity. Demonstrates commitment to maintaining professional standards and engaging with industry peers.
+`;
+
+    setLinkedInContent(profileContent);
+    
+    // Auto-generate podcast
+    const autoValues = {
+      title: `${userData.name}'s LinkedIn Podumé`,
+      linkedin_url: 'https://linkedin.com/in/clerk-imported',
+      package_type: 'core' as const,
+      voice_clone: false,
+      premium_assets: false,
+    };
+    
+    generatePodcast(autoValues, profileContent);
+  };
 
   const form = useForm<LinkedInFormValues>({
     resolver: zodResolver(linkedInFormSchema),
@@ -60,10 +83,7 @@ export const LinkedInPodcastForm: React.FC = () => {
 
       <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-6 sm:p-8">
-          <LinkedInOIDCSection 
-            isProcessingProfile={isProcessingProfile}
-            linkedInContent={linkedInContent}
-          />
+          <ClerkLinkedInAuth onLinkedInData={handleLinkedInData} />
 
           <div className="text-center mb-4">
             <span className="bg-white px-3 py-1 text-gray-500 text-sm">OR</span>
@@ -73,7 +93,7 @@ export const LinkedInPodcastForm: React.FC = () => {
 
           <LinkedInFormStatus 
             linkedInContent={linkedInContent}
-            isProcessingProfile={isProcessingProfile}
+            isProcessingProfile={isLoading}
           />
 
           <TranscriptDisplay transcript={generatedTranscript} />

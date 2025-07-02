@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.32.3",
     "@hookform/resolvers": "^3.9.0",
     "@mendable/firecrawl-js": "^1.27.0",
     "@playwright/test": "^1.53.1",
