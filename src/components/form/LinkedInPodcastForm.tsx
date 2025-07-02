@@ -11,6 +11,7 @@ import { LinkedInOIDCSection } from './LinkedInOIDCSection';
 import { LinkedInDataDisplay } from './LinkedInDataDisplay';
 import { TranscriptDisplay } from './TranscriptDisplay';
 import { LinkedInFormStatus } from './LinkedInFormStatus';
+import { TTSComparison } from './TTSComparison';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [linkedInContent, setLinkedInContent] = useState('');
@@ -87,6 +88,10 @@ export const LinkedInPodcastForm: React.FC = () => {
           />
 
           <TranscriptDisplay transcript={generatedTranscript} />
+          
+          {generatedTranscript && (
+            <TTSComparison transcript={generatedTranscript} />
+          )}
         </CardContent>
       </Card>
     </div>
