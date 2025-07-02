@@ -98,5 +98,11 @@ verify_jwt = false
 [functions.tts-test]
 verify_jwt = false
 
+[functions.tts-cartesia]
+verify_jwt = false
+
+[functions.tts-playht]
+verify_jwt = false
+
 [edge-runtime]
 policy = "per_worker"

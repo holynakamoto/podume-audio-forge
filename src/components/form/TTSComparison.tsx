@@ -20,17 +20,23 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
   const [elevenlabs, setElevenlabs] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
   const [deepgram, setDeepgram] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
   const [hume, setHume] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
+  const [cartesia, setCartesia] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
+  const [playht, setPlayht] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
 
   // Audio elements refs
   const [audioRefs] = useState({
     elevenlabs: new Audio(),
     deepgram: new Audio(),
-    hume: new Audio()
+    hume: new Audio(),
+    cartesia: new Audio(),
+    playht: new Audio()
   });
 
-  const generateTTS = async (provider: 'elevenlabs' | 'deepgram' | 'hume') => {
+  const generateTTS = async (provider: 'elevenlabs' | 'deepgram' | 'hume' | 'cartesia' | 'playht') => {
     const setState = provider === 'elevenlabs' ? setElevenlabs : 
-                    provider === 'deepgram' ? setDeepgram : setHume;
+                    provider === 'deepgram' ? setDeepgram : 
+                    provider === 'hume' ? setHume :
+                    provider === 'cartesia' ? setCartesia : setPlayht;
     
     setState(prev => ({ ...prev, isLoading: true }));
     
@@ -59,12 +65,16 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
     }
   };
 
-  const playAudio = (provider: 'elevenlabs' | 'deepgram' | 'hume') => {
+  const playAudio = (provider: 'elevenlabs' | 'deepgram' | 'hume' | 'cartesia' | 'playht') => {
     const audio = audioRefs[provider];
     const state = provider === 'elevenlabs' ? elevenlabs : 
-                  provider === 'deepgram' ? deepgram : hume;
+                  provider === 'deepgram' ? deepgram : 
+                  provider === 'hume' ? hume :
+                  provider === 'cartesia' ? cartesia : playht;
     const setState = provider === 'elevenlabs' ? setElevenlabs : 
-                     provider === 'deepgram' ? setDeepgram : setHume;
+                     provider === 'deepgram' ? setDeepgram : 
+                     provider === 'hume' ? setHume :
+                     provider === 'cartesia' ? setCartesia : setPlayht;
 
     if (!state.audio) return;
 
@@ -81,6 +91,8 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
       setElevenlabs(prev => ({ ...prev, isPlaying: false }));
       setDeepgram(prev => ({ ...prev, isPlaying: false }));
       setHume(prev => ({ ...prev, isPlaying: false }));
+      setCartesia(prev => ({ ...prev, isPlaying: false }));
+      setPlayht(prev => ({ ...prev, isPlaying: false }));
 
       audio.src = state.audio;
       audio.play();
@@ -101,17 +113,31 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
       color: 'border-purple-200 bg-purple-50'
     },
     {
-      name: 'Deepgram Aura2',
+      name: 'Deepgram Aura',
       key: 'deepgram' as const,
       state: deepgram,
       description: 'Fast, natural-sounding speech synthesis',
       color: 'border-blue-200 bg-blue-50'
     },
     {
+      name: 'Cartesia Sonic',
+      key: 'cartesia' as const,
+      state: cartesia,
+      description: 'Ultra-realistic conversational voices',
+      color: 'border-orange-200 bg-orange-50'
+    },
+    {
+      name: 'PlayHT 2.0',
+      key: 'playht' as const,
+      state: playht,
+      description: 'Natural conversational AI voices',
+      color: 'border-indigo-200 bg-indigo-50'
+    },
+    {
       name: 'Hume AI',
       key: 'hume' as const,
       state: hume,
-      description: 'Emotionally intelligent voice generation',
+      description: 'Emotionally intelligent voice generation (OpenAI fallback)',
       color: 'border-green-200 bg-green-50'
     }
   ];
@@ -126,7 +152,7 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {providers.map(provider => (
               <Card key={provider.key} className={provider.color}>
                 <CardHeader className="pb-3">

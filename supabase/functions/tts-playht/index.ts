@@ -11,43 +11,41 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice_id = 'EXAVITQu4vr4xnSDxMaL' } = await req.json(); // Default to Sarah voice
+    const { text, voice = 'jennifer' } = await req.json();
 
     if (!text) {
       throw new Error('Text is required');
     }
 
-    console.log('ElevenLabs TTS request:', { textLength: text.length, voice_id });
+    console.log('PlayHT TTS request:', { textLength: text.length, voice });
 
-    const apiKey = Deno.env.get('ELEVENLABS_API_KEY');
-    if (!apiKey) {
-      throw new Error('ElevenLabs API key not configured');
+    const apiKey = Deno.env.get('PLAYHT_API_KEY');
+    const userId = Deno.env.get('PLAYHT_USER_ID');
+    
+    if (!apiKey || !userId) {
+      throw new Error('PlayHT API credentials not configured');
     }
 
-    // Call ElevenLabs TTS API
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice_id}`, {
+    // Call PlayHT TTS API
+    const response = await fetch('https://api.play.ht/api/v2/tts/stream', {
       method: 'POST',
       headers: {
-        'Accept': 'audio/mpeg',
+        'Authorization': `Bearer ${apiKey}`,
+        'X-User-ID': userId,
         'Content-Type': 'application/json',
-        'xi-api-key': apiKey,
       },
       body: JSON.stringify({
         text,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: 0.0,
-          use_speaker_boost: true
-        }
+        voice: voice,
+        output_format: 'mp3',
+        voice_engine: 'PlayHT2.0-turbo'
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('ElevenLabs API error:', response.status, errorText);
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      console.error('PlayHT API error:', response.status, errorText);
+      throw new Error(`PlayHT API error: ${response.status}`);
     }
 
     // Convert audio to base64 using chunked approach
@@ -62,14 +60,14 @@ serve(async (req) => {
       base64Audio += btoa(String.fromCharCode(...chunk));
     }
 
-    console.log('ElevenLabs TTS successful, audio length:', arrayBuffer.byteLength);
+    console.log('PlayHT TTS successful, audio length:', arrayBuffer.byteLength);
 
     return new Response(
       JSON.stringify({ 
         success: true,
         audio: base64Audio,
-        provider: 'elevenlabs',
-        voice_id,
+        provider: 'playht',
+        voice,
         format: 'mp3'
       }),
       {
@@ -78,12 +76,12 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error('ElevenLabs TTS error:', error);
+    console.error('PlayHT TTS error:', error);
     return new Response(
       JSON.stringify({ 
         success: false,
         error: error.message,
-        provider: 'elevenlabs'
+        provider: 'playht'
       }),
       {
         status: 500,

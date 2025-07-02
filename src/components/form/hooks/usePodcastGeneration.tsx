@@ -23,29 +23,25 @@ export const usePodcastGeneration = () => {
       const name = resumeContent?.match(/# (.+)/)?.[1] || 'LinkedIn Professional';
       
       const mockTranscript = `
-Sarah: Welcome back to "Career Spotlight," the podcast where we dive deep into the professional journeys of today's most interesting candidates. I'm Sarah, your host.
+Hey, welcome back to Career Deep Dive! So I've been diving into ${name}'s professional journey, and honestly, there's some really impressive stuff here.
 
-Mike: And I'm Mike, co-host. Today we're excited to discuss ${name}'s impressive career trajectory and what makes them stand out in today's competitive market.
+Oh absolutely! What caught my eye right away is how they've built this authentic professional presence. You know what I mean? It's not just another generic LinkedIn profile - there's real substance behind their career progression.
 
-Sarah: Absolutely, Mike. Let me start by giving our listeners an overview of ${name}'s background. This professional has built a remarkable career with a verified LinkedIn presence and demonstrates commitment to career excellence and growth.
+Exactly! And speaking of progression, let's talk about their networking approach. It's clear they understand that career growth isn't just about what you know, but who you're connected with and how you add value to those relationships.
 
-Mike: That's a great foundation, Sarah. What really catches my attention is their professional networking and relationship building skills. ${name} has shown expertise in industry leadership and strategic communication.
+That's such a good point. I was looking at their skill development, and it's fascinating how they've balanced technical expertise with those softer leadership qualities. You don't see that combination very often.
 
-Sarah: Exactly! Their core competencies include professional networking, industry expertise, strategic communication and collaboration, digital presence and personal branding, and continuous professional development.
+Right? And here's what I find really interesting - their approach to professional branding feels genuine. It's not just buzzwords and fluff. There's real depth in how they present their experience and growth trajectory.
 
-Mike: The combination of technical proficiency and professional acumen makes them a valuable asset to any organization. Their LinkedIn profile shows they maintain an active professional network.
+I totally agree. You can tell they've been strategic about their career moves. Each step seems intentional, building on the previous experience rather than just jumping around randomly.
 
-Sarah: What I find particularly impressive is their commitment to career excellence and growth. This kind of forward-thinking approach is exactly what organizations need in today's market.
+And that consistency shows up in everything - from their professional communication style to how they engage with their industry. It's the kind of authenticity that employers are really looking for right now.
 
-Mike: And let's not forget the verified email and professional credentials that come through in their LinkedIn presentation. These are the intangibles that often make the difference between a good candidate and a great one.
+Absolutely. In today's market, candidates like ${name} who can demonstrate both competence and genuine professional growth are exactly what forward-thinking organizations need to invest in.
 
-Sarah: As we wrap up today's episode, I want to emphasize that ${name} represents the kind of candidate that forward-thinking organizations should actively seek out. Their combination of verified credentials and demonstrated professional growth makes them an excellent investment.
+Couldn't have said it better myself. For anyone listening who wants to build a similar trajectory, the key takeaway here is that authentic professional development really does make all the difference.
 
-Mike: Well said, Sarah. To our listeners, thank you for joining us on another episode of "Career Spotlight." We hope this deep dive into ${name}'s professional journey has provided valuable insights.
-
-Sarah: Don't forget to subscribe to our podcast for more career insights and professional success stories. Until next time, keep growing and keep inspiring!
-
-Mike: This has been Sarah and Mike with "Career Spotlight." Thanks for listening, and we'll see you next episode!
+Thanks for diving deep with us today! If you found this conversation valuable, definitely share it with someone who might benefit from these insights. Until next time, keep building those meaningful professional connections!
       `.trim();
 
       console.log('=== Mock Transcript Generated ===');
