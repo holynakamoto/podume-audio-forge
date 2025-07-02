@@ -95,5 +95,8 @@ verify_jwt = false
 [functions.tts-hume]
 verify_jwt = false
 
+[functions.tts-test]
+verify_jwt = false
+
 [edge-runtime]
 policy = "per_worker"

@@ -185,6 +185,34 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
               <strong>Testing with first 500 characters:</strong> "{transcript.substring(0, 100)}..."
             </p>
           </div>
+          
+          <div className="mt-4">
+            <Button
+              onClick={async () => {
+                try {
+                  console.log('Testing basic TTS function...');
+                  const { data, error } = await supabase.functions.invoke('tts-test', {
+                    body: { text: "Hello, this is a test of the TTS system." }
+                  });
+                  
+                  if (error) {
+                    console.error('Test error:', error);
+                    toast.error(`Test failed: ${error.message}`);
+                  } else {
+                    console.log('Test success:', data);
+                    toast.success('Test TTS function is working!');
+                  }
+                } catch (err: any) {
+                  console.error('Test exception:', err);
+                  toast.error(`Test exception: ${err.message}`);
+                }
+              }}
+              variant="outline"
+              className="w-full"
+            >
+              🧪 Test Basic TTS Function
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
