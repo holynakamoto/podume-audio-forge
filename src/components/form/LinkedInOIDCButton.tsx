@@ -44,8 +44,11 @@ export const LinkedInOIDCButton: React.FC<LinkedInOIDCButtonProps> = ({
         },
       });
       
+      
       console.log('OAuth response - data:', data);
       console.log('OAuth response - error:', error);
+      console.log('OAuth completed successfully - user should be redirected');
+      
       
       if (error) {
         console.error('LinkedIn OIDC sign-in error:', error);
