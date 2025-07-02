@@ -35,14 +35,24 @@ export const ClerkLinkedInAuth: React.FC<ClerkLinkedInAuthProps> = ({ onLinkedIn
       if (linkedInAccount || user.fullName) {
         console.log('[ClerkLinkedIn] Processing user data...');
         
-        // Create LinkedIn data even if no specific LinkedIn account (since user signed in via LinkedIn)
+        // Create LinkedIn data with what Clerk provides (not full LinkedIn API data)
         const linkedInData = {
+          clerkUserId: user.id,
           name: user.fullName || `${user.firstName} ${user.lastName}`,
+          firstName: user.firstName,
+          lastName: user.lastName,
           email: user.primaryEmailAddress?.emailAddress,
-          linkedInId: linkedInAccount?.id || 'clerk-user',
+          emailVerified: user.primaryEmailAddress?.verification?.status === 'verified',
           imageUrl: user.imageUrl,
+          linkedInAccount: linkedInAccount ? {
+            id: linkedInAccount.id,
+            provider: linkedInAccount.provider,
+            providerUserId: linkedInAccount.providerUserId,
+            verificationStatus: linkedInAccount.verification?.status
+          } : null,
           publicMetadata: user.publicMetadata,
-          fullUserData: user
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
         };
         
         console.log('[ClerkLinkedIn] Sending LinkedIn data:', linkedInData);

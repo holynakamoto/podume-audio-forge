@@ -39,7 +39,8 @@ export const LinkedInDataDisplay: React.FC<LinkedInDataDisplayProps> = ({
         <Card className="border-blue-200">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg text-blue-900">LinkedIn Profile Data (JSON)</CardTitle>
+              <CardTitle className="text-lg text-blue-900">LinkedIn Data from Clerk (JSON)</CardTitle>
+              <p className="text-sm text-blue-600 mt-1">Note: This is Clerk's basic user data, not full LinkedIn API data</p>
               <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"

@@ -26,13 +26,15 @@ export const LinkedInPodcastForm: React.FC = () => {
     }
     
     console.log('[LinkedInPodcastForm] Received LinkedIn data:', userData);
-    console.log('[LinkedInPodcastForm] Full user data object:', userData.fullUserData);
     
-    // Convert Clerk user data to profile content
+    // Convert Clerk user data to both JSON and profile content
+    const jsonData = JSON.stringify(userData, null, 2);
+    
     const profileContent = `# ${userData.name}
 
 **Email:** ${userData.email}
-**LinkedIn ID:** ${userData.linkedInId}
+**Clerk User ID:** ${userData.clerkUserId}
+**LinkedIn Account:** ${userData.linkedInAccount ? 'Connected via Clerk' : 'Basic user data'}
 
 ## Professional Summary
 ${userData.name} is an accomplished professional with a strong LinkedIn presence. They maintain an active professional network and demonstrate commitment to career excellence and growth.
@@ -40,7 +42,8 @@ ${userData.name} is an accomplished professional with a strong LinkedIn presence
 ## Profile Information
 • **Name:** ${userData.name}
 • **Email:** ${userData.email}
-• **Platform:** LinkedIn (via Clerk)
+• **Platform:** LinkedIn (via Clerk OIDC)
+• **Account Status:** ${userData.emailVerified ? 'Verified' : 'Unverified'}
 
 ## Core Competencies
 • Professional networking and relationship building
@@ -53,9 +56,10 @@ ${userData.name} is an accomplished professional with a strong LinkedIn presence
 Active LinkedIn professional with verified identity. Demonstrates commitment to maintaining professional standards and engaging with industry peers.
 `;
 
-    setLinkedInContent(profileContent);
+    // Set both the JSON data for display AND the formatted content for podcast generation
+    setLinkedInContent(jsonData); // This will show in the JSON window
     
-    // Auto-generate podcast
+    // Auto-generate podcast using the formatted content (not the JSON)
     const autoValues = {
       title: `${userData.name}'s LinkedIn Podumé`,
       linkedin_url: 'https://linkedin.com/in/clerk-imported',
@@ -65,7 +69,7 @@ Active LinkedIn professional with verified identity. Demonstrates commitment to 
     };
     
     setHasAutoSubmitted(true);
-    generatePodcast(autoValues, profileContent);
+    generatePodcast(autoValues, profileContent); // Use formatted content for podcast
   };
 
   const form = useForm<LinkedInFormValues>({
