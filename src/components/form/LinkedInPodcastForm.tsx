@@ -12,10 +12,30 @@ import { LinkedInTitleInput } from './LinkedInTitleInput';
 import { LinkedInUrlInput } from './LinkedInUrlInput';
 import { LinkedInSubmitButton } from './LinkedInSubmitButton';
 import { LinkedInOIDCButton } from './LinkedInOIDCButton';
+import { useLinkedInOAuth } from './hooks/useLinkedInOAuth';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [linkedInContent, setLinkedInContent] = useState('');
   const navigate = useNavigate();
+
+  // Auto-fetch LinkedIn profile data after OIDC sign-in
+  const { isProcessingProfile } = useLinkedInOAuth(
+    (profileData) => {
+      setLinkedInContent(profileData);
+      // Auto-submit form with LinkedIn data
+      if (profileData) {
+        const autoValues = {
+          title: 'My LinkedIn Podumé',
+          linkedin_url: 'https://linkedin.com/in/auto-imported',
+          package_type: 'core' as const,
+          voice_clone: false,
+          premium_assets: false,
+        };
+        handleLinkedInSubmit(autoValues, profileData);
+      }
+    }
+  );
 
   const form = useForm<LinkedInFormValues>({
     resolver: zodResolver(linkedInFormSchema),
@@ -27,6 +47,52 @@ export const LinkedInPodcastForm: React.FC = () => {
       premium_assets: false,
     },
   });
+
+  const handleLinkedInSubmit = async (values: LinkedInFormValues, resumeContent?: string) => {
+    console.log('=== LinkedIn Auto-Submit Started ===');
+    
+    if (isLoading) return;
+    setIsLoading(true);
+    toast.info('Creating podcast from LinkedIn profile...');
+
+    try {
+      const session = await supabase.auth.getSession();
+      
+      const requestPayload = {
+        title: values.title.trim(),
+        linkedin_url: values.linkedin_url.trim(),
+        package_type: values.package_type || 'core',
+        voice_clone: values.voice_clone || false,
+        premium_assets: values.premium_assets || false,
+        source_type: 'linkedin_oidc',
+        resume_content: resumeContent || ''
+      };
+
+      const { data, error } = await supabase.functions.invoke('generate-podcast', {
+        body: requestPayload,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session.data.session?.access_token && {
+            'Authorization': `Bearer ${session.data.session.access_token}`
+          })
+        },
+      });
+
+      if (error) throw new Error(error.message);
+      if (!data) throw new Error('No response data received');
+
+      if (data?.podcast?.id) {
+        toast.success('Your LinkedIn podcast has been created!');
+        navigate(`/podcast/${data.podcast.id}`);
+      } else {
+        toast.error('Podcast creation response was unexpected');
+      }
+    } catch (error: any) {
+      toast.error(`Failed to create podcast: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const onSubmit = async (values: LinkedInFormValues) => {
     console.log('=== LinkedIn Form Submission Started ===');
@@ -194,12 +260,26 @@ export const LinkedInPodcastForm: React.FC = () => {
             <p className="text-blue-700 text-sm mb-3">
               Sign in with LinkedIn to automatically import your profile data
             </p>
-            <LinkedInOIDCButton 
-              className="w-full mb-2"
-              onSuccess={() => {
-                toast.success('LinkedIn connected! Your profile will be processed automatically.');
-              }}
-            />
+            {isProcessingProfile ? (
+              <div className="w-full p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 text-sm">
+                  🔄 Processing your LinkedIn profile and creating podcast...
+                </p>
+              </div>
+            ) : linkedInContent ? (
+              <div className="w-full p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-green-800 text-sm">
+                  ✅ LinkedIn profile imported! Creating your podcast...
+                </p>
+              </div>
+            ) : (
+              <LinkedInOIDCButton 
+                className="w-full mb-2"
+                onSuccess={() => {
+                  toast.success('LinkedIn connected! Processing your profile...');
+                }}
+              />
+            )}
           </div>
 
           <div className="text-center mb-4">

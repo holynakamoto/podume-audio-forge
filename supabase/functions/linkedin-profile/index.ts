@@ -67,6 +67,13 @@ serve(async (req: Request) => {
       });
     }
 
+    console.log('Session debug:', {
+      hasSession: !!sessionData.session,
+      provider: sessionData.session?.user?.app_metadata?.provider,
+      hasProviderToken: !!sessionData.session?.provider_token,
+      sessionKeys: Object.keys(sessionData.session || {})
+    });
+
     // Extract the LinkedIn provider token
     const providerToken = sessionData.session.provider_token;
     if (!providerToken) {
@@ -75,8 +82,9 @@ serve(async (req: Request) => {
         error: 'No LinkedIn access token found. Please sign in with LinkedIn OIDC.',
         debug: {
           user_id: user.id,
-          providers: sessionData.session.app_metadata?.providers || [],
-          has_provider_token: !!providerToken
+          provider: sessionData.session?.user?.app_metadata?.provider,
+          has_provider_token: !!providerToken,
+          session_keys: Object.keys(sessionData.session || {})
         }
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
