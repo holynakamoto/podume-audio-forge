@@ -13,7 +13,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    console.log('=== LinkedIn Profile API function called ===');
+    console.log('=== LinkedIn Profile API function called (OIDC userinfo) ===');
     
     const { access_token } = await req.json();
     
@@ -28,104 +28,42 @@ serve(async (req: Request) => {
       });
     }
 
-    console.log('Fetching LinkedIn profile data with access token...');
+    console.log('Fetching LinkedIn profile via userinfo endpoint...');
     
-    let profileData = null;
-    let profileResponse = null;
+    // Use the modern LinkedIn OIDC userinfo endpoint
+    const response = await fetch('https://api.linkedin.com/v2/userinfo', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${access_token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-    // Use the modern LinkedIn v2/me endpoint with POST method
-    try {
-      console.log('Attempting LinkedIn v2/me API call with POST...');
-      profileResponse = await fetch('https://api.linkedin.com/v2/me', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${access_token}`,
-          'Content-Type': 'application/json',
-          'X-Restli-Protocol-Version': '2.0.0'
-        },
-        body: JSON.stringify({
-          projection: '(id,firstName,lastName,headline,summary,vanityName,profilePicture(displayImage~:playableStreams))'
-        })
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('LinkedIn userinfo API failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
       });
-
-      if (profileResponse.ok) {
-        profileData = await profileResponse.json();
-        console.log('LinkedIn v2/me API successful');
-      } else {
-        console.log('LinkedIn v2/me API failed with status:', profileResponse.status);
-        const errorText = await profileResponse.text();
-        console.log('Error response:', errorText);
-      }
-    } catch (error) {
-      console.log('LinkedIn v2/me API error:', error.message);
-    }
-
-    // Fallback to GET method if POST fails
-    if (!profileData) {
-      try {
-        console.log('Attempting LinkedIn v2/me API call with GET (fallback)...');
-        profileResponse = await fetch('https://api.linkedin.com/v2/me', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${access_token}`,
-            'Content-Type': 'application/json',
-            'X-Restli-Protocol-Version': '2.0.0'
-          }
-        });
-
-        if (profileResponse.ok) {
-          profileData = await profileResponse.json();
-          console.log('LinkedIn v2/me GET API successful');
-        } else {
-          console.log('LinkedIn v2/me GET API failed with status:', profileResponse.status);
-          const errorText = await profileResponse.text();
-          console.log('Error response:', errorText);
-        }
-      } catch (error) {
-        console.log('LinkedIn v2/me GET API error:', error.message);
-      }
-    }
-
-    // Try basic profile endpoint as final fallback
-    if (!profileData) {
-      try {
-        console.log('Attempting basic profile endpoint as final fallback...');
-        profileResponse = await fetch('https://api.linkedin.com/v2/people/~', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${access_token}`,
-            'Content-Type': 'application/json',
-          }
-        });
-
-        if (profileResponse.ok) {
-          profileData = await profileResponse.json();
-          console.log('Basic profile endpoint successful');
-        }
-      } catch (error) {
-        console.log('Basic profile endpoint error:', error.message);
-      }
-    }
-
-    if (!profileData) {
-      console.error('All LinkedIn API calls failed');
-      const errorText = profileResponse ? await profileResponse.text() : 'No response';
-      console.error('Last response:', errorText);
       
       return new Response(JSON.stringify({ 
         success: false, 
-        error: `LinkedIn API error: Unable to fetch profile data. Status: ${profileResponse?.status || 'unknown'}. This may be due to insufficient permissions, expired token, or the profile being private.`,
+        error: `LinkedIn API error: ${response.status} ${response.statusText}`,
+        details: errorText.substring(0, 500),
         debug: {
-          status: profileResponse?.status || 'unknown',
-          response: errorText.substring(0, 500) // Limit error response length
+          endpoint: 'https://api.linkedin.com/v2/userinfo',
+          method: 'GET',
+          status: response.status
         }
       }), {
-        status: profileResponse?.status || 500,
+        status: response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('LinkedIn profile data received successfully');
+    const profileData = await response.json();
+    console.log('LinkedIn userinfo API successful');
     console.log('Profile data keys:', Object.keys(profileData));
 
     // Format the profile data into resume content
@@ -153,61 +91,72 @@ serve(async (req: Request) => {
 });
 
 function formatLinkedInProfile(profile: any): string {
-  console.log('Formatting LinkedIn profile...');
+  console.log('Formatting LinkedIn OIDC profile...');
   
-  const firstName = profile.firstName?.localized?.en_US || 
-                   profile.firstName?.preferredLocale?.en_US ||
-                   profile.localizedFirstName ||
-                   profile.firstName || '';
-  const lastName = profile.lastName?.localized?.en_US || 
-                  profile.lastName?.preferredLocale?.en_US ||
-                  profile.localizedLastName ||
-                  profile.lastName || '';
-  const fullName = `${firstName} ${lastName}`.trim() || 'LinkedIn Professional';
+  // LinkedIn OIDC userinfo response format:
+  // sub, name, given_name, family_name, picture, email, email_verified, locale
+  
+  const fullName = profile.name || `${profile.given_name || ''} ${profile.family_name || ''}`.trim() || 'LinkedIn Professional';
+  const firstName = profile.given_name || '';
+  const lastName = profile.family_name || '';
+  const email = profile.email || '';
+  const picture = profile.picture || '';
+  const locale = profile.locale || '';
+  const sub = profile.sub || '';
   
   let content = `# ${fullName}\n\n`;
   
-  // Add headline if available
-  if (profile.headline?.localized?.en_US || profile.headline) {
-    const headline = profile.headline?.localized?.en_US || profile.headline;
-    content += `**Current Position:** ${headline}\n\n`;
+  // Add contact information
+  if (email && profile.email_verified) {
+    content += `**Email:** ${email}\n\n`;
   }
   
-  // Add vanity name (LinkedIn username) if available
-  if (profile.vanityName) {
-    content += `**LinkedIn:** linkedin.com/in/${profile.vanityName}\n\n`;
+  // Add LinkedIn identifier
+  if (sub) {
+    content += `**LinkedIn ID:** ${sub}\n\n`;
   }
   
   // Add professional summary
   content += `## Professional Summary\n`;
-  content += `${fullName} is a accomplished professional with a strong LinkedIn presence. `;
+  content += `${fullName} is an accomplished professional with a strong LinkedIn presence. `;
+  content += `They maintain an active professional network and demonstrate commitment to career excellence and growth. `;
+  content += `As a verified LinkedIn member, they contribute to professional discourse and industry development.\n\n`;
   
-  if (profile.headline?.localized?.en_US || profile.headline) {
-    const headline = profile.headline?.localized?.en_US || profile.headline;
-    content += `Currently working as ${headline}, they demonstrate expertise in their field. `;
+  // Add profile information section
+  content += `## Profile Information\n`;
+  if (firstName && lastName) {
+    content += `• **Name:** ${firstName} ${lastName}\n`;
   }
-  
-  content += `They maintain an active professional network and are committed to career excellence and growth.\n\n`;
-  
-  // Add summary if available
-  if (profile.summary?.localized?.en_US || profile.summary) {
-    const summary = profile.summary?.localized?.en_US || profile.summary;
-    content += `## About\n${summary}\n\n`;
+  if (locale) {
+    content += `• **Location/Locale:** ${locale}\n`;
   }
+  if (profile.email_verified) {
+    content += `• **Verified Email:** Yes\n`;
+  }
+  content += `• **Platform:** LinkedIn (OIDC Verified)\n\n`;
   
   // Add core competencies
   content += `## Core Competencies\n`;
   content += `• Professional networking and relationship building\n`;
   content += `• Industry expertise and thought leadership\n`;
   content += `• Strategic communication and collaboration\n`;
-  content += `• Continuous professional development\n`;
-  content += `• Digital presence and personal branding\n\n`;
+  content += `• Digital presence and personal branding\n`;
+  content += `• Continuous professional development\n\n`;
   
   // Add LinkedIn specific section
   content += `## Professional Network\n`;
-  content += `Active on LinkedIn with a focus on professional growth, industry insights, and meaningful connections. `;
-  content += `Demonstrates commitment to staying current with industry trends and best practices.\n\n`;
+  content += `Active LinkedIn professional with verified identity and email. `;
+  content += `Demonstrates commitment to maintaining professional standards and engaging with industry peers. `;
+  content += `Contributes to the LinkedIn professional community through authentic networking and knowledge sharing.\n\n`;
   
-  console.log('Formatted content length:', content.length);
+  // Add professional attributes
+  content += `## Professional Attributes\n`;
+  content += `• Verified professional identity on LinkedIn\n`;
+  content += `• Commitment to professional networking\n`;
+  content += `• Focus on authentic professional relationships\n`;
+  content += `• Engagement with industry trends and best practices\n`;
+  content += `• Dedication to career growth and development\n\n`;
+  
+  console.log('Formatted OIDC content length:', content.length);
   return content;
 }
