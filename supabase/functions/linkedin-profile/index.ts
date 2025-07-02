@@ -94,47 +94,62 @@ serve(async (req: Request) => {
 
     console.log('Provider token found, calling LinkedIn userinfo endpoint...');
 
-    // Fetch profile details from LinkedIn's userinfo endpoint
-    const response = await fetch('https://api.linkedin.com/v2/userinfo', {
+    // First try LinkedIn v2 API for detailed profile data
+    let profileData;
+    let profileResponse = await fetch('https://api.linkedin.com/v2/people/~:(id,firstName,lastName,emailAddress,headline,summary,industry,positions,educations,skills,profilePicture)', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${providerToken}`,
         'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
       },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (!profileResponse.ok) {
+      console.log('LinkedIn v2 API failed, trying userinfo endpoint...');
+      // Fallback to userinfo endpoint
+      profileResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${providerToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    if (!profileResponse.ok) {
+      const errorText = await profileResponse.text();
       console.error('LinkedIn API error:', {
-        status: response.status,
-        statusText: response.statusText,
+        status: profileResponse.status,
+        statusText: profileResponse.statusText,
         error: errorText
       });
       
       return new Response(JSON.stringify({ 
-        error: `LinkedIn API error: ${response.status} ${response.statusText}`,
+        error: `LinkedIn API error: ${profileResponse.status} ${profileResponse.statusText}`,
         details: errorText.substring(0, 500),
         debug: {
-          endpoint: 'https://api.linkedin.com/v2/userinfo',
+          endpoint: 'LinkedIn API',
           method: 'GET',
-          status: response.status,
+          status: profileResponse.status,
           token_preview: providerToken.substring(0, 20) + '...'
         }
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: response.status,
+        status: profileResponse.status,
       });
     }
 
-    const profileData = await response.json();
-    console.log('LinkedIn userinfo successful:', Object.keys(profileData));
+    profileData = await profileResponse.json();
+    console.log('LinkedIn API successful:', Object.keys(profileData));
+    console.log('Full LinkedIn profile data:', profileData);
 
     // Format the profile data into resume content
     const resumeContent = formatLinkedInProfile(profileData);
     
     return new Response(JSON.stringify({ 
       success: true,
-      profile: profileData,
+      raw_profile: profileData,
       data: resumeContent
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

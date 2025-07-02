@@ -6,71 +6,42 @@ import { Card, CardContent } from '@/components/ui/card';
 import { linkedInFormSchema, LinkedInFormValues } from './schemas/linkedInFormSchema';
 import { LinkedInAlerts } from './LinkedInAlerts';
 import { usePodcastGeneration } from './hooks/usePodcastGeneration';
-import { ClerkLinkedInAuth } from './ClerkLinkedInAuth';
+import { useLinkedInOAuth } from './hooks/useLinkedInOAuth';
+import { LinkedInOIDCSection } from './LinkedInOIDCSection';
 import { LinkedInDataDisplay } from './LinkedInDataDisplay';
 import { TranscriptDisplay } from './TranscriptDisplay';
 import { LinkedInFormStatus } from './LinkedInFormStatus';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [linkedInContent, setLinkedInContent] = useState('');
-  const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
+  const [rawLinkedInJSON, setRawLinkedInJSON] = useState('');
   const { isLoading, generatedTranscript, generatePodcast } = usePodcastGeneration();
 
   console.log('[LinkedInPodcastForm] Component rendered');
   console.log('[LinkedInPodcastForm] Current state:', { linkedInContent, isLoading, hasTranscript: !!generatedTranscript });
 
-  const handleLinkedInData = (userData: any) => {
-    if (hasAutoSubmitted) {
-      console.log('[LinkedInPodcastForm] Auto-submit already completed, skipping...');
-      return;
+  // Auto-fetch LinkedIn profile data after OIDC sign-in
+  const { isProcessingProfile } = useLinkedInOAuth(
+    (profileData) => {
+      console.log('[LinkedInPodcastForm] Profile data received:', profileData);
+      setLinkedInContent(profileData);
+      // Auto-submit form with LinkedIn data
+      if (profileData) {
+        const autoValues = {
+          title: 'My LinkedIn Podumé',
+          linkedin_url: 'https://linkedin.com/in/auto-imported',
+          package_type: 'core' as const,
+          voice_clone: false,
+          premium_assets: false,
+        };
+        generatePodcast(autoValues, profileData);
+      }
+    },
+    (rawJSON) => {
+      console.log('[LinkedInPodcastForm] Raw JSON received:', rawJSON);
+      setRawLinkedInJSON(rawJSON);
     }
-    
-    console.log('[LinkedInPodcastForm] Received LinkedIn data:', userData);
-    
-    // Convert Clerk user data to both JSON and profile content
-    const jsonData = JSON.stringify(userData, null, 2);
-    
-    const profileContent = `# ${userData.name}
-
-**Email:** ${userData.email}
-**Clerk User ID:** ${userData.clerkUserId}
-**LinkedIn Account:** ${userData.linkedInAccount ? 'Connected via Clerk' : 'Basic user data'}
-
-## Professional Summary
-${userData.name} is an accomplished professional with a strong LinkedIn presence. They maintain an active professional network and demonstrate commitment to career excellence and growth.
-
-## Profile Information
-• **Name:** ${userData.name}
-• **Email:** ${userData.email}
-• **Platform:** LinkedIn (via Clerk OIDC)
-• **Account Status:** ${userData.emailVerified ? 'Verified' : 'Unverified'}
-
-## Core Competencies
-• Professional networking and relationship building
-• Industry expertise and thought leadership
-• Strategic communication and collaboration
-• Digital presence and personal branding
-• Continuous professional development
-
-## Professional Network
-Active LinkedIn professional with verified identity. Demonstrates commitment to maintaining professional standards and engaging with industry peers.
-`;
-
-    // Set both the JSON data for display AND the formatted content for podcast generation
-    setLinkedInContent(jsonData); // This will show in the JSON window
-    
-    // Auto-generate podcast using the formatted content (not the JSON)
-    const autoValues = {
-      title: `${userData.name}'s LinkedIn Podumé`,
-      linkedin_url: 'https://linkedin.com/in/clerk-imported',
-      package_type: 'core' as const,
-      voice_clone: false,
-      premium_assets: false,
-    };
-    
-    setHasAutoSubmitted(true);
-    generatePodcast(autoValues, profileContent); // Use formatted content for podcast
-  };
+  );
 
   const form = useForm<LinkedInFormValues>({
     resolver: zodResolver(linkedInFormSchema),
@@ -96,11 +67,14 @@ Active LinkedIn professional with verified identity. Demonstrates commitment to 
 
       <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-6 sm:p-8">
-          <ClerkLinkedInAuth onLinkedInData={handleLinkedInData} />
-          
-          {/* DEBUG: Always show data display for testing */}
-          <LinkedInDataDisplay 
+          <LinkedInOIDCSection 
+            isProcessingProfile={isProcessingProfile}
             linkedInContent={linkedInContent}
+          />
+          
+          {/* Show LinkedIn JSON data and generated transcript */}
+          <LinkedInDataDisplay 
+            linkedInContent={rawLinkedInJSON || linkedInContent}
             generatedTranscript={generatedTranscript}
           />
 
