@@ -45,10 +45,10 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
                 <SelectValue placeholder="Choose a voice for your podcast..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="notebooklm-podcast-host">Podcast Host (NotebookLM Style) - Professional narrator</SelectItem>
-                <SelectItem value="notebooklm-interviewer">Interviewer (NotebookLM Style) - Engaging conversational</SelectItem>
                 <SelectItem value="deepgram-aura-asteria-en">Asteria (Deepgram) - Clear female</SelectItem>
                 <SelectItem value="deepgram-aura-orpheus-en">Orpheus (Deepgram) - Smooth male</SelectItem>
+                <SelectItem value="deepgram-aura-luna-en">Luna (Deepgram) - Warm female</SelectItem>
+                <SelectItem value="deepgram-aura-stella-en">Stella (Deepgram) - Professional female</SelectItem>
               </SelectContent>
             </Select>
           </div>
