@@ -147,8 +147,10 @@ export const useLinkedInOAuth = (
         log('[LinkedInOAuth] - Provider:', session?.user?.app_metadata?.provider);
         log('[LinkedInOAuth] - Provider token exists:', !!session?.provider_token);
 
-        const isLinkedInSession = session?.user?.app_metadata?.provider === 'linkedin_oidc';
+        const isLinkedInSession = session?.user?.app_metadata?.provider === 'linkedin_oidc' || 
+          (session?.provider_token && session?.user?.user_metadata?.iss === 'https://www.linkedin.com/oauth');
         log('[LinkedInOAuth] Is LinkedIn session:', isLinkedInSession);
+        log('[LinkedInOAuth] Has LinkedIn user metadata:', !!session?.user?.user_metadata?.iss);
 
         if (isLinkedInSession && session?.provider_token) {
           log('[LinkedInOAuth] Processing LinkedIn profile...');
