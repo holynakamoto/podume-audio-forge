@@ -31,11 +31,14 @@ export const useLinkedInOAuth = (
   const log = process.env.NODE_ENV === 'development' ? console.log : () => {};
 
   useEffect(() => {
+    console.log('[LinkedInOAuth] Hook mounted and useEffect starting...');
+    
     const extractLinkedInProfile = async (): Promise<{
       profileData: string | null;
       rawJSON: string | null;
     }> => {
       try {
+        console.log('[LinkedInOAuth] Starting LinkedIn profile extraction...');
         log('[LinkedInOAuth] Extracting LinkedIn profile via session...');
         
         // Get current session to check for LinkedIn provider token
