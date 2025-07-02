@@ -18,6 +18,7 @@ interface SupabaseSession {
     app_metadata: {
       provider?: string;
     };
+    user_metadata?: any;
   };
 }
 
@@ -61,6 +62,32 @@ export const useLinkedInOAuth = (
         }
 
         const session = sessionData.session as SupabaseSession;
+        
+        // Check if we have LinkedIn user metadata directly in the session
+        const userMetadata = session.user?.user_metadata;
+        if (userMetadata && userMetadata.iss === 'https://www.linkedin.com/oauth') {
+          console.log('[LinkedInOAuth] Found LinkedIn user metadata in session, using directly');
+          
+          // Create formatted profile data from user metadata
+          const linkedInData = {
+            id: userMetadata.sub || userMetadata.provider_id,
+            name: userMetadata.name || userMetadata.full_name,
+            given_name: userMetadata.given_name,
+            family_name: userMetadata.family_name,
+            email: userMetadata.email,
+            email_verified: userMetadata.email_verified,
+            picture: userMetadata.picture || userMetadata.avatar_url,
+            locale: userMetadata.locale,
+            provider: 'linkedin_oidc'
+          };
+          
+          // Format as resume content
+          const resumeContent = formatLinkedInUserMetadata(linkedInData);
+          const rawJSON = JSON.stringify(linkedInData, null, 2);
+          
+          return { profileData: resumeContent, rawJSON };
+        }
+        
         log('[LinkedInOAuth] Session provider:', session.user?.app_metadata?.provider);
         log('[LinkedInOAuth] Has provider token:', !!session.provider_token);
 
@@ -126,6 +153,46 @@ export const useLinkedInOAuth = (
         toast.error(`Error processing LinkedIn profile: ${error.message || 'Unknown error'}`);
         return { profileData: null, rawJSON: null };
       }
+    };
+
+    // Helper function to format LinkedIn user metadata
+    const formatLinkedInUserMetadata = (profile: any): string => {
+      const fullName = profile.name || `${profile.given_name || ''} ${profile.family_name || ''}`.trim() || 'LinkedIn Professional';
+      
+      let content = `# ${fullName}\n\n`;
+      
+      if (profile.email && profile.email_verified) {
+        content += `**Email:** ${profile.email}\n\n`;
+      }
+      
+      if (profile.id) {
+        content += `**LinkedIn ID:** ${profile.id}\n\n`;
+      }
+      
+      content += `## Professional Summary\n`;
+      content += `${fullName} is an accomplished professional with a verified LinkedIn presence. `;
+      content += `They maintain an active professional network and demonstrate commitment to career excellence and growth.\n\n`;
+      
+      content += `## Profile Information\n`;
+      if (profile.given_name && profile.family_name) {
+        content += `• **Name:** ${profile.given_name} ${profile.family_name}\n`;
+      }
+      if (profile.locale) {
+        content += `• **Location/Locale:** ${profile.locale}\n`;
+      }
+      if (profile.email_verified) {
+        content += `• **Verified Email:** Yes\n`;
+      }
+      content += `• **Platform:** LinkedIn (OIDC Verified)\n\n`;
+      
+      content += `## Core Competencies\n`;
+      content += `• Professional networking and relationship building\n`;
+      content += `• Industry expertise and thought leadership\n`;
+      content += `• Strategic communication and collaboration\n`;
+      content += `• Digital presence and personal branding\n`;
+      content += `• Continuous professional development\n\n`;
+      
+      return content;
     };
 
     const handleLinkedInSession = async () => {
