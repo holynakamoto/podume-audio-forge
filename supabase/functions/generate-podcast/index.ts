@@ -171,10 +171,10 @@ serve(async (req: Request) => {
     
     if (validation.data!.source_type === 'linkedin_url') {
       console.log('📧 LinkedIn URL detected - generating LinkedIn-focused script');
-      generatedScript = generateLinkedInScript(validation.data!);
+      generatedScript = await generateResumeScript(validation.data!);
     } else {
       console.log('📄 Resume content provided - generating resume-focused script');
-      generatedScript = generateResumeScript(validation.data!);
+      generatedScript = await generateResumeScript(validation.data!);
     }
     
     console.log('✅ Script generated successfully, length:', generatedScript.length);
@@ -300,7 +300,7 @@ Generated from LinkedIn profile: ${linkedinUrl}
 Podcast title: ${title}`;
 }
 
-function generateResumeScript(data: any): string {
+async function generateResumeScript(data: any): Promise<string> {
   const title = data.title || 'Professional Journey';
   const resumeContent = data.resume_content || '';
   
@@ -308,66 +308,115 @@ function generateResumeScript(data: any): string {
   const lines = resumeContent.split('\n');
   const name = lines.find(line => line.startsWith('#'))?.replace('#', '').trim() || 'Professional';
   
-  return `# ${title}
+  console.log('Generating podcast script with Llama 3.1...');
+  
+  // Try to use Llama 3.1 via Hugging Face
+  const huggingFaceApiKey = Deno.env.get('HUGGING_FACE_API_KEY');
+  
+  if (huggingFaceApiKey) {
+    try {
+      const prompt = `Create a dynamic podcast transcript featuring two hosts discussing ${name}'s professional journey. Make it conversational and engaging.
 
-Welcome to this professional journey podcast. Today we're exploring the career story of ${name}, a dedicated professional whose experiences offer valuable insights into career development and professional growth.
+Profile Information:
+${resumeContent}
 
-## Introduction
+Format as a dialogue between two podcast hosts - Host A and Host B. Make it sound natural with interruptions, questions, and insights. Focus on career highlights, skills, and achievements. Keep it professional but engaging.
 
-Every professional has a unique story—a journey filled with challenges, achievements, and continuous learning. Today's episode focuses on a career path that demonstrates resilience, adaptability, and commitment to excellence.
+Example format:
+**Host A**: Welcome back to Career Spotlight! I'm here with my co-host...
+**Host B**: Thanks! Today we're diving into an incredible professional story...
 
-## Professional Background
+Generate about 800-1000 words of realistic podcast dialogue.`;
 
-${name} represents the modern professional who understands that career success comes from:
+      const response = await fetch(
+        'https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-8B-Instruct',
+        {
+          headers: {
+            'Authorization': `Bearer ${huggingFaceApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify({
+            inputs: prompt,
+            parameters: {
+              max_new_tokens: 1000,
+              temperature: 0.7,
+              do_sample: true,
+            },
+          }),
+        }
+      );
 
-- Continuous skill development and learning
-- Building strong professional relationships
-- Adapting to industry changes and new technologies
-- Maintaining a commitment to quality and excellence
+      if (response.ok) {
+        const result = await response.json();
+        if (result && result[0] && result[0].generated_text) {
+          console.log('✅ Generated script with Llama 3.1');
+          return result[0].generated_text;
+        }
+      }
+    } catch (error) {
+      console.error('Llama 3.1 generation failed:', error);
+    }
+  }
+  
+  // Fallback to static two-host format
+  console.log('Using fallback two-host script generation');
+  
+  return `**Host A**: Welcome back to "Career Spotlight," the podcast where we dive deep into incredible professional journeys! I'm Sarah, and I'm here with my co-host Marcus.
 
-## Career Highlights
+**Host B**: Hey everyone! Today we're exploring the career story of ${name}, and wow, what a journey this is going to be.
 
-Throughout their career journey, key themes emerge:
+**Host A**: Absolutely! Marcus, when you first looked at ${name}'s profile, what jumped out at you immediately?
 
-1. **Professional Growth**: A commitment to expanding skills and taking on new challenges
-2. **Industry Expertise**: Deep knowledge developed through hands-on experience
-3. **Leadership Qualities**: Demonstrated ability to guide projects and mentor others
-4. **Problem-Solving**: Creative approaches to overcoming professional challenges
+**Host B**: You know what struck me? The diversity of experience and the clear progression. This isn't someone who just stumbled into success - there's real intentionality here.
 
-## Key Competencies
+**Host A**: I completely agree. Let's break this down for our listeners. ${name} represents what I call the "modern professional" - someone who understands that career success isn't just about one thing.
 
-The professional skills demonstrated include:
-- Strategic thinking and planning
-- Effective communication and collaboration
-- Technical expertise in their field
-- Project management and organization
-- Adaptability and continuous learning
+**Host B**: Exactly! And looking at their background, you can see several key themes emerging. First, there's this commitment to continuous learning and skill development.
 
-## Professional Philosophy
+**Host A**: Oh, that's huge. In today's rapidly changing work environment, the professionals who thrive are the ones who never stop growing. What else are you seeing?
 
-This career journey reflects important principles:
-- Excellence in all professional endeavors
-- Commitment to continuous improvement
-- Value of building meaningful professional relationships
-- Importance of staying current with industry trends
+**Host B**: Well, the relationship-building aspect is really impressive. This person clearly understands that professional success is often about the strength of your network and the value you bring to others.
 
-## Lessons Learned
+**Host A**: That's so true. And you know what I love? The adaptability factor. Looking at their journey, you can see how they've navigated industry changes and new technologies.
 
-Key insights from this professional journey:
+**Host B**: Right! And there's this underlying commitment to quality and excellence that runs through everything. It's not just about doing more work - it's about doing excellent work.
 
-1. **Consistency Matters**: Regular effort and dedication compound over time
-2. **Relationships Are Key**: Professional success often depends on the strength of your network
-3. **Learning Never Stops**: The best professionals are always acquiring new skills
-4. **Quality Over Quantity**: Focus on doing excellent work rather than just more work
+**Host A**: Marcus, if you had to identify the key competencies that make ${name} stand out, what would they be?
 
-## Conclusion
+**Host B**: Great question. I'd say strategic thinking is a big one. You can see evidence of planning and forward-thinking throughout their career progression.
 
-This professional story reminds us that career success is not just about reaching destinations—it's about the journey itself, the relationships we build, and the value we create along the way.
+**Host A**: Absolutely. And the communication and collaboration skills are evident too. Plus, there's clear technical expertise in their field.
 
-Thank you for joining us on this exploration of professional excellence. Remember, every career has its unique story, and every professional has valuable experiences to share.
+**Host B**: Don't forget project management and organization. These are the soft skills that often separate good professionals from great ones.
+
+**Host A**: You know what's interesting? The professional philosophy that comes through here. It's all about excellence, continuous improvement, and building meaningful relationships.
+
+**Host B**: And staying current with industry trends! That's something our listeners should really take note of.
+
+**Host A**: So true. Now, let's talk about the lessons that come out of this career journey. What would you say are the biggest takeaways?
+
+**Host B**: Well, consistency is huge. You can see how regular effort and dedication have compounded over time for ${name}.
+
+**Host A**: And relationships really are key. Professional success often depends on the strength of your network and the value you bring to others.
+
+**Host B**: The learning never stops either. The best professionals are always acquiring new skills, and that's clearly the case here.
+
+**Host A**: And finally - quality over quantity. It's about focusing on doing excellent work rather than just more work.
+
+**Host B**: That's such an important distinction, Sarah. In our productivity-obsessed culture, sometimes we forget that excellence trumps volume every time.
+
+**Host A**: Absolutely. This professional story really reminds us that career success isn't just about reaching destinations - it's about the journey itself, the relationships we build along the way, and the value we create.
+
+**Host B**: Beautifully put. And for our listeners out there, remember: every career has its unique story, and every professional has valuable experiences to share.
+
+**Host A**: That's going to wrap up today's episode of Career Spotlight. Thanks for joining us, and we'll see you next time!
+
+**Host B**: Until then, keep building those careers and creating value wherever you go!
 
 ---
-Generated from resume content
-Podcast title: ${title}
-Content length: ${resumeContent.length} characters`;
+🎙️ Generated by Career Spotlight Podcast
+Professional: ${name}
+Episode: "${title}"`;
+}
 }

@@ -294,15 +294,10 @@ export const LinkedInPodcastForm: React.FC = () => {
               errors={form.formState.errors}
             />
 
-            <LinkedInUrlInput 
-              register={form.register}
-              errors={form.formState.errors}
-            />
-
             <LinkedInSubmitButton 
               isLoading={isLoading}
               isExtracting={false}
-              disabled={!form.watch('linkedin_url') || form.watch('linkedin_url') === 'https://linkedin.com/in/'}
+              disabled={false}
             />
           </form>
         </CardContent>
