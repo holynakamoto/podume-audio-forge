@@ -15,11 +15,12 @@ export const LinkedInOIDCButton: React.FC<LinkedInOIDCButtonProps> = ({
   children = "Sign in with LinkedIn" 
 }) => {
   const handleLinkedInSignIn = async () => {
+    console.log('=== LinkedIn OIDC Sign-In Button Clicked ===');
+    console.log('Starting LinkedIn OIDC sign-in...');
+    console.log('Current URL:', window.location.href);
+    console.log('Origin:', window.location.origin);
+    
     try {
-      console.log('=== LinkedIn OIDC Debug ===');
-      console.log('Starting LinkedIn OIDC sign-in...');
-      console.log('Current URL:', window.location.href);
-      console.log('Origin:', window.location.origin);
       
       const redirectUrl = `${window.location.origin}/create`;
       console.log('Redirect URL:', redirectUrl);
