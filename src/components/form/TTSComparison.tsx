@@ -45,16 +45,10 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
                 <SelectValue placeholder="Choose a voice for your podcast..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="elevenlabs-EXAVITQu4vr4xnSDxMaL">Sarah (ElevenLabs) - Professional female</SelectItem>
-                <SelectItem value="elevenlabs-TX3LPaxmHKxFdv7VOQHJ">Liam (ElevenLabs) - Confident male</SelectItem>
-                <SelectItem value="elevenlabs-XB0fDUnXU5powFXDhCwa">Charlotte (ElevenLabs) - Warm female</SelectItem>
-                <SelectItem value="elevenlabs-JBFqnCBsd6RMkjVDRZzb">George (ElevenLabs) - Distinguished male</SelectItem>
+                <SelectItem value="notebooklm-podcast-host">Podcast Host (NotebookLM Style) - Professional narrator</SelectItem>
+                <SelectItem value="notebooklm-interviewer">Interviewer (NotebookLM Style) - Engaging conversational</SelectItem>
                 <SelectItem value="deepgram-aura-asteria-en">Asteria (Deepgram) - Clear female</SelectItem>
                 <SelectItem value="deepgram-aura-orpheus-en">Orpheus (Deepgram) - Smooth male</SelectItem>
-                <SelectItem value="cartesia-barbershop-man">Barbershop Man (Cartesia) - Casual male</SelectItem>
-                <SelectItem value="cartesia-pleasant-female">Pleasant Female (Cartesia) - Friendly female</SelectItem>
-                <SelectItem value="playht-jennifer">Jennifer (PlayHT) - Natural female</SelectItem>
-                <SelectItem value="playht-mark">Mark (PlayHT) - Professional male</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -75,21 +75,12 @@ export const LinkedInPodcastForm: React.FC = () => {
             linkedInContent={linkedInContent}
           />
           
-          {/* Show LinkedIn JSON data and generated transcript */}
-          <LinkedInDataDisplay 
-            linkedInContent={rawLinkedInJSON || linkedInContent}
-            generatedTranscript={generatedTranscript}
-          />
-
-
           <LinkedInAlerts showManualOption={false} />
 
           <LinkedInFormStatus 
             linkedInContent={linkedInContent}
             isProcessingProfile={isLoading}
           />
-
-          <TranscriptDisplay transcript={generatedTranscript} />
           
           {generatedTranscript && (
             <TTSComparison transcript={generatedTranscript} />
