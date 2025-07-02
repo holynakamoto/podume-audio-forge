@@ -93,15 +93,13 @@ Active LinkedIn professional with verified identity. Demonstrates commitment to 
       <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-6 sm:p-8">
           <ClerkLinkedInAuth onLinkedInData={handleLinkedInData} />
-
+          
+          {/* DEBUG: Always show data display for testing */}
           <LinkedInDataDisplay 
             linkedInContent={linkedInContent}
             generatedTranscript={generatedTranscript}
           />
 
-          <div className="text-center mb-4">
-            <span className="bg-white px-3 py-1 text-gray-500 text-sm">OR</span>
-          </div>
 
           <LinkedInAlerts showManualOption={false} />
 
