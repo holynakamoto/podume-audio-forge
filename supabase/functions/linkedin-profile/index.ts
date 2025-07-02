@@ -15,20 +15,6 @@ serve(async (req: Request) => {
   try {
     console.log('=== LinkedIn Profile API function called ===');
     
-    const linkedinClientId = Deno.env.get('LINKEDIN_CLIENT_ID');
-    const linkedinClientSecret = Deno.env.get('LINKEDIN_CLIENT_SECRET');
-    
-    if (!linkedinClientId || !linkedinClientSecret) {
-      console.error('LinkedIn credentials not found in environment');
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'LinkedIn credentials not configured' 
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     const { access_token } = await req.json();
     
     if (!access_token) {
@@ -44,55 +30,80 @@ serve(async (req: Request) => {
 
     console.log('Fetching LinkedIn profile data with access token...');
     
-    // Try to fetch basic profile information with different scopes
     let profileData = null;
     let profileResponse = null;
 
-    // First try with the v2 people API (more comprehensive)
+    // Use the modern LinkedIn v2/me endpoint with POST method
     try {
-      console.log('Attempting v2 people API call...');
-      profileResponse = await fetch(
-        'https://api.linkedin.com/v2/people/~:(id,firstName,lastName,headline,summary,positions)',
-        {
-          headers: {
-            'Authorization': `Bearer ${access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      console.log('Attempting LinkedIn v2/me API call with POST...');
+      profileResponse = await fetch('https://api.linkedin.com/v2/me', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${access_token}`,
+          'Content-Type': 'application/json',
+          'X-Restli-Protocol-Version': '2.0.0'
+        },
+        body: JSON.stringify({
+          projection: '(id,firstName,lastName,headline,summary,vanityName,profilePicture(displayImage~:playableStreams))'
+        })
+      });
 
       if (profileResponse.ok) {
         profileData = await profileResponse.json();
-        console.log('v2 people API successful');
+        console.log('LinkedIn v2/me API successful');
       } else {
-        console.log('v2 people API failed with status:', profileResponse.status);
+        console.log('LinkedIn v2/me API failed with status:', profileResponse.status);
+        const errorText = await profileResponse.text();
+        console.log('Error response:', errorText);
       }
     } catch (error) {
-      console.log('v2 people API error:', error.message);
+      console.log('LinkedIn v2/me API error:', error.message);
     }
 
-    // If v2 fails, try the lite profile endpoint
+    // Fallback to GET method if POST fails
     if (!profileData) {
       try {
-        console.log('Attempting lite profile API call...');
-        profileResponse = await fetch(
-          'https://api.linkedin.com/v2/people/~:(id,firstName,lastName,profilePicture(displayImage~:playableStreams))',
-          {
-            headers: {
-              'Authorization': `Bearer ${access_token}`,
-              'Content-Type': 'application/json',
-            },
+        console.log('Attempting LinkedIn v2/me API call with GET (fallback)...');
+        profileResponse = await fetch('https://api.linkedin.com/v2/me', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${access_token}`,
+            'Content-Type': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0'
           }
-        );
+        });
 
         if (profileResponse.ok) {
           profileData = await profileResponse.json();
-          console.log('Lite profile API successful');
+          console.log('LinkedIn v2/me GET API successful');
         } else {
-          console.log('Lite profile API failed with status:', profileResponse.status);
+          console.log('LinkedIn v2/me GET API failed with status:', profileResponse.status);
+          const errorText = await profileResponse.text();
+          console.log('Error response:', errorText);
         }
       } catch (error) {
-        console.log('Lite profile API error:', error.message);
+        console.log('LinkedIn v2/me GET API error:', error.message);
+      }
+    }
+
+    // Try basic profile endpoint as final fallback
+    if (!profileData) {
+      try {
+        console.log('Attempting basic profile endpoint as final fallback...');
+        profileResponse = await fetch('https://api.linkedin.com/v2/people/~', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${access_token}`,
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (profileResponse.ok) {
+          profileData = await profileResponse.json();
+          console.log('Basic profile endpoint successful');
+        }
+      } catch (error) {
+        console.log('Basic profile endpoint error:', error.message);
       }
     }
 
@@ -103,7 +114,11 @@ serve(async (req: Request) => {
       
       return new Response(JSON.stringify({ 
         success: false, 
-        error: `LinkedIn API error: Unable to fetch profile data. This may be due to insufficient permissions or the profile being private.` 
+        error: `LinkedIn API error: Unable to fetch profile data. Status: ${profileResponse?.status || 'unknown'}. This may be due to insufficient permissions, expired token, or the profile being private.`,
+        debug: {
+          status: profileResponse?.status || 'unknown',
+          response: errorText.substring(0, 500) // Limit error response length
+        }
       }), {
         status: profileResponse?.status || 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -142,60 +157,56 @@ function formatLinkedInProfile(profile: any): string {
   
   const firstName = profile.firstName?.localized?.en_US || 
                    profile.firstName?.preferredLocale?.en_US ||
+                   profile.localizedFirstName ||
                    profile.firstName || '';
   const lastName = profile.lastName?.localized?.en_US || 
                   profile.lastName?.preferredLocale?.en_US ||
+                  profile.localizedLastName ||
                   profile.lastName || '';
-  const fullName = `${firstName} ${lastName}`.trim() || 'Professional';
+  const fullName = `${firstName} ${lastName}`.trim() || 'LinkedIn Professional';
   
   let content = `# ${fullName}\n\n`;
   
-  if (profile.headline) {
-    content += `**Current Position:** ${profile.headline}\n\n`;
+  // Add headline if available
+  if (profile.headline?.localized?.en_US || profile.headline) {
+    const headline = profile.headline?.localized?.en_US || profile.headline;
+    content += `**Current Position:** ${headline}\n\n`;
   }
   
-  // Add a professional summary if we have basic info
-  if (firstName || lastName) {
-    content += `## Professional Summary\n`;
-    content += `${fullName} is a dedicated professional with experience in their field. `;
-    
-    if (profile.headline) {
-      content += `Currently serving as ${profile.headline}, they bring valuable expertise and skills to their role. `;
-    }
-    
-    content += `This professional is committed to excellence and continuous growth in their career.\n\n`;
+  // Add vanity name (LinkedIn username) if available
+  if (profile.vanityName) {
+    content += `**LinkedIn:** linkedin.com/in/${profile.vanityName}\n\n`;
   }
   
-  if (profile.summary) {
-    content += `## About\n${profile.summary}\n\n`;
+  // Add professional summary
+  content += `## Professional Summary\n`;
+  content += `${fullName} is a accomplished professional with a strong LinkedIn presence. `;
+  
+  if (profile.headline?.localized?.en_US || profile.headline) {
+    const headline = profile.headline?.localized?.en_US || profile.headline;
+    content += `Currently working as ${headline}, they demonstrate expertise in their field. `;
   }
   
-  if (profile.positions && profile.positions.elements && profile.positions.elements.length > 0) {
-    content += `## Professional Experience\n\n`;
-    
-    profile.positions.elements.forEach((position: any, index: number) => {
-      const company = position.companyName || `Company ${index + 1}`;
-      const title = position.title || 'Professional Role';
-      const description = position.description || 'Contributed to company objectives and delivered results in their professional capacity.';
-      
-      content += `### ${title} at ${company}\n`;
-      content += `${description}\n\n`;
-    });
-  } else {
-    // Add generic experience section if no specific positions
-    if (profile.headline) {
-      content += `## Professional Experience\n\n`;
-      content += `### ${profile.headline}\n`;
-      content += `Experienced professional with demonstrated expertise in their field. Committed to delivering quality results and contributing to organizational success.\n\n`;
-    }
+  content += `They maintain an active professional network and are committed to career excellence and growth.\n\n`;
+  
+  // Add summary if available
+  if (profile.summary?.localized?.en_US || profile.summary) {
+    const summary = profile.summary?.localized?.en_US || profile.summary;
+    content += `## About\n${summary}\n\n`;
   }
   
-  // Add skills section
+  // Add core competencies
   content += `## Core Competencies\n`;
-  content += `• Professional communication and collaboration\n`;
-  content += `• Problem-solving and analytical thinking\n`;
-  content += `• Project management and organization\n`;
-  content += `• Adaptability and continuous learning\n\n`;
+  content += `• Professional networking and relationship building\n`;
+  content += `• Industry expertise and thought leadership\n`;
+  content += `• Strategic communication and collaboration\n`;
+  content += `• Continuous professional development\n`;
+  content += `• Digital presence and personal branding\n\n`;
+  
+  // Add LinkedIn specific section
+  content += `## Professional Network\n`;
+  content += `Active on LinkedIn with a focus on professional growth, industry insights, and meaningful connections. `;
+  content += `Demonstrates commitment to staying current with industry trends and best practices.\n\n`;
   
   console.log('Formatted content length:', content.length);
   return content;
