@@ -47,10 +47,17 @@ serve(async (req) => {
       throw new Error(`Hume AI TTS error: ${response.status}`);
     }
 
-    // Convert audio to base64
+    // Convert audio to base64 using chunked approach
     const arrayBuffer = await response.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
-    const base64Audio = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)));
+    
+    // Process in chunks to avoid stack overflow
+    let base64Audio = '';
+    const chunkSize = 32768; // 32KB chunks
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize);
+      base64Audio += btoa(String.fromCharCode(...chunk));
+    }
 
     console.log('Hume AI TTS successful, audio length:', arrayBuffer.byteLength);
 
