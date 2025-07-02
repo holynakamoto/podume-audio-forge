@@ -16,12 +16,25 @@ export const LinkedInOIDCButton: React.FC<LinkedInOIDCButtonProps> = ({
 }) => {
   const handleLinkedInSignIn = async () => {
     try {
+      console.log('=== LinkedIn OIDC Debug ===');
       console.log('Starting LinkedIn OIDC sign-in...');
+      console.log('Current URL:', window.location.href);
+      console.log('Origin:', window.location.origin);
+      
+      const redirectUrl = `${window.location.origin}/create`;
+      console.log('Redirect URL:', redirectUrl);
+      
+      // Check if supabase is available
+      if (!supabase) {
+        throw new Error('Supabase client not available');
+      }
+      
+      console.log('Calling supabase.auth.signInWithOAuth...');
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${window.location.origin}/create`,
+          redirectTo: redirectUrl,
           queryParams: {
             scope: 'openid profile email',
             access_type: 'offline',
@@ -29,6 +42,9 @@ export const LinkedInOIDCButton: React.FC<LinkedInOIDCButtonProps> = ({
           },
         },
       });
+      
+      console.log('OAuth response - data:', data);
+      console.log('OAuth response - error:', error);
       
       if (error) {
         console.error('LinkedIn OIDC sign-in error:', error);
@@ -45,6 +61,7 @@ export const LinkedInOIDCButton: React.FC<LinkedInOIDCButtonProps> = ({
       
     } catch (error: any) {
       console.error('Unexpected error during LinkedIn sign-in:', error);
+      console.error('Error stack:', error.stack);
       toast.error(`Unexpected error: ${error.message || 'Unknown error'}`);
     }
   };

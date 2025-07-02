@@ -6,6 +6,8 @@ import { LinkedInPodcastForm } from '@/components/form/LinkedInPodcastForm';
 
 const Create = () => {
     console.log('[Create] Page rendered');
+    console.log('[Create] Location:', window.location.href);
+    console.log('[Create] Current route in Create page');
     
     try {
         return (
