@@ -85,5 +85,15 @@ verify_jwt = false
 [functions.cleanup-users]
 verify_jwt = false
 
+# TTS FUNCTIONS
+[functions.tts-elevenlabs]
+verify_jwt = false
+
+[functions.tts-deepgram]
+verify_jwt = false
+
+[functions.tts-hume]
+verify_jwt = false
+
 [edge-runtime]
 policy = "per_worker"
