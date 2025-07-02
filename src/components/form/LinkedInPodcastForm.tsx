@@ -288,18 +288,12 @@ export const LinkedInPodcastForm: React.FC = () => {
 
           <LinkedInAlerts showManualOption={false} />
 
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <LinkedInTitleInput 
-              register={form.register}
-              errors={form.formState.errors}
-            />
-
-            <LinkedInSubmitButton 
-              isLoading={isLoading}
-              isExtracting={false}
-              disabled={false}
-            />
-          </form>
+          {/* Show manual form only if no LinkedIn content has been imported */}
+          {!linkedInContent && !isProcessingProfile && (
+            <div className="text-center p-6 text-gray-600">
+              <p className="text-sm">Please sign in with LinkedIn OIDC above to automatically create your podcast.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
