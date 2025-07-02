@@ -17,6 +17,7 @@ import { useLinkedInOAuth } from './hooks/useLinkedInOAuth';
 export const LinkedInPodcastForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [linkedInContent, setLinkedInContent] = useState('');
+  const [generatedTranscript, setGeneratedTranscript] = useState('');
   const navigate = useNavigate();
 
   // Auto-fetch LinkedIn profile data after OIDC sign-in
@@ -80,6 +81,12 @@ export const LinkedInPodcastForm: React.FC = () => {
 
       if (error) throw new Error(error.message);
       if (!data) throw new Error('No response data received');
+
+      // Store the generated transcript for display
+      if (data?.transcript) {
+        setGeneratedTranscript(data.transcript);
+        toast.success('Transcript generated! Check below.');
+      }
 
       if (data?.podcast?.id) {
         toast.success('Your LinkedIn podcast has been created!');
@@ -292,6 +299,18 @@ export const LinkedInPodcastForm: React.FC = () => {
           {!linkedInContent && !isProcessingProfile && (
             <div className="text-center p-6 text-gray-600">
               <p className="text-sm">Please sign in with LinkedIn OIDC above to automatically create your podcast.</p>
+            </div>
+          )}
+
+          {/* Transcript Display Area */}
+          {generatedTranscript && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+              <h3 className="font-semibold text-gray-900 mb-3">Generated Transcript (Troubleshooting)</h3>
+              <div className="max-h-96 overflow-y-auto">
+                <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
+                  {generatedTranscript}
+                </pre>
+              </div>
             </div>
           )}
         </CardContent>
