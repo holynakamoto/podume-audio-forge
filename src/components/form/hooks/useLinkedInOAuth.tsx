@@ -32,6 +32,9 @@ export const useLinkedInOAuth = (
 
   useEffect(() => {
     console.log('[LinkedInOAuth] Hook mounted and useEffect starting...');
+    console.log('[LinkedInOAuth] Current URL on mount:', window.location.href);
+    console.log('[LinkedInOAuth] URL search params:', window.location.search);
+    console.log('[LinkedInOAuth] URL hash:', window.location.hash);
     
     const extractLinkedInProfile = async (): Promise<{
       profileData: string | null;
@@ -124,8 +127,13 @@ export const useLinkedInOAuth = (
         log('[LinkedInOAuth] Checking for LinkedIn OAuth session...');
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
+        console.log('[LinkedInOAuth] Session check - URL:', window.location.href);
+        console.log('[LinkedInOAuth] Session check - error:', sessionError);
+        console.log('[LinkedInOAuth] Session check - session exists:', !!session);
+
         if (sessionError) {
           console.error('[LinkedInOAuth] Session error:', sessionError);
+          toast.error(`Session error: ${sessionError.message}`);
           return;
         }
 
@@ -176,17 +184,24 @@ export const useLinkedInOAuth = (
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      log('[LinkedInOAuth] === Auth State Change Event ===');
-      log('[LinkedInOAuth] Event:', event);
-      log('[LinkedInOAuth] Session provider:', session?.user?.app_metadata?.provider);
+      console.log('[LinkedInOAuth] === Auth State Change Event ===');
+      console.log('[LinkedInOAuth] Event:', event);
+      console.log('[LinkedInOAuth] Session provider:', session?.user?.app_metadata?.provider);
+      console.log('[LinkedInOAuth] Current URL during auth change:', window.location.href);
 
       if (event === 'SIGNED_IN' && session?.user?.app_metadata?.provider === 'linkedin_oidc') {
-        log('[LinkedInOAuth] LinkedIn sign-in detected, processing profile...');
+        console.log('[LinkedInOAuth] LinkedIn sign-in detected, processing profile...');
         
         // Small delay to ensure session is fully established
         setTimeout(() => {
           handleLinkedInSession();
         }, 1000);
+      }
+      
+      // Handle any auth errors
+      if (event === 'SIGNED_OUT') {
+        console.log('[LinkedInOAuth] User signed out');
+        setIsProcessingProfile(false);
       }
     });
 
