@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Play, Square, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Play, Square, Loader2, Share, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TTSComparisonProps {
   transcript: string;
+}
+
+interface VoiceOption {
+  provider: 'elevenlabs' | 'deepgram' | 'cartesia' | 'playht';
+  voiceId: string;
+  name: string;
+  description: string;
 }
 
 interface AudioState {
@@ -17,37 +25,54 @@ interface AudioState {
 }
 
 export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
-  const [elevenlabs, setElevenlabs] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
-  const [deepgram, setDeepgram] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
-  const [hume, setHume] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
-  const [cartesia, setCartesia] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
-  const [playht, setPlayht] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
+  const [selectedVoice, setSelectedVoice] = useState<VoiceOption | null>(null);
+  const [audioState, setAudioState] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
+  const [audio] = useState(new Audio());
 
-  // Audio elements refs
-  const [audioRefs] = useState({
-    elevenlabs: new Audio(),
-    deepgram: new Audio(),
-    hume: new Audio(),
-    cartesia: new Audio(),
-    playht: new Audio()
-  });
-
-  const generateTTS = async (provider: 'elevenlabs' | 'deepgram' | 'hume' | 'cartesia' | 'playht') => {
-    const setState = provider === 'elevenlabs' ? setElevenlabs : 
-                    provider === 'deepgram' ? setDeepgram : 
-                    provider === 'hume' ? setHume :
-                    provider === 'cartesia' ? setCartesia : setPlayht;
+  const voiceOptions: VoiceOption[] = [
+    // ElevenLabs voices (premium quality)
+    { provider: 'elevenlabs', voiceId: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah (ElevenLabs)', description: 'Professional female voice' },
+    { provider: 'elevenlabs', voiceId: 'TX3LPaxmHKxFdv7VOQHJ', name: 'Liam (ElevenLabs)', description: 'Confident male voice' },
+    { provider: 'elevenlabs', voiceId: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte (ElevenLabs)', description: 'Warm female voice' },
+    { provider: 'elevenlabs', voiceId: 'JBFqnCBsd6RMkjVDRZzb', name: 'George (ElevenLabs)', description: 'Distinguished male voice' },
     
-    setState(prev => ({ ...prev, isLoading: true }));
+    // Deepgram voices (fast & natural)
+    { provider: 'deepgram', voiceId: 'aura-asteria-en', name: 'Asteria (Deepgram)', description: 'Clear female voice' },
+    { provider: 'deepgram', voiceId: 'aura-orpheus-en', name: 'Orpheus (Deepgram)', description: 'Smooth male voice' },
+    
+    // Cartesia voices (conversational)
+    { provider: 'cartesia', voiceId: 'barbershop-man', name: 'Barbershop Man (Cartesia)', description: 'Casual male voice' },
+    { provider: 'cartesia', voiceId: 'pleasant-female', name: 'Pleasant Female (Cartesia)', description: 'Friendly female voice' },
+    
+    // PlayHT voices (natural)
+    { provider: 'playht', voiceId: 'jennifer', name: 'Jennifer (PlayHT)', description: 'Natural female voice' },
+    { provider: 'playht', voiceId: 'mark', name: 'Mark (PlayHT)', description: 'Professional male voice' },
+  ];
+
+  const generateTTS = async () => {
+    if (!selectedVoice) {
+      toast.error('Please select a voice first');
+      return;
+    }
+    
+    setAudioState(prev => ({ ...prev, isLoading: true }));
     
     try {
-      console.log(`Generating ${provider} TTS...`);
+      console.log(`Generating ${selectedVoice.provider} TTS with voice ${selectedVoice.voiceId}...`);
       
-      // Use first 500 characters for testing
-      const testText = transcript.substring(0, 500) + "...";
+      // Use first 1000 characters for testing
+      const testText = transcript.substring(0, 1000) + "...";
       
-      const { data, error } = await supabase.functions.invoke(`tts-${provider}`, {
-        body: { text: testText }
+      const requestBody = selectedVoice.provider === 'elevenlabs' 
+        ? { text: testText, voice_id: selectedVoice.voiceId }
+        : selectedVoice.provider === 'deepgram'
+        ? { text: testText, model: selectedVoice.voiceId }
+        : selectedVoice.provider === 'cartesia'
+        ? { text: testText, voice: selectedVoice.voiceId }
+        : { text: testText, voice: selectedVoice.voiceId }; // PlayHT
+      
+      const { data, error } = await supabase.functions.invoke(`tts-${selectedVoice.provider}`, {
+        body: requestBody
       });
 
       if (error) throw error;
@@ -55,189 +80,194 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
 
       const audioUrl = `data:audio/${data.format};base64,${data.audio}`;
       
-      setState(prev => ({ ...prev, audio: audioUrl, isLoading: false }));
-      toast.success(`${provider} TTS generated successfully!`);
+      setAudioState(prev => ({ ...prev, audio: audioUrl, isLoading: false }));
+      toast.success(`${selectedVoice.name} TTS generated successfully!`);
       
     } catch (error: any) {
-      console.error(`${provider} TTS error:`, error);
-      setState(prev => ({ ...prev, isLoading: false }));
-      toast.error(`${provider} TTS failed: ${error.message}`);
+      console.error(`${selectedVoice.provider} TTS error:`, error);
+      setAudioState(prev => ({ ...prev, isLoading: false }));
+      toast.error(`${selectedVoice.name} TTS failed: ${error.message}`);
     }
   };
 
-  const playAudio = (provider: 'elevenlabs' | 'deepgram' | 'hume' | 'cartesia' | 'playht') => {
-    const audio = audioRefs[provider];
-    const state = provider === 'elevenlabs' ? elevenlabs : 
-                  provider === 'deepgram' ? deepgram : 
-                  provider === 'hume' ? hume :
-                  provider === 'cartesia' ? cartesia : playht;
-    const setState = provider === 'elevenlabs' ? setElevenlabs : 
-                     provider === 'deepgram' ? setDeepgram : 
-                     provider === 'hume' ? setHume :
-                     provider === 'cartesia' ? setCartesia : setPlayht;
+  const playAudio = () => {
+    if (!audioState.audio) return;
 
-    if (!state.audio) return;
-
-    if (state.isPlaying) {
+    if (audioState.isPlaying) {
       audio.pause();
-      setState(prev => ({ ...prev, isPlaying: false }));
+      setAudioState(prev => ({ ...prev, isPlaying: false }));
     } else {
-      // Pause other audio
-      Object.keys(audioRefs).forEach(key => {
-        if (key !== provider) {
-          audioRefs[key as keyof typeof audioRefs].pause();
-        }
-      });
-      setElevenlabs(prev => ({ ...prev, isPlaying: false }));
-      setDeepgram(prev => ({ ...prev, isPlaying: false }));
-      setHume(prev => ({ ...prev, isPlaying: false }));
-      setCartesia(prev => ({ ...prev, isPlaying: false }));
-      setPlayht(prev => ({ ...prev, isPlaying: false }));
-
-      audio.src = state.audio;
+      audio.src = audioState.audio;
       audio.play();
-      setState(prev => ({ ...prev, isPlaying: true }));
+      setAudioState(prev => ({ ...prev, isPlaying: true }));
       
       audio.onended = () => {
-        setState(prev => ({ ...prev, isPlaying: false }));
+        setAudioState(prev => ({ ...prev, isPlaying: false }));
       };
     }
   };
 
-  const providers = [
-    {
-      name: 'ElevenLabs',
-      key: 'elevenlabs' as const,
-      state: elevenlabs,
-      description: 'High-quality AI voices with emotional expression',
-      color: 'border-purple-200 bg-purple-50'
-    },
-    {
-      name: 'Deepgram Aura',
-      key: 'deepgram' as const,
-      state: deepgram,
-      description: 'Fast, natural-sounding speech synthesis',
-      color: 'border-blue-200 bg-blue-50'
-    },
-    {
-      name: 'Cartesia Sonic',
-      key: 'cartesia' as const,
-      state: cartesia,
-      description: 'Ultra-realistic conversational voices',
-      color: 'border-orange-200 bg-orange-50'
-    },
-    {
-      name: 'PlayHT 2.0',
-      key: 'playht' as const,
-      state: playht,
-      description: 'Natural conversational AI voices',
-      color: 'border-indigo-200 bg-indigo-50'
-    },
-    {
-      name: 'Hume AI',
-      key: 'hume' as const,
-      state: hume,
-      description: 'Emotionally intelligent voice generation (OpenAI fallback)',
-      color: 'border-green-200 bg-green-50'
+  const shareToSocial = (platform: string) => {
+    if (!audioState.audio) {
+      toast.error('Generate audio first to share');
+      return;
     }
-  ];
+    
+    const shareText = `Check out my AI-generated podcast from my LinkedIn profile! 🎧 #PodcastGeneration #AI`;
+    const shareUrl = window.location.href;
+    
+    switch (platform) {
+      case 'twitter':
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`);
+        break;
+      case 'linkedin':
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`);
+        break;
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`);
+        break;
+      default:
+        navigator.clipboard.writeText(shareUrl);
+        toast.success('Link copied to clipboard!');
+    }
+  };
+
+  const downloadAudio = () => {
+    if (!audioState.audio) {
+      toast.error('Generate audio first to download');
+      return;
+    }
+    
+    const link = document.createElement('a');
+    link.href = audioState.audio;
+    link.download = 'podcast.mp3';
+    link.click();
+    toast.success('Audio download started!');
+  };
+
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>🎧 TTS Provider Comparison</CardTitle>
-          <p className="text-sm text-gray-600">
-            Test different Text-to-Speech providers with your podcast transcript
+          <CardTitle>🎧 Generate Podcast Audio</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Choose a voice and generate high-quality audio from your transcript
           </p>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {providers.map(provider => (
-              <Card key={provider.key} className={provider.color}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{provider.name}</CardTitle>
-                  <p className="text-xs text-gray-600">{provider.description}</p>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button
-                    onClick={() => generateTTS(provider.key)}
-                    disabled={provider.state.isLoading}
-                    className="w-full"
-                    variant="outline"
+        <CardContent className="space-y-6">
+          {/* Voice Selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Select Voice</label>
+            <Select onValueChange={(value) => {
+              const voice = voiceOptions.find(v => `${v.provider}-${v.voiceId}` === value);
+              setSelectedVoice(voice || null);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose a voice for your podcast..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="elevenlabs-EXAVITQu4vr4xnSDxMaL">Sarah (ElevenLabs) - Professional female</SelectItem>
+                <SelectItem value="elevenlabs-TX3LPaxmHKxFdv7VOQHJ">Liam (ElevenLabs) - Confident male</SelectItem>
+                <SelectItem value="elevenlabs-XB0fDUnXU5powFXDhCwa">Charlotte (ElevenLabs) - Warm female</SelectItem>
+                <SelectItem value="elevenlabs-JBFqnCBsd6RMkjVDRZzb">George (ElevenLabs) - Distinguished male</SelectItem>
+                <SelectItem value="deepgram-aura-asteria-en">Asteria (Deepgram) - Clear female</SelectItem>
+                <SelectItem value="deepgram-aura-orpheus-en">Orpheus (Deepgram) - Smooth male</SelectItem>
+                <SelectItem value="cartesia-barbershop-man">Barbershop Man (Cartesia) - Casual male</SelectItem>
+                <SelectItem value="cartesia-pleasant-female">Pleasant Female (Cartesia) - Friendly female</SelectItem>
+                <SelectItem value="playht-jennifer">Jennifer (PlayHT) - Natural female</SelectItem>
+                <SelectItem value="playht-mark">Mark (PlayHT) - Professional male</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Generate Button */}
+          <Button
+            onClick={generateTTS}
+            disabled={audioState.isLoading || !selectedVoice}
+            className="w-full"
+            size="lg"
+          >
+            {audioState.isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating Audio...
+              </>
+            ) : (
+              'Generate Podcast Audio'
+            )}
+          </Button>
+
+          {/* Audio Player */}
+          {audioState.audio && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
+                <Button
+                  onClick={playAudio}
+                  size="lg"
+                  className="rounded-full w-12 h-12"
+                >
+                  {audioState.isPlaying ? <Square className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+                </Button>
+                <div className="flex-1">
+                  <p className="font-medium">Your LinkedIn Podcast</p>
+                  <p className="text-sm text-muted-foreground">
+                    Generated with {selectedVoice?.name}
+                  </p>
+                </div>
+                <Button onClick={downloadAudio} variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+
+              {/* Social Sharing */}
+              <div className="space-y-3">
+                <h4 className="font-medium">Share Your Podcast</h4>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    onClick={() => shareToSocial('twitter')} 
+                    variant="outline" 
+                    size="sm"
+                    className="bg-blue-50 hover:bg-blue-100"
                   >
-                    {provider.state.isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      'Generate Audio'
-                    )}
+                    <Share className="w-4 h-4 mr-2" />
+                    Twitter
                   </Button>
-                  
-                  {provider.state.audio && (
-                    <Button
-                      onClick={() => playAudio(provider.key)}
-                      className="w-full"
-                      variant={provider.state.isPlaying ? "destructive" : "default"}
-                    >
-                      {provider.state.isPlaying ? (
-                        <>
-                          <Square className="w-4 h-4 mr-2" />
-                          Stop
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4 mr-2" />
-                          Play
-                        </>
-                      )}
-                    </Button>
-                  )}
-                  
-                  {provider.state.audio && (
-                    <p className="text-xs text-gray-500">
-                      ✅ Audio ready to play
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <Button 
+                    onClick={() => shareToSocial('linkedin')} 
+                    variant="outline" 
+                    size="sm"
+                    className="bg-blue-50 hover:bg-blue-100"
+                  >
+                    <Share className="w-4 h-4 mr-2" />
+                    LinkedIn
+                  </Button>
+                  <Button 
+                    onClick={() => shareToSocial('facebook')} 
+                    variant="outline" 
+                    size="sm"
+                    className="bg-blue-50 hover:bg-blue-100"
+                  >
+                    <Share className="w-4 h-4 mr-2" />
+                    Facebook
+                  </Button>
+                  <Button 
+                    onClick={() => shareToSocial('copy')} 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    Copy Link
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
           
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-            <p className="text-sm text-yellow-800">
-              <strong>Testing with first 500 characters:</strong> "{transcript.substring(0, 100)}..."
+          <div className="mt-4 p-3 bg-muted rounded">
+            <p className="text-sm text-muted-foreground">
+              <strong>Preview:</strong> "{transcript.substring(0, 150)}..."
             </p>
-          </div>
-          
-          <div className="mt-4">
-            <Button
-              onClick={async () => {
-                try {
-                  console.log('Testing basic TTS function...');
-                  const { data, error } = await supabase.functions.invoke('tts-test', {
-                    body: { text: "Hello, this is a test of the TTS system." }
-                  });
-                  
-                  if (error) {
-                    console.error('Test error:', error);
-                    toast.error(`Test failed: ${error.message}`);
-                  } else {
-                    console.log('Test success:', data);
-                    toast.success('Test TTS function is working!');
-                  }
-                } catch (err: any) {
-                  console.error('Test exception:', err);
-                  toast.error(`Test exception: ${err.message}`);
-                }
-              }}
-              variant="outline"
-              className="w-full"
-            >
-              🧪 Test Basic TTS Function
-            </Button>
           </div>
         </CardContent>
       </Card>

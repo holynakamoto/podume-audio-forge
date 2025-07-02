@@ -12,10 +12,12 @@ import { LinkedInDataDisplay } from './LinkedInDataDisplay';
 import { TranscriptDisplay } from './TranscriptDisplay';
 import { LinkedInFormStatus } from './LinkedInFormStatus';
 import { TTSComparison } from './TTSComparison';
+import { PodcastDistributor } from './PodcastDistributor';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [linkedInContent, setLinkedInContent] = useState('');
   const [rawLinkedInJSON, setRawLinkedInJSON] = useState('');
+  const [generatedAudioUrl, setGeneratedAudioUrl] = useState('');
   const { isLoading, generatedTranscript, generatePodcast } = usePodcastGeneration();
 
   console.log('[LinkedInPodcastForm] Component rendered');
@@ -91,6 +93,14 @@ export const LinkedInPodcastForm: React.FC = () => {
           
           {generatedTranscript && (
             <TTSComparison transcript={generatedTranscript} />
+          )}
+          
+          {generatedAudioUrl && generatedTranscript && (
+            <PodcastDistributor 
+              audioUrl={generatedAudioUrl}
+              transcript={generatedTranscript}
+              title="My LinkedIn Podumé"
+            />
           )}
         </CardContent>
       </Card>
