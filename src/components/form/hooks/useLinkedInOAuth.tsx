@@ -26,6 +26,7 @@ export const useLinkedInOAuth = (
   onRawJSON?: (json: string) => void
 ) => {
   const [isProcessingProfile, setIsProcessingProfile] = useState(false);
+  const [hasProcessed, setHasProcessed] = useState(false);
 
   // Conditional logging for development only
   const log = process.env.NODE_ENV === 'development' ? console.log : () => {};
@@ -128,6 +129,11 @@ export const useLinkedInOAuth = (
     };
 
     const handleLinkedInSession = async () => {
+      if (hasProcessed) {
+        log('[LinkedInOAuth] Already processed, skipping...');
+        return;
+      }
+
       try {
         log('[LinkedInOAuth] Checking for LinkedIn OAuth session...');
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -152,9 +158,10 @@ export const useLinkedInOAuth = (
         log('[LinkedInOAuth] Is LinkedIn session:', isLinkedInSession);
         log('[LinkedInOAuth] Has LinkedIn user metadata:', !!session?.user?.user_metadata?.iss);
 
-        if (isLinkedInSession && session?.provider_token) {
+        if (isLinkedInSession && session?.provider_token && !hasProcessed) {
           log('[LinkedInOAuth] Processing LinkedIn profile...');
           setIsProcessingProfile(true);
+          setHasProcessed(true);
           
           const { profileData, rawJSON } = await extractLinkedInProfile();
           
@@ -177,7 +184,7 @@ export const useLinkedInOAuth = (
           
           setIsProcessingProfile(false);
         } else {
-          log('[LinkedInOAuth] No LinkedIn OAuth session found');
+          log('[LinkedInOAuth] No LinkedIn OAuth session found or already processed');
         }
       } catch (error: any) {
         console.error('[LinkedInOAuth] Error processing LinkedIn session:', error);

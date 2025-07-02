@@ -71,8 +71,30 @@ serve(async (req: Request) => {
       hasSession: !!sessionData.session,
       provider: sessionData.session?.user?.app_metadata?.provider,
       hasProviderToken: !!sessionData.session?.provider_token,
+      hasLinkedInUserData: !!sessionData.session?.user?.user_metadata?.iss,
+      linkedInIss: sessionData.session?.user?.user_metadata?.iss,
       sessionKeys: Object.keys(sessionData.session || {})
     });
+
+    // Check if this is a LinkedIn session - either direct provider or has LinkedIn user metadata
+    const isLinkedInSession = sessionData.session?.user?.app_metadata?.provider === 'linkedin_oidc' ||
+      (sessionData.session?.user?.user_metadata?.iss === 'https://www.linkedin.com/oauth');
+
+    if (!isLinkedInSession) {
+      console.error('Not a LinkedIn session - provider:', sessionData.session?.user?.app_metadata?.provider);
+      return new Response(JSON.stringify({ 
+        error: 'Session is not from LinkedIn. Please sign in with LinkedIn.',
+        debug: {
+          user_id: user.id,
+          provider: sessionData.session?.user?.app_metadata?.provider,
+          hasLinkedInUserData: !!sessionData.session?.user?.user_metadata?.iss,
+          linkedInIss: sessionData.session?.user?.user_metadata?.iss
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
 
     // Extract the LinkedIn provider token
     const providerToken = sessionData.session.provider_token;
