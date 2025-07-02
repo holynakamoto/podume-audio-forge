@@ -419,4 +419,3 @@ Generate about 800-1000 words of realistic podcast dialogue.`;
 Professional: ${name}
 Episode: "${title}"`;
 }
-}
