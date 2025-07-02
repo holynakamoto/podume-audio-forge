@@ -1,5 +1,6 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,85 +8,139 @@ const corsHeaders = {
 };
 
 serve(async (req: Request) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    console.log('=== LinkedIn Profile API function called (OIDC userinfo) ===');
+    console.log('=== LinkedIn OIDC Profile Function Called ===');
     
-    const { access_token } = await req.json();
-    
-    if (!access_token) {
-      console.error('No access token provided');
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Access token is required' 
-      }), {
-        status: 400,
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    // Get the user session from the Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header provided');
+      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
       });
     }
 
-    console.log('Fetching LinkedIn profile via userinfo endpoint...');
-    
-    // Use the modern LinkedIn OIDC userinfo endpoint
+    // Create authenticated Supabase client with the user's token
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseWithAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader
+          }
+        }
+      }
+    );
+
+    // Get the user session (this will include provider tokens)
+    const { data: { user }, error: userError } = await supabaseWithAuth.auth.getUser();
+    if (userError || !user) {
+      console.error('User authentication failed:', userError);
+      return new Response(JSON.stringify({ error: 'Unauthorized - please sign in with LinkedIn' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    console.log('User authenticated:', user.id);
+
+    // Get the user's session to access provider tokens
+    const { data: sessionData, error: sessionError } = await supabaseWithAuth.auth.getSession();
+    if (sessionError || !sessionData.session) {
+      console.error('Session retrieval failed:', sessionError);
+      return new Response(JSON.stringify({ error: 'No active session found' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    // Extract the LinkedIn provider token
+    const providerToken = sessionData.session.provider_token;
+    if (!providerToken) {
+      console.error('No provider token found in session');
+      return new Response(JSON.stringify({ 
+        error: 'No LinkedIn access token found. Please sign in with LinkedIn OIDC.',
+        debug: {
+          user_id: user.id,
+          providers: sessionData.session.app_metadata?.providers || [],
+          has_provider_token: !!providerToken
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
+    console.log('Provider token found, calling LinkedIn userinfo endpoint...');
+
+    // Fetch profile details from LinkedIn's userinfo endpoint
     const response = await fetch('https://api.linkedin.com/v2/userinfo', {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${access_token}`,
+        'Authorization': `Bearer ${providerToken}`,
         'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('LinkedIn userinfo API failed:', {
+      console.error('LinkedIn API error:', {
         status: response.status,
         statusText: response.statusText,
         error: errorText
       });
       
       return new Response(JSON.stringify({ 
-        success: false, 
         error: `LinkedIn API error: ${response.status} ${response.statusText}`,
         details: errorText.substring(0, 500),
         debug: {
           endpoint: 'https://api.linkedin.com/v2/userinfo',
           method: 'GET',
-          status: response.status
+          status: response.status,
+          token_preview: providerToken.substring(0, 20) + '...'
         }
       }), {
-        status: response.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: response.status,
       });
     }
 
     const profileData = await response.json();
-    console.log('LinkedIn userinfo API successful');
-    console.log('Profile data keys:', Object.keys(profileData));
+    console.log('LinkedIn userinfo successful:', Object.keys(profileData));
 
     // Format the profile data into resume content
     const resumeContent = formatLinkedInProfile(profileData);
-    console.log('Formatted resume content length:', resumeContent.length);
     
     return new Response(JSON.stringify({ 
-      success: true, 
-      data: resumeContent,
-      raw_profile: profileData
+      success: true,
+      profile: profileData,
+      data: resumeContent
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
     });
 
   } catch (error) {
     console.error('Error in LinkedIn profile function:', error);
     return new Response(JSON.stringify({ 
-      success: false, 
-      error: `Internal server error: ${error.message}` 
+      error: `Internal server error: ${error.message}`,
+      stack: error.stack
     }), {
-      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
     });
   }
 });

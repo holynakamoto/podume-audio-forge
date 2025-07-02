@@ -31,20 +31,45 @@ export const useLinkedInOAuth = (
   const log = process.env.NODE_ENV === 'development' ? console.log : () => {};
 
   useEffect(() => {
-    const extractLinkedInProfile = async (accessToken: string): Promise<{
+    const extractLinkedInProfile = async (): Promise<{
       profileData: string | null;
       rawJSON: string | null;
     }> => {
       try {
-        log('[LinkedInOAuth] Extracting LinkedIn profile...');
-        log('[LinkedInOAuth] Access token exists:', !!accessToken);
+        log('[LinkedInOAuth] Extracting LinkedIn profile via session...');
+        
+        // Get current session to check for LinkedIn provider token
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          throw new Error(`Session error: ${sessionError.message}`);
+        }
+
+        if (!sessionData.session) {
+          throw new Error('No active session found. Please sign in with LinkedIn.');
+        }
+
+        const session = sessionData.session as SupabaseSession;
+        log('[LinkedInOAuth] Session provider:', session.user?.app_metadata?.provider);
+        log('[LinkedInOAuth] Has provider token:', !!session.provider_token);
+
+        if (session.user?.app_metadata?.provider !== 'linkedin_oidc') {
+          throw new Error('Current session is not from LinkedIn OIDC. Please sign in with LinkedIn.');
+        }
+
+        if (!session.provider_token) {
+          throw new Error('No LinkedIn access token found in session.');
+        }
 
         const maxRetries = 3;
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           try {
             log('[LinkedInOAuth] Calling linkedin-profile edge function, attempt:', attempt);
+            
+            // Call the edge function without passing the token in body - it will get it from session
             const { data, error } = await supabase.functions.invoke<LinkedInProfileResponse>('linkedin-profile', {
-              body: { access_token: accessToken }
+              headers: {
+                'Authorization': `Bearer ${sessionData.session.access_token}`
+              }
             });
 
             log('[LinkedInOAuth] LinkedIn function response received');
@@ -113,7 +138,7 @@ export const useLinkedInOAuth = (
           log('[LinkedInOAuth] Processing LinkedIn profile...');
           setIsProcessingProfile(true);
           
-          const { profileData, rawJSON } = await extractLinkedInProfile(session.provider_token);
+          const { profileData, rawJSON } = await extractLinkedInProfile();
           
           if (profileData) {
             onProfileData(profileData);

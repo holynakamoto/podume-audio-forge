@@ -11,6 +11,7 @@ import { LinkedInAlerts } from './LinkedInAlerts';
 import { LinkedInTitleInput } from './LinkedInTitleInput';
 import { LinkedInUrlInput } from './LinkedInUrlInput';
 import { LinkedInSubmitButton } from './LinkedInSubmitButton';
+import { LinkedInOIDCButton } from './LinkedInOIDCButton';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -187,6 +188,24 @@ export const LinkedInPodcastForm: React.FC = () => {
 
       <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-6 sm:p-8">
+          {/* LinkedIn OIDC Sign-in Option */}
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="font-semibold text-blue-900 mb-2">Option 1: Connect with LinkedIn OIDC</h3>
+            <p className="text-blue-700 text-sm mb-3">
+              Sign in with LinkedIn to automatically import your profile data
+            </p>
+            <LinkedInOIDCButton 
+              className="w-full mb-2"
+              onSuccess={() => {
+                toast.success('LinkedIn connected! Your profile will be processed automatically.');
+              }}
+            />
+          </div>
+
+          <div className="text-center mb-4">
+            <span className="bg-white px-3 py-1 text-gray-500 text-sm">OR</span>
+          </div>
+
           <LinkedInAlerts showManualOption={false} />
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
