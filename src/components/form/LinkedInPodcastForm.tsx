@@ -26,6 +26,7 @@ export const LinkedInPodcastForm: React.FC = () => {
     }
     
     console.log('[LinkedInPodcastForm] Received LinkedIn data:', userData);
+    console.log('[LinkedInPodcastForm] Full user data object:', userData.fullUserData);
     
     // Convert Clerk user data to profile content
     const profileContent = `# ${userData.name}

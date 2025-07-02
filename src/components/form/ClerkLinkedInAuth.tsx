@@ -12,26 +12,44 @@ export const ClerkLinkedInAuth: React.FC<ClerkLinkedInAuthProps> = ({ onLinkedIn
   const [hasProcessedData, setHasProcessedData] = React.useState(false);
 
   React.useEffect(() => {
+    console.log('[ClerkLinkedIn] === Full User Debug ===');
+    console.log('[ClerkLinkedIn] User exists:', !!user);
+    console.log('[ClerkLinkedIn] User object:', user);
+    console.log('[ClerkLinkedIn] External accounts:', user?.externalAccounts);
+    console.log('[ClerkLinkedIn] External accounts length:', user?.externalAccounts?.length);
+    
+    if (user?.externalAccounts) {
+      user.externalAccounts.forEach((account, index) => {
+        console.log(`[ClerkLinkedIn] External account ${index}:`, account);
+        console.log(`[ClerkLinkedIn] Provider ${index}:`, account.provider);
+      });
+    }
+    
     if (user?.externalAccounts && !hasProcessedData) {
       const linkedInAccount = user.externalAccounts.find(
         account => account.provider === 'linkedin_oidc'
       );
       
-      if (linkedInAccount && user.publicMetadata) {
-        console.log('[ClerkLinkedIn] LinkedIn account found:', linkedInAccount);
-        console.log('[ClerkLinkedIn] User data:', user);
+      console.log('[ClerkLinkedIn] LinkedIn account found:', linkedInAccount);
+      
+      if (linkedInAccount || user.fullName) {
+        console.log('[ClerkLinkedIn] Processing user data...');
         
-        // Format user data for the podcast generation
+        // Create LinkedIn data even if no specific LinkedIn account (since user signed in via LinkedIn)
         const linkedInData = {
           name: user.fullName || `${user.firstName} ${user.lastName}`,
           email: user.primaryEmailAddress?.emailAddress,
-          linkedInId: linkedInAccount.id,
+          linkedInId: linkedInAccount?.id || 'clerk-user',
           imageUrl: user.imageUrl,
-          publicMetadata: user.publicMetadata
+          publicMetadata: user.publicMetadata,
+          fullUserData: user
         };
         
+        console.log('[ClerkLinkedIn] Sending LinkedIn data:', linkedInData);
         onLinkedInData(linkedInData);
         setHasProcessedData(true);
+      } else {
+        console.log('[ClerkLinkedIn] No LinkedIn account or user data found');
       }
     }
   }, [user, onLinkedInData, hasProcessedData]);
