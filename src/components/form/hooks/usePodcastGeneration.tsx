@@ -39,13 +39,27 @@ export const usePodcastGeneration = () => {
         },
       });
 
+      console.log('=== Podcast Generation Response ===');
+      console.log('Error:', error);
+      console.log('Data:', data);
+      console.log('Data transcript:', data?.transcript);
+      console.log('Data podcast transcript:', data?.podcast?.transcript);
+
       if (error) throw new Error(error.message);
       if (!data) throw new Error('No response data received');
 
       // Store the generated transcript for display
       if (data?.transcript) {
+        console.log('Setting transcript from data.transcript:', data.transcript);
         setGeneratedTranscript(data.transcript);
         toast.success('Transcript generated! Check below.');
+      } else if (data?.podcast?.transcript) {
+        console.log('Setting transcript from data.podcast.transcript:', data.podcast.transcript);
+        setGeneratedTranscript(data.podcast.transcript);
+        toast.success('Transcript generated! Check below.');
+      } else {
+        console.log('No transcript found in response');
+        toast.warning('Podcast created but no transcript found');
       }
 
       if (data?.podcast?.id) {

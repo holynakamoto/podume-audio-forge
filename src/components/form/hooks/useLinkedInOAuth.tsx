@@ -140,9 +140,17 @@ export const useLinkedInOAuth = (
           
           const { profileData, rawJSON } = await extractLinkedInProfile();
           
+          console.log('=== LinkedIn Profile Extracted ===');
+          console.log('Profile data exists:', !!profileData);
+          console.log('Profile data length:', profileData?.length || 0);
+          
           if (profileData) {
+            console.log('Calling onProfileData with profile data');
             onProfileData(profileData);
             toast.success('LinkedIn profile imported successfully!');
+          } else {
+            console.log('No profile data received');
+            toast.error('No profile data received from LinkedIn');
           }
           
           if (rawJSON && onRawJSON) {
