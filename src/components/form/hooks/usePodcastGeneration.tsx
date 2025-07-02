@@ -69,7 +69,11 @@ export const usePodcastGeneration = () => {
         toast.error('Podcast creation response was unexpected');
       }
     } catch (error: any) {
-      toast.error(`Failed to create podcast: ${error.message}`);
+      console.log('=== Podcast Generation Error ===');
+      console.log('Full error object:', error);
+      console.log('Error message:', error?.message);
+      console.log('Error details:', error?.details);
+      toast.error(`Failed to create podcast: ${error.message || 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
