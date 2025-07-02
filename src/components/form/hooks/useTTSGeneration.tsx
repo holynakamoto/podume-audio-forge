@@ -32,6 +32,8 @@ export const useTTSGeneration = () => {
         ? { text: testText, model: selectedVoice.voiceId }
         : selectedVoice.provider === 'cartesia'
         ? { text: testText, voice: selectedVoice.voiceId }
+        : selectedVoice.provider === 'huggingface'
+        ? { text: testText, model: selectedVoice.voiceId }
         : { text: testText, voice: selectedVoice.voiceId }; // PlayHT
       
       const { data, error } = await supabase.functions.invoke(`tts-${selectedVoice.provider}`, {
