@@ -191,6 +191,54 @@ export type Database = {
           },
         ]
       }
+      test_results: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          error_message: string | null
+          generated_script: string | null
+          id: string
+          profile_data: Json | null
+          success_rate: string | null
+          target_url: string | null
+          test_name: string
+          test_status: string
+          test_timestamp: string
+          updated_at: string
+          validation_checks: Json | null
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          error_message?: string | null
+          generated_script?: string | null
+          id?: string
+          profile_data?: Json | null
+          success_rate?: string | null
+          target_url?: string | null
+          test_name: string
+          test_status: string
+          test_timestamp: string
+          updated_at?: string
+          validation_checks?: Json | null
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          error_message?: string | null
+          generated_script?: string | null
+          id?: string
+          profile_data?: Json | null
+          success_rate?: string | null
+          target_url?: string | null
+          test_name?: string
+          test_status?: string
+          test_timestamp?: string
+          updated_at?: string
+          validation_checks?: Json | null
+        }
+        Relationships: []
+      }
       workflow_logs: {
         Row: {
           created_at: string | null

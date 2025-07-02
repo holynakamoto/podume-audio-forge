@@ -50,25 +50,31 @@ const Hero = () => {
       </nav>
       
       {/* Main Content Area - Anchored to Bottom */}
-      <div className="relative z-20 flex-1 flex items-end pb-12 px-6 md:pb-16 md:px-8 lg:pb-20 lg:px-12">
-        <div className="max-w-5xl w-full">
+      <div className="relative z-20 flex-1 flex items-end pb-16 px-6 md:pb-24 md:px-8 lg:pb-32 lg:px-12">
+        <div className="max-w-6xl w-full">
           {/* Moody Tagline */}
-          <p className="text-white/60 text-sm md:text-base font-light tracking-wide mb-6 md:mb-8">
-            There is no competition, your story is a limited edition
-          </p>
+          <div className="mb-8 md:mb-12">
+            <p className="text-white/60 text-sm md:text-base font-light tracking-wide">
+              There is no competition, your story is a limited edition
+            </p>
+          </div>
           
-          {/* Bold Two-Line Headline */}
-          <h1 className="text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-light leading-none mb-8 md:mb-12">
-            <div className="text-white mb-2">Purple Reign</div>
-            <div className="text-white/75">Majesty</div>
-          </h1>
+          {/* Bold Two-Line Headline with Enhanced Typography */}
+          <div className="mb-12 md:mb-16 lg:mb-20">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-light leading-[0.85] tracking-tight">
+              <div className="text-white mb-3 md:mb-4">Purple Reign</div>
+              <div className="text-white/75">Majesty</div>
+            </h1>
+          </div>
           
-          {/* Story Paragraph */}
-          <p className="max-w-xl text-white/70 font-light leading-relaxed text-lg md:text-xl">
-            In a world where voices blend into the noise, yours cuts through like lightning. 
-            This isn't just about being heard—it's about commanding attention, owning your narrative, 
-            and turning your story into an empire.
-          </p>
+          {/* Story Paragraph with Premium Spacing */}
+          <div className="max-w-2xl">
+            <p className="text-white/70 font-light leading-relaxed text-lg md:text-xl lg:text-2xl">
+              In a world where voices blend into the noise, yours cuts through like lightning. 
+              This isn't just about being heard—it's about commanding attention, owning your narrative, 
+              and turning your story into an empire.
+            </p>
+          </div>
         </div>
       </div>
     </div>

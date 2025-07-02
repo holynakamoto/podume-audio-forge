@@ -17,41 +17,54 @@ const Index = () => {
   return (
     <IntentProvider>
       <ContextProvider>
-        <div className="bg-background text-foreground">
+        <div className="bg-background text-foreground overflow-x-hidden">
           {/* Original hero for video background, then dynamic hero */}
           <Hero />
           
-          <SmartContentPrioritizer sectionId="hero" priority="high">
-            <DynamicHeroSection />
-          </SmartContentPrioritizer>
+          {/* Premium Sections with Enhanced Spacing */}
+          <div className="space-y-32 lg:space-y-40">
+            <SmartContentPrioritizer sectionId="hero" priority="high">
+              <div className="py-16 lg:py-24">
+                <DynamicHeroSection />
+              </div>
+            </SmartContentPrioritizer>
 
-          <SmartContentPrioritizer sectionId="secondary" priority="medium">
-            <SecondarySection />
-          </SmartContentPrioritizer>
+            <SmartContentPrioritizer sectionId="secondary" priority="medium">
+              <div className="py-16 lg:py-24">
+                <SecondarySection />
+              </div>
+            </SmartContentPrioritizer>
 
-          <SmartContentPrioritizer 
-            sectionId="sample" 
-            priority="high"
-            showCondition={(intent) => intent.timeOnSite > 20 || intent.primaryGoal === 'create_podcast'}
-          >
-            <SampleSection />
-          </SmartContentPrioritizer>
+            <SmartContentPrioritizer 
+              sectionId="sample" 
+              priority="high"
+              showCondition={(intent) => intent.timeOnSite > 20 || intent.primaryGoal === 'create_podcast'}
+            >
+              <div className="py-20 lg:py-32">
+                <SampleSection />
+              </div>
+            </SmartContentPrioritizer>
 
-          <SmartContentPrioritizer 
-            sectionId="community" 
-            priority="medium"
-            showCondition={(intent) => intent.engagementLevel !== 'low'}
-          >
-            <CommunitySection />
-          </SmartContentPrioritizer>
+            <SmartContentPrioritizer 
+              sectionId="community" 
+              priority="medium"
+              showCondition={(intent) => intent.engagementLevel !== 'low'}
+            >
+              <div className="py-16 lg:py-24">
+                <CommunitySection />
+              </div>
+            </SmartContentPrioritizer>
 
-          <SmartContentPrioritizer 
-            sectionId="pricing" 
-            priority="high"
-            showCondition={(intent) => intent.timeOnSite > 30 || intent.primaryGoal === 'pricing'}
-          >
-            <PricingSection />
-          </SmartContentPrioritizer>
+            <SmartContentPrioritizer 
+              sectionId="pricing" 
+              priority="high"
+              showCondition={(intent) => intent.timeOnSite > 30 || intent.primaryGoal === 'pricing'}
+            >
+              <div className="py-20 lg:py-32">
+                <PricingSection />
+              </div>
+            </SmartContentPrioritizer>
+          </div>
 
           {/* Progressive Disclosure Elements */}
           <ProgressiveDisclosure 
