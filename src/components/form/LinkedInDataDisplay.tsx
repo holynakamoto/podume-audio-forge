@@ -21,10 +21,17 @@ export const LinkedInDataDisplay: React.FC<LinkedInDataDisplayProps> = ({
     toast.success(`${label} copied to clipboard!`);
   };
 
+  console.log('[LinkedInDataDisplay] Checking content:', { 
+    linkedInContent: linkedInContent?.length || 0, 
+    generatedTranscript: generatedTranscript?.length || 0 
+  });
+
   if (!linkedInContent && !generatedTranscript) {
-    console.log('[LinkedInDataDisplay] No content to display:', { linkedInContent: !!linkedInContent, generatedTranscript: !!generatedTranscript });
+    console.log('[LinkedInDataDisplay] No content to display');
     return null;
   }
+
+  console.log('[LinkedInDataDisplay] Rendering with content');
 
   return (
     <div className="space-y-4">
