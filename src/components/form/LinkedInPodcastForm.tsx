@@ -15,6 +15,9 @@ export const LinkedInPodcastForm: React.FC = () => {
   const [linkedInContent, setLinkedInContent] = useState('');
   const { isLoading, generatedTranscript, generatePodcast } = usePodcastGeneration();
 
+  console.log('[LinkedInPodcastForm] Component rendered');
+  console.log('[LinkedInPodcastForm] Current state:', { linkedInContent, isLoading, hasTranscript: !!generatedTranscript });
+
   // Auto-fetch LinkedIn profile data after OIDC sign-in
   const { isProcessingProfile } = useLinkedInOAuth(
     (profileData) => {
