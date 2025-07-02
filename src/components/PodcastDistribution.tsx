@@ -7,7 +7,6 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { Loader2, Podcast, Music, Radio, Headphones, Copy, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/auth/ClerkAuthProvider';
 
 interface PodcastDistributionProps {
   podcastId: string;
@@ -23,7 +22,6 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
   const [isDistributing, setIsDistributing] = useState(false);
   const [rssUrl, setRssUrl] = useState('');
   const [generatedRssUrl, setGeneratedRssUrl] = useState('');
-  const { user } = useAuth();
 
   const platforms = [
     { name: 'Spotify', icon: Music, color: 'bg-green-500', url: 'https://podcasters.spotify.com/' },
@@ -33,12 +31,12 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
   ];
 
   useEffect(() => {
-    if (user && podcastId) {
+    if (podcastId) {
       const baseUrl = 'https://pudwgzutzoidxbvozhnk.supabase.co/functions/v1/generate-rss';
       const url = `${baseUrl}?podcast_id=${podcastId}`;
       setGeneratedRssUrl(url);
     }
-  }, [user, podcastId]);
+  }, [podcastId]);
 
   const handleCopyRssUrl = () => {
     navigator.clipboard.writeText(generatedRssUrl);

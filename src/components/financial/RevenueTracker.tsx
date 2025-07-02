@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, Users, Calendar, Download } from 'lucide-react';
-import { useAuth } from '@/auth/ClerkAuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 
 interface RevenueData {
@@ -34,13 +33,10 @@ export const RevenueTracker: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
-  const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
-      fetchRevenueData();
-    }
-  }, [user, timeframe]);
+    fetchRevenueData();
+  }, [timeframe]);
 
   const fetchRevenueData = async () => {
     setIsLoading(true);

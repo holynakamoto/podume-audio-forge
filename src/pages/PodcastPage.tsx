@@ -11,7 +11,6 @@ import PodcastDistribution from '@/components/PodcastDistribution';
 import { PodcastSharingControls } from '@/components/PodcastSharingControls';
 import { toast } from 'sonner';
 import { sanitizeHtml, sanitizeText } from '@/utils/security';
-import { useAuth } from '@/auth/ClerkAuthProvider';
 
 const fetchPodcast = async (id: string) => {
   const { data, error } = await supabase
@@ -33,7 +32,6 @@ const fetchPodcast = async (id: string) => {
 
 const PodcastPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [isPublic, setIsPublic] = React.useState(false);
   const audioRef = React.useRef<HTMLAudioElement>(null);
@@ -45,7 +43,6 @@ const PodcastPage = () => {
   });
 
   const shareUrl = window.location.href;
-  const isOwner = user && podcast && user.id === podcast.user_id;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -198,14 +195,6 @@ const PodcastPage = () => {
             </div>
           </CardContent>
         </Card>
-
-        {isOwner && (
-          <PodcastSharingControls
-            podcastId={podcast.id}
-            isPublic={isPublic}
-            onSharingChange={handleSharingChange}
-          />
-        )}
 
         <PodcastDistribution 
           podcastId={podcast.id}

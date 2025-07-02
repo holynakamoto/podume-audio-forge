@@ -2,14 +2,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { UserButton } from '@clerk/clerk-react';
-import { useAuth } from '@/auth/ClerkAuthProvider';
 import Logo from '@/components/Logo';
 import { MobileNav } from './MobileNav';
 
 const Header = () => {
-  const { isSignedIn } = useAuth();
-
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-b border-white/10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,29 +40,13 @@ const Header = () => {
 
           {/* Auth Section */}
           <div className="hidden md:flex items-center space-x-4">
-            {isSignedIn ? (
-              <UserButton 
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    avatarBox: "w-8 h-8"
-                  }
-                }}
-              />
-            ) : (
-              <div className="flex items-center space-x-3">
-                <Link to="/auth">
-                  <Button variant="ghost" className="text-white hover:bg-white/10">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/create">
-                  <Button className="bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700">
-                    Get Started
-                  </Button>
-                </Link>
-              </div>
-            )}
+            <div className="flex items-center space-x-3">
+              <Link to="/create">
+                <Button className="bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Mobile Menu */}

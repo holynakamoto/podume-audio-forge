@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/auth/ClerkAuthProvider';
 import { ResumeUploader } from './ResumeUploader';
 import { PodcastTitleInput } from './PodcastTitleInput';
 import { PodcastSettings } from './PodcastSettings';
@@ -39,7 +38,6 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [resumeContent, setResumeContent] = useState(initialResumeContent);
   const navigate = useNavigate();
-  const { user, isSignedIn } = useAuth();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -90,13 +88,6 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
   const onSubmit = async (values: FormValues) => {
     console.log('Form submission started with values:', values);
     console.log('Resume content length:', resumeContent.length);
-    
-    // Check if user is signed in
-    if (!isSignedIn || !user) {
-      toast.error('You must be signed in to create a podcast');
-      navigate('/auth');
-      return;
-    }
     
     // Enhanced validation
     const validation = validateSubmitData({ ...values, resume_content: resumeContent });
@@ -192,27 +183,15 @@ export const PodcastCreationForm: React.FC<PodcastCreationFormProps> = ({
                    resumeContent.length <= 50000 &&
                    titleValue && 
                    titleValue.length >= 3 && 
-                   titleValue.length <= 200 &&
-                   isSignedIn;
+                   titleValue.length <= 200;
 
   console.log('Form state:', { 
     resumeContentLength: resumeContent.length, 
     titleLength: titleValue?.length || 0, 
     canSubmit,
-    isLoading,
-    isSignedIn
+    isLoading
   });
 
-  if (!isSignedIn) {
-    return (
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle>Sign In Required</CardTitle>
-          <CardDescription>You must be signed in to create a podcast.</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
 
   return (
     <Card className="w-full max-w-2xl mx-auto">

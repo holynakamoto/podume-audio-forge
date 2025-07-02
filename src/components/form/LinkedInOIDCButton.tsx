@@ -21,7 +21,7 @@ export const LinkedInOIDCButton: React.FC<LinkedInOIDCButtonProps> = ({
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/create`,
           queryParams: {
             scope: 'openid profile email',
             access_type: 'offline',
