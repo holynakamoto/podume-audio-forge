@@ -1,149 +1,27 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Play, Square, Loader2, Share, Download } from 'lucide-react';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { voiceOptions } from './constants/voices';
+import { useTTSGeneration } from './hooks/useTTSGeneration';
+import { useSocialSharing } from './hooks/useSocialSharing';
 
 interface TTSComparisonProps {
   transcript: string;
 }
 
-interface VoiceOption {
-  provider: 'elevenlabs' | 'deepgram' | 'cartesia' | 'playht';
-  voiceId: string;
-  name: string;
-  description: string;
-}
-
-interface AudioState {
-  audio: string | null;
-  isLoading: boolean;
-  isPlaying: boolean;
-  duration?: number;
-}
-
 export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
-  const [selectedVoice, setSelectedVoice] = useState<VoiceOption | null>(null);
-  const [audioState, setAudioState] = useState<AudioState>({ audio: null, isLoading: false, isPlaying: false });
-  const [audio] = useState(new Audio());
-
-  const voiceOptions: VoiceOption[] = [
-    // ElevenLabs voices (premium quality)
-    { provider: 'elevenlabs', voiceId: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah (ElevenLabs)', description: 'Professional female voice' },
-    { provider: 'elevenlabs', voiceId: 'TX3LPaxmHKxFdv7VOQHJ', name: 'Liam (ElevenLabs)', description: 'Confident male voice' },
-    { provider: 'elevenlabs', voiceId: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte (ElevenLabs)', description: 'Warm female voice' },
-    { provider: 'elevenlabs', voiceId: 'JBFqnCBsd6RMkjVDRZzb', name: 'George (ElevenLabs)', description: 'Distinguished male voice' },
-    
-    // Deepgram voices (fast & natural)
-    { provider: 'deepgram', voiceId: 'aura-asteria-en', name: 'Asteria (Deepgram)', description: 'Clear female voice' },
-    { provider: 'deepgram', voiceId: 'aura-orpheus-en', name: 'Orpheus (Deepgram)', description: 'Smooth male voice' },
-    
-    // Cartesia voices (conversational)
-    { provider: 'cartesia', voiceId: 'barbershop-man', name: 'Barbershop Man (Cartesia)', description: 'Casual male voice' },
-    { provider: 'cartesia', voiceId: 'pleasant-female', name: 'Pleasant Female (Cartesia)', description: 'Friendly female voice' },
-    
-    // PlayHT voices (natural)
-    { provider: 'playht', voiceId: 'jennifer', name: 'Jennifer (PlayHT)', description: 'Natural female voice' },
-    { provider: 'playht', voiceId: 'mark', name: 'Mark (PlayHT)', description: 'Professional male voice' },
-  ];
-
-  const generateTTS = async () => {
-    if (!selectedVoice) {
-      toast.error('Please select a voice first');
-      return;
-    }
-    
-    setAudioState(prev => ({ ...prev, isLoading: true }));
-    
-    try {
-      console.log(`Generating ${selectedVoice.provider} TTS with voice ${selectedVoice.voiceId}...`);
-      
-      // Use first 1000 characters for testing
-      const testText = transcript.substring(0, 1000) + "...";
-      
-      const requestBody = selectedVoice.provider === 'elevenlabs' 
-        ? { text: testText, voice_id: selectedVoice.voiceId }
-        : selectedVoice.provider === 'deepgram'
-        ? { text: testText, model: selectedVoice.voiceId }
-        : selectedVoice.provider === 'cartesia'
-        ? { text: testText, voice: selectedVoice.voiceId }
-        : { text: testText, voice: selectedVoice.voiceId }; // PlayHT
-      
-      const { data, error } = await supabase.functions.invoke(`tts-${selectedVoice.provider}`, {
-        body: requestBody
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'TTS generation failed');
-
-      const audioUrl = `data:audio/${data.format};base64,${data.audio}`;
-      
-      setAudioState(prev => ({ ...prev, audio: audioUrl, isLoading: false }));
-      toast.success(`${selectedVoice.name} TTS generated successfully!`);
-      
-    } catch (error: any) {
-      console.error(`${selectedVoice.provider} TTS error:`, error);
-      setAudioState(prev => ({ ...prev, isLoading: false }));
-      toast.error(`${selectedVoice.name} TTS failed: ${error.message}`);
-    }
-  };
-
-  const playAudio = () => {
-    if (!audioState.audio) return;
-
-    if (audioState.isPlaying) {
-      audio.pause();
-      setAudioState(prev => ({ ...prev, isPlaying: false }));
-    } else {
-      audio.src = audioState.audio;
-      audio.play();
-      setAudioState(prev => ({ ...prev, isPlaying: true }));
-      
-      audio.onended = () => {
-        setAudioState(prev => ({ ...prev, isPlaying: false }));
-      };
-    }
-  };
-
-  const shareToSocial = (platform: string) => {
-    if (!audioState.audio) {
-      toast.error('Generate audio first to share');
-      return;
-    }
-    
-    const shareText = `Check out my AI-generated podcast from my LinkedIn profile! 🎧 #PodcastGeneration #AI`;
-    const shareUrl = window.location.href;
-    
-    switch (platform) {
-      case 'twitter':
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`);
-        break;
-      case 'linkedin':
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`);
-        break;
-      case 'facebook':
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`);
-        break;
-      default:
-        navigator.clipboard.writeText(shareUrl);
-        toast.success('Link copied to clipboard!');
-    }
-  };
-
-  const downloadAudio = () => {
-    if (!audioState.audio) {
-      toast.error('Generate audio first to download');
-      return;
-    }
-    
-    const link = document.createElement('a');
-    link.href = audioState.audio;
-    link.download = 'podcast.mp3';
-    link.click();
-    toast.success('Audio download started!');
-  };
+  const {
+    selectedVoice,
+    setSelectedVoice,
+    audioState,
+    generateTTS,
+    playAudio,
+    downloadAudio
+  } = useTTSGeneration();
+  
+  const { shareToSocial } = useSocialSharing();
 
 
   return (
@@ -183,7 +61,7 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
 
           {/* Generate Button */}
           <Button
-            onClick={generateTTS}
+            onClick={() => generateTTS(transcript)}
             disabled={audioState.isLoading || !selectedVoice}
             className="w-full"
             size="lg"
@@ -226,7 +104,7 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
                 <h4 className="font-medium">Share Your Podcast</h4>
                 <div className="flex flex-wrap gap-2">
                   <Button 
-                    onClick={() => shareToSocial('twitter')} 
+                    onClick={() => shareToSocial('twitter', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
                     className="bg-blue-50 hover:bg-blue-100"
@@ -235,7 +113,7 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
                     Twitter
                   </Button>
                   <Button 
-                    onClick={() => shareToSocial('linkedin')} 
+                    onClick={() => shareToSocial('linkedin', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
                     className="bg-blue-50 hover:bg-blue-100"
@@ -244,7 +122,7 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
                     LinkedIn
                   </Button>
                   <Button 
-                    onClick={() => shareToSocial('facebook')} 
+                    onClick={() => shareToSocial('facebook', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
                     className="bg-blue-50 hover:bg-blue-100"
@@ -253,7 +131,7 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
                     Facebook
                   </Button>
                   <Button 
-                    onClick={() => shareToSocial('copy')} 
+                    onClick={() => shareToSocial('copy', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
                   >
