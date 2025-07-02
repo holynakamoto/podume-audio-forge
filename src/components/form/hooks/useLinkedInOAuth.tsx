@@ -32,9 +32,14 @@ export const useLinkedInOAuth = (
 
   useEffect(() => {
     console.log('[LinkedInOAuth] Hook mounted and useEffect starting...');
-    console.log('[LinkedInOAuth] Current URL on mount:', window.location.href);
-    console.log('[LinkedInOAuth] URL search params:', window.location.search);
-    console.log('[LinkedInOAuth] URL hash:', window.location.hash);
+    
+    try {
+      console.log('[LinkedInOAuth] Current URL on mount:', window.location.href);
+      console.log('[LinkedInOAuth] URL search params:', window.location.search);
+      console.log('[LinkedInOAuth] URL hash:', window.location.hash);
+    } catch (error) {
+      console.error('[LinkedInOAuth] Error accessing window location:', error);
+    }
     
     const extractLinkedInProfile = async (): Promise<{
       profileData: string | null;
