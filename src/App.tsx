@@ -10,8 +10,6 @@ import Financial from "./pages/Financial";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Pricing from "./pages/Pricing";
-import { ClerkAuthProvider } from "./auth/ClerkAuthProvider";
-import AuthPage from "./pages/Auth";
 import PodcastPage from "./pages/PodcastPage";
 import ZooToolsDemo from "./pages/ZooToolsDemo";
 import OurPodcasts from "./pages/OurPodcasts";
@@ -22,23 +20,20 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BrowserRouter>
-        <ClerkAuthProvider>
-          <Toaster />
-          <Sonner richColors theme="dark" />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/create" element={<Create />} />
-            <Route path="/financial" element={<Financial />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/podcast/:id" element={<PodcastPage />} />
-            <Route path="/zootools" element={<ZooToolsDemo />} />
-            <Route path="/our-podcasts" element={<OurPodcasts />} />
-            <Route path="/pricing" element={<Pricing />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </ClerkAuthProvider>
+        <Toaster />
+        <Sonner richColors theme="dark" />
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/create" element={<Create />} />
+          <Route path="/financial" element={<Financial />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/podcast/:id" element={<PodcastPage />} />
+          <Route path="/zootools" element={<ZooToolsDemo />} />
+          <Route path="/our-podcasts" element={<OurPodcasts />} />
+          <Route path="/pricing" element={<Pricing />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
