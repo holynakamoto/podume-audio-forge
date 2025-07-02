@@ -9,9 +9,10 @@ interface ClerkLinkedInAuthProps {
 
 export const ClerkLinkedInAuth: React.FC<ClerkLinkedInAuthProps> = ({ onLinkedInData }) => {
   const { user } = useUser();
+  const [hasProcessedData, setHasProcessedData] = React.useState(false);
 
   React.useEffect(() => {
-    if (user?.externalAccounts) {
+    if (user?.externalAccounts && !hasProcessedData) {
       const linkedInAccount = user.externalAccounts.find(
         account => account.provider === 'linkedin_oidc'
       );
@@ -30,9 +31,10 @@ export const ClerkLinkedInAuth: React.FC<ClerkLinkedInAuthProps> = ({ onLinkedIn
         };
         
         onLinkedInData(linkedInData);
+        setHasProcessedData(true);
       }
     }
-  }, [user, onLinkedInData]);
+  }, [user, onLinkedInData, hasProcessedData]);
 
   return (
     <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">

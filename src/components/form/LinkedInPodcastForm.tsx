@@ -7,17 +7,24 @@ import { linkedInFormSchema, LinkedInFormValues } from './schemas/linkedInFormSc
 import { LinkedInAlerts } from './LinkedInAlerts';
 import { usePodcastGeneration } from './hooks/usePodcastGeneration';
 import { ClerkLinkedInAuth } from './ClerkLinkedInAuth';
+import { LinkedInDataDisplay } from './LinkedInDataDisplay';
 import { TranscriptDisplay } from './TranscriptDisplay';
 import { LinkedInFormStatus } from './LinkedInFormStatus';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [linkedInContent, setLinkedInContent] = useState('');
+  const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
   const { isLoading, generatedTranscript, generatePodcast } = usePodcastGeneration();
 
   console.log('[LinkedInPodcastForm] Component rendered');
   console.log('[LinkedInPodcastForm] Current state:', { linkedInContent, isLoading, hasTranscript: !!generatedTranscript });
 
   const handleLinkedInData = (userData: any) => {
+    if (hasAutoSubmitted) {
+      console.log('[LinkedInPodcastForm] Auto-submit already completed, skipping...');
+      return;
+    }
+    
     console.log('[LinkedInPodcastForm] Received LinkedIn data:', userData);
     
     // Convert Clerk user data to profile content
@@ -56,6 +63,7 @@ Active LinkedIn professional with verified identity. Demonstrates commitment to 
       premium_assets: false,
     };
     
+    setHasAutoSubmitted(true);
     generatePodcast(autoValues, profileContent);
   };
 
@@ -84,6 +92,11 @@ Active LinkedIn professional with verified identity. Demonstrates commitment to 
       <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
         <CardContent className="p-6 sm:p-8">
           <ClerkLinkedInAuth onLinkedInData={handleLinkedInData} />
+
+          <LinkedInDataDisplay 
+            linkedInContent={linkedInContent}
+            generatedTranscript={generatedTranscript}
+          />
 
           <div className="text-center mb-4">
             <span className="bg-white px-3 py-1 text-gray-500 text-sm">OR</span>
