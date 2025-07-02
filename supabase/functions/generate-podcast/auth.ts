@@ -5,9 +5,9 @@ export async function authenticateUser(request: Request) {
   console.log('=== Authenticating user ===');
   
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
   
-  if (!supabaseUrl || !supabaseServiceKey) {
+  if (!supabaseUrl || !supabaseAnonKey) {
     console.error('Missing Supabase environment variables');
     throw new Error('Server configuration error');
   }
@@ -22,19 +22,18 @@ export async function authenticateUser(request: Request) {
   const token = authHeader.replace('Bearer ', '');
   console.log('Token received:', token.substring(0, 20) + '...');
   
-  // Check if this is the anon key (which means user is not authenticated)
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  if (token === anonKey) {
-    console.error('Received anon key instead of user token - user not authenticated');
-    throw new Error('User must be signed in to create podcasts');
-  }
-  
-  // Create Supabase client with service role key for user verification
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  // Create Supabase client with anon key (this is correct for user token verification)
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  });
   
   try {
-    // Verify the JWT token
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    // Verify the JWT token - this will use the user's session token
+    const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error) {
       console.error('Auth error:', error);
@@ -43,7 +42,7 @@ export async function authenticateUser(request: Request) {
     
     if (!user) {
       console.error('No user found for token');
-      throw new Error('Invalid authentication token');
+      throw new Error('User must be signed in to create podcasts');
     }
     
     console.log('User authenticated successfully:', user.id);

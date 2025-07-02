@@ -65,28 +65,24 @@ enable_confirmations = true
 enabled = true
 uri = "https://pudwgzutzoidxbvozhnk.supabase.co/functions/v1/send-confirmation-email"
 
-[functions.send-confirmation-email]
-verify_jwt = false
-
-[functions.cleanup-users]
-verify_jwt = false
-
+# CORE PODUMÉ FUNCTIONS
 [functions.generate-podcast]
 verify_jwt = true
 
-[functions.generate-rss]
+[functions.zapier-completion]
 verify_jwt = false
+
+[functions.linkedin-profile]
+verify_jwt = true
 
 [functions.secure-waitlist]
 verify_jwt = false
 
-[functions.secure-zootools]
+# AUTH & EMAIL FUNCTIONS
+[functions.send-confirmation-email]
 verify_jwt = false
 
-[functions.send-welcome-email]
-verify_jwt = false
-
-[functions.zootools-contact]
+[functions.cleanup-users]
 verify_jwt = false
 
 [edge-runtime]
