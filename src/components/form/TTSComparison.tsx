@@ -49,12 +49,14 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
                 <SelectItem value="deepgram-aura-orpheus-en">Orpheus (Deepgram) - Smooth male</SelectItem>
                 <SelectItem value="deepgram-aura-luna-en">Luna (Deepgram) - Warm female</SelectItem>
                 <SelectItem value="deepgram-aura-stella-en">Stella (Deepgram) - Professional female</SelectItem>
+                {/* Eden AI voices temporarily disabled - deployment issues
                 <SelectItem value="edenai-en-US-AriaNeural">Aria Neural (Eden AI) - Microsoft Azure female voice</SelectItem>
                 <SelectItem value="edenai-en-US-GuyNeural">Guy Neural (Eden AI) - Microsoft Azure male voice</SelectItem>
                 <SelectItem value="edenai-en-US-JennyNeural">Jenny Neural (Eden AI) - Microsoft Azure conversational female</SelectItem>
                 <SelectItem value="edenai-en-US-DavisNeural">Davis Neural (Eden AI) - Microsoft Azure confident male</SelectItem>
                 <SelectItem value="edenai-en-US-AmberNeural">Amber Neural (Eden AI) - Microsoft Azure warm female</SelectItem>
                 <SelectItem value="edenai-en-US-AnaNeural">Ana Neural (Eden AI) - Microsoft Azure cheerful female</SelectItem>
+                */}
 {/* Golpo AI voices temporarily disabled - API not responding
                 <SelectItem value="golpoai-podcast-female">Podcast Female (Golpo AI) - Professional podcast female voice</SelectItem>
                 <SelectItem value="golpoai-podcast-male">Podcast Male (Golpo AI) - Professional podcast male voice</SelectItem>
