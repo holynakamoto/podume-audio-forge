@@ -13,6 +13,7 @@ import Pricing from "./pages/Pricing";
 import PodcastPage from "./pages/PodcastPage";
 import ZooToolsDemo from "./pages/ZooToolsDemo";
 import OurPodcasts from "./pages/OurPodcasts";
+import LiquidGlassDemo from "./pages/LiquidGlassDemo";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/zootools" element={<ZooToolsDemo />} />
           <Route path="/our-podcasts" element={<OurPodcasts />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/liquid-glass" element={<LiquidGlassDemo />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
