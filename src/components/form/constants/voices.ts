@@ -15,8 +15,8 @@ export const voiceOptions: VoiceOption[] = [
   { provider: 'edenai', voiceId: 'en-US-AmberNeural', name: 'Amber Neural (Eden AI)', description: 'Microsoft Azure warm female' },
   { provider: 'edenai', voiceId: 'en-US-AnaNeural', name: 'Ana Neural (Eden AI)', description: 'Microsoft Azure cheerful female' },
   
-  // Golpo AI voices (Podcast-style conversational)
-  { provider: 'golpoai', voiceId: 'podcast-female', name: 'Podcast Female (Golpo AI)', description: 'Professional podcast female voice' },
-  { provider: 'golpoai', voiceId: 'podcast-male', name: 'Podcast Male (Golpo AI)', description: 'Professional podcast male voice' },
-  { provider: 'golpoai', voiceId: 'conversational', name: 'Conversational (Golpo AI)', description: 'Natural conversational style' },
+  // Golpo AI voices (Temporarily disabled - API not responding)
+  // { provider: 'golpoai', voiceId: 'podcast-female', name: 'Podcast Female (Golpo AI)', description: 'Professional podcast female voice' },
+  // { provider: 'golpoai', voiceId: 'podcast-male', name: 'Podcast Male (Golpo AI)', description: 'Professional podcast male voice' },
+  // { provider: 'golpoai', voiceId: 'conversational', name: 'Conversational (Golpo AI)', description: 'Natural conversational style' },
 ];

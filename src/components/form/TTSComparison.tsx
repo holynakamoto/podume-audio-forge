@@ -55,9 +55,11 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
                 <SelectItem value="edenai-en-US-DavisNeural">Davis Neural (Eden AI) - Microsoft Azure confident male</SelectItem>
                 <SelectItem value="edenai-en-US-AmberNeural">Amber Neural (Eden AI) - Microsoft Azure warm female</SelectItem>
                 <SelectItem value="edenai-en-US-AnaNeural">Ana Neural (Eden AI) - Microsoft Azure cheerful female</SelectItem>
+{/* Golpo AI voices temporarily disabled - API not responding
                 <SelectItem value="golpoai-podcast-female">Podcast Female (Golpo AI) - Professional podcast female voice</SelectItem>
                 <SelectItem value="golpoai-podcast-male">Podcast Male (Golpo AI) - Professional podcast male voice</SelectItem>
                 <SelectItem value="golpoai-conversational">Conversational (Golpo AI) - Natural conversational style</SelectItem>
+                */}
               </SelectContent>
             </Select>
           </div>
