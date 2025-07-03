@@ -21,6 +21,7 @@ export type Database = {
           status: string
           transcript: string | null
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           audio_url?: string | null
@@ -33,6 +34,7 @@ export type Database = {
           status?: string
           transcript?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           audio_url?: string | null
@@ -45,6 +47,7 @@ export type Database = {
           status?: string
           transcript?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -131,29 +134,41 @@ export type Database = {
       }
       security_audit_log: {
         Row: {
+          action_details: Json | null
           created_at: string | null
           event_data: Json | null
           event_type: string
+          geo_location: Json | null
           id: string
           ip_address: unknown | null
+          risk_level: string | null
+          session_id: string | null
           user_agent: string | null
           user_id: string | null
         }
         Insert: {
+          action_details?: Json | null
           created_at?: string | null
           event_data?: Json | null
           event_type: string
+          geo_location?: Json | null
           id?: string
           ip_address?: unknown | null
+          risk_level?: string | null
+          session_id?: string | null
           user_agent?: string | null
           user_id?: string | null
         }
         Update: {
+          action_details?: Json | null
           created_at?: string | null
           event_data?: Json | null
           event_type?: string
+          geo_location?: Json | null
           id?: string
           ip_address?: unknown | null
+          risk_level?: string | null
+          session_id?: string | null
           user_agent?: string | null
           user_id?: string | null
         }
@@ -285,6 +300,17 @@ export type Database = {
       is_podcast_owner: {
         Args: { podcast_id: string; user_id: string }
         Returns: boolean
+      }
+      log_security_event: {
+        Args: {
+          p_event_type: string
+          p_user_id?: string
+          p_event_data?: Json
+          p_risk_level?: string
+          p_ip_address?: unknown
+          p_user_agent?: string
+        }
+        Returns: string
       }
     }
     Enums: {
