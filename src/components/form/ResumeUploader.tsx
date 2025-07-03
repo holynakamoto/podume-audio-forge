@@ -6,7 +6,7 @@ import { UploadModeSelector } from './UploadModeSelector';
 import { PDFUploadZone } from './PDFUploadZone';
 import { TextPasteArea } from './TextPasteArea';
 import { UrlScraper } from './UrlScraper';
-import { ZapierNotebookLM } from './ZapierNotebookLM';
+import { GoogleDriveNotebookLM } from './GoogleDriveNotebookLM';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Info, CheckCircle, Globe } from 'lucide-react';
 
@@ -202,7 +202,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
       )}
 
       {uploadMode === 'notebooklm' && (
-        <ZapierNotebookLM 
+        <GoogleDriveNotebookLM 
           onAudioGenerated={onResumeContentChange}
         />
       )}
