@@ -3,7 +3,6 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { LinkedInFormValues } from '../schemas/linkedInFormSchema';
-import { generatePodcastBranding } from '@/utils/brandingService';
 
 export const usePodcastGeneration = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,44 +17,10 @@ export const usePodcastGeneration = () => {
     toast.info('Creating podcast from LinkedIn profile...');
 
     try {
-      // Generate context-aware branding image first
-      console.log('=== Generating Podcast Branding ===');
-      toast.info('Creating your personalized podcast branding...');
+      // Generate the transcript directly
+      console.log('=== Generating Mock Transcript ===');
       
       const name = resumeContent?.match(/# (.+)/)?.[1] || 'LinkedIn Professional';
-      
-      // Extract key themes from resume for context-aware branding
-      const profession = resumeContent?.match(/(?:title|position|role):\s*([^\n]+)/i)?.[1] || 
-                        resumeContent?.match(/(?:developer|engineer|manager|director|analyst|designer|consultant|specialist)/i)?.[0] || 
-                        'Professional';
-      
-      const industry = resumeContent?.match(/(?:industry|sector|field):\s*([^\n]+)/i)?.[1] ||
-                      resumeContent?.match(/(?:technology|finance|healthcare|education|marketing|sales|design|consulting)/i)?.[0] ||
-                      'Business';
-      
-      // Generate context-aware branding prompt
-      const brandingPrompt = `Create a premium podcast branding image with a luxurious purple and gold color scheme. Feature a sleek modern headset with "PODUME" elegantly written on the side in gold lettering, and a professional studio microphone. The design should appeal to a ${profession} in the ${industry} industry. Include subtle elements that reflect ${profession} work - perhaps geometric patterns, clean lines, or professional icons. The overall aesthetic should be sophisticated, modern, and broadcast-quality. Purple and gold gradient background with soft lighting effects. Ultra high resolution, professional branding design.`;
-      
-      console.log('Branding prompt:', brandingPrompt);
-      
-      // Generate the branding image
-      let brandingImageUrl = '';
-      try {
-        brandingImageUrl = await generatePodcastBranding({
-          name,
-          profession,
-          industry,
-          resumeContent: resumeContent || ''
-        });
-        console.log('Generated branding image URL:', brandingImageUrl);
-        toast.success('Personalized branding created!');
-      } catch (imageError) {
-        console.warn('Image generation failed, continuing without branding:', imageError);
-        toast.warning('Continuing without custom branding');
-      }
-      
-      // Generate the transcript
-      console.log('=== Generating Mock Transcript ===');
       
       const mockTranscript = `
 Hey, welcome back to Career Deep Dive! I'm your host Sarah, and today we're exploring the fascinating professional journey of ${name}. Let's dive right in!
