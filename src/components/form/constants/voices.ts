@@ -7,13 +7,11 @@ export const voiceOptions: VoiceOption[] = [
   { provider: 'deepgram', voiceId: 'aura-luna-en', name: 'Luna (Deepgram)', description: 'Warm female voice' },
   { provider: 'deepgram', voiceId: 'aura-stella-en', name: 'Stella (Deepgram)', description: 'Professional female voice' },
   
-  // Hugging Face TTS models
-  { provider: 'huggingface', voiceId: 'microsoft/speecht5_tts', name: 'SpeechT5 (Microsoft)', description: 'High-quality neural TTS' },
-  { provider: 'huggingface', voiceId: 'facebook/mms-tts-eng', name: 'MMS English (Meta)', description: 'Multilingual speech synthesis' },
-  { provider: 'huggingface', voiceId: 'suno/bark', name: 'Bark (Suno)', description: 'Expressive multilingual TTS' },
-  { provider: 'huggingface', voiceId: 'espnet/kan-bayashi_ljspeech_vits', name: 'VITS LJSpeech', description: 'Fast parallel TTS' },
-  { provider: 'huggingface', voiceId: 'facebook/fastspeech2-en-ljspeech', name: 'FastSpeech2 (Meta)', description: 'Fast and stable TTS' },
-  { provider: 'huggingface', voiceId: 'microsoft/DiT-TTS_LibriTTS_R', name: 'DiT-TTS (Microsoft)', description: 'Diffusion-based TTS' },
-  { provider: 'huggingface', voiceId: 'parler-tts/parler_tts_mini_v0.1', name: 'Parler TTS Mini', description: 'Controllable TTS model' },
-  { provider: 'huggingface', voiceId: 'myshell-ai/MeloTTS-English', name: 'MeloTTS English', description: 'High-quality multilingual TTS' },
+  // Eden AI TTS models (Multiple providers)
+  { provider: 'edenai', voiceId: 'en-US-AriaNeural', name: 'Aria Neural (Eden AI)', description: 'Microsoft Azure female voice' },
+  { provider: 'edenai', voiceId: 'en-US-GuyNeural', name: 'Guy Neural (Eden AI)', description: 'Microsoft Azure male voice' },
+  { provider: 'edenai', voiceId: 'en-US-JennyNeural', name: 'Jenny Neural (Eden AI)', description: 'Microsoft Azure conversational female' },
+  { provider: 'edenai', voiceId: 'en-US-DavisNeural', name: 'Davis Neural (Eden AI)', description: 'Microsoft Azure confident male' },
+  { provider: 'edenai', voiceId: 'en-US-AmberNeural', name: 'Amber Neural (Eden AI)', description: 'Microsoft Azure warm female' },
+  { provider: 'edenai', voiceId: 'en-US-AnaNeural', name: 'Ana Neural (Eden AI)', description: 'Microsoft Azure cheerful female' },
 ];

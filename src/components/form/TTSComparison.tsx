@@ -49,14 +49,12 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
                 <SelectItem value="deepgram-aura-orpheus-en">Orpheus (Deepgram) - Smooth male</SelectItem>
                 <SelectItem value="deepgram-aura-luna-en">Luna (Deepgram) - Warm female</SelectItem>
                 <SelectItem value="deepgram-aura-stella-en">Stella (Deepgram) - Professional female</SelectItem>
-                <SelectItem value="huggingface-microsoft/speecht5_tts">SpeechT5 (Microsoft) - High-quality neural TTS</SelectItem>
-                <SelectItem value="huggingface-facebook/mms-tts-eng">MMS English (Meta) - Multilingual speech synthesis</SelectItem>
-                <SelectItem value="huggingface-suno/bark">Bark (Suno) - Expressive multilingual TTS</SelectItem>
-                <SelectItem value="huggingface-espnet/kan-bayashi_ljspeech_vits">VITS LJSpeech - Fast parallel TTS</SelectItem>
-                <SelectItem value="huggingface-facebook/fastspeech2-en-ljspeech">FastSpeech2 (Meta) - Fast and stable TTS</SelectItem>
-                <SelectItem value="huggingface-microsoft/DiT-TTS_LibriTTS_R">DiT-TTS (Microsoft) - Diffusion-based TTS</SelectItem>
-                <SelectItem value="huggingface-parler-tts/parler_tts_mini_v0.1">Parler TTS Mini - Controllable TTS model</SelectItem>
-                <SelectItem value="huggingface-myshell-ai/MeloTTS-English">MeloTTS English - High-quality multilingual TTS</SelectItem>
+                <SelectItem value="edenai-en-US-AriaNeural">Aria Neural (Eden AI) - Microsoft Azure female voice</SelectItem>
+                <SelectItem value="edenai-en-US-GuyNeural">Guy Neural (Eden AI) - Microsoft Azure male voice</SelectItem>
+                <SelectItem value="edenai-en-US-JennyNeural">Jenny Neural (Eden AI) - Microsoft Azure conversational female</SelectItem>
+                <SelectItem value="edenai-en-US-DavisNeural">Davis Neural (Eden AI) - Microsoft Azure confident male</SelectItem>
+                <SelectItem value="edenai-en-US-AmberNeural">Amber Neural (Eden AI) - Microsoft Azure warm female</SelectItem>
+                <SelectItem value="edenai-en-US-AnaNeural">Ana Neural (Eden AI) - Microsoft Azure cheerful female</SelectItem>
               </SelectContent>
             </Select>
           </div>
