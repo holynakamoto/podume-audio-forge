@@ -43,11 +43,11 @@ export const PodcastDistributor: React.FC<PodcastDistributorProps> = ({
       color: 'bg-green-100 hover:bg-green-200'
     },
     {
-      name: 'Google Podcasts',
+      name: 'Anchor',
       icon: <Headphones className="w-5 h-5" />,
-      description: 'Submit to Google Podcast Manager',
-      url: 'https://podcastsmanager.google.com/',
-      color: 'bg-blue-100 hover:bg-blue-200'
+      description: 'Upload to Anchor for auto-distribution',
+      url: 'https://anchor.fm/',
+      color: 'bg-orange-100 hover:bg-orange-200'
     },
     {
       name: 'RSS Feed',

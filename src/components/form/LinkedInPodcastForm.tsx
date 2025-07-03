@@ -12,7 +12,7 @@ import { LinkedInDataDisplay } from './LinkedInDataDisplay';
 import { TranscriptDisplay } from './TranscriptDisplay';
 import { LinkedInFormStatus } from './LinkedInFormStatus';
 import { TTSComparison } from './TTSComparison';
-import { PodcastDistributor } from './PodcastDistributor';
+import { OneClickDistribution } from '../OneClickDistribution';
 
 export const LinkedInPodcastForm: React.FC = () => {
   const [linkedInContent, setLinkedInContent] = useState('');
@@ -90,10 +90,10 @@ export const LinkedInPodcastForm: React.FC = () => {
           )}
           
           {generatedAudioUrl && generatedTranscript && (
-            <PodcastDistributor 
+            <OneClickDistribution 
+              podcastId="temp-linkedin-podcast"
               audioUrl={generatedAudioUrl}
-              transcript={generatedTranscript}
-              title="My LinkedIn Podumé"
+              podcastTitle="My LinkedIn Podumé"
             />
           )}
         </CardContent>

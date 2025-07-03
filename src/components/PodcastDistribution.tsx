@@ -26,7 +26,6 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
   const platforms = [
     { name: 'Spotify', icon: Music, color: 'bg-green-500', url: 'https://podcasters.spotify.com/' },
     { name: 'Apple Podcasts', icon: Podcast, color: 'bg-purple-500', url: 'https://podcastsconnect.apple.com/' },
-    { name: 'Google Podcasts', icon: Radio, color: 'bg-blue-500', url: 'https://podcastmanagers.google.com/' },
     { name: 'Anchor', icon: Headphones, color: 'bg-orange-500', url: 'https://anchor.fm/' },
   ];
 
@@ -43,7 +42,7 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
     toast.success('RSS feed URL copied to clipboard!');
   };
 
-  const handleDistribute = async () => {
+  const handleAutoDistribute = async () => {
     if (!audioUrl) {
       toast.error('Audio must be generated before distribution');
       return;
@@ -52,12 +51,28 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
     setIsDistributing(true);
     
     try {
-      // Simulate the distribution process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const { data, error } = await supabase.functions.invoke('auto-distribute', {
+        body: {
+          podcastId,
+          platforms: platforms.map(p => p.name.toLowerCase()),
+          userEmail: '',
+          authorName: 'AI Podcast Generator'
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('🚀 One-click distribution prepared! Your RSS feed is ready and platform links are opened.');
       
-      toast.success('Distribution initiated! Your RSS feed is ready for platform submission.');
+      // Open platform submission pages
+      platforms.forEach(platform => {
+        setTimeout(() => {
+          window.open(platform.url, '_blank');
+        }, 500);
+      });
       
     } catch (error) {
+      console.error('Distribution error:', error);
       toast.error('Failed to prepare distribution. Please try again.');
     } finally {
       setIsDistributing(false);
@@ -141,31 +156,37 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
           </div>
         </div>
 
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <h4 className="font-medium text-blue-900 mb-2">How to submit your podcast:</h4>
-          <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-            <li>Copy your RSS feed URL above</li>
-            <li>Click "Submit" next to each platform</li>
-            <li>Paste your RSS feed URL in their submission form</li>
-            <li>Follow their review process (usually 1-7 days)</li>
-            <li>Your podcast will be live once approved!</li>
-          </ol>
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200">
+          <h4 className="font-bold text-blue-900 mb-3 text-lg">🚀 One-Click Distribution</h4>
+          <p className="text-blue-800 text-sm mb-4">
+            Your RSS feed will be automatically generated and platform submission pages will open. 
+            Simply paste your RSS feed URL on each platform.
+          </p>
+          <Button 
+            onClick={handleAutoDistribute} 
+            disabled={isDistributing || !audioUrl}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 text-lg"
+            size="lg"
+          >
+            {isDistributing ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Preparing Distribution...
+              </>
+            ) : (
+              '🚀 Distribute to All Platforms'
+            )}
+          </Button>
         </div>
 
-        <Button 
-          onClick={handleDistribute} 
-          disabled={isDistributing || !audioUrl}
-          className="w-full"
-        >
-          {isDistributing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Preparing Distribution...
-            </>
-          ) : (
-            'Prepare for Distribution'
-          )}
-        </Button>
+        <Separator />
+
+        <div className="space-y-4">
+          <h3 className="font-medium">Manual Platform Submission</h3>
+          <p className="text-sm text-muted-foreground">
+            Or submit to platforms individually using your RSS feed URL above.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
