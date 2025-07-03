@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audio_files: {
+        Row: {
+          created_at: string
+          file_name: string
+          google_drive_file_id: string | null
+          id: string
+          is_published: boolean
+          metadata: Json | null
+          source_pdf: string | null
+          supabase_url: string | null
+          updated_at: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          google_drive_file_id?: string | null
+          id?: string
+          is_published?: boolean
+          metadata?: Json | null
+          source_pdf?: string | null
+          supabase_url?: string | null
+          updated_at?: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          google_drive_file_id?: string | null
+          id?: string
+          is_published?: boolean
+          metadata?: Json | null
+          source_pdf?: string | null
+          supabase_url?: string | null
+          updated_at?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       podcast_jobs: {
         Row: {
           audio_url: string | null
