@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Upload, Type, Globe } from 'lucide-react';
 
 interface UploadModeSelectorProps {
-  uploadMode: 'upload' | 'paste' | 'url';
-  onModeChange: (mode: 'upload' | 'paste' | 'url') => void;
+  uploadMode: 'upload' | 'paste' | 'url' | 'notebooklm';
+  onModeChange: (mode: 'upload' | 'paste' | 'url' | 'notebooklm') => void;
 }
 
 export const UploadModeSelector: React.FC<UploadModeSelectorProps> = ({
@@ -40,6 +40,14 @@ export const UploadModeSelector: React.FC<UploadModeSelectorProps> = ({
       >
         <Type className="w-4 h-4 mr-2" />
         Paste Text
+      </Button>
+      <Button
+        type="button"
+        variant={uploadMode === 'notebooklm' ? 'default' : 'outline'}
+        onClick={() => onModeChange('notebooklm')}
+        className="flex-1"
+      >
+        🤖 NotebookLM
       </Button>
     </div>
   );

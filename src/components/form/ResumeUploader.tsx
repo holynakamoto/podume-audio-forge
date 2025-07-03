@@ -6,6 +6,7 @@ import { UploadModeSelector } from './UploadModeSelector';
 import { PDFUploadZone } from './PDFUploadZone';
 import { TextPasteArea } from './TextPasteArea';
 import { UrlScraper } from './UrlScraper';
+import { NotebookLMIntegration } from './NotebookLMIntegration';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Info, CheckCircle, Globe } from 'lucide-react';
 
@@ -19,7 +20,7 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
   resumeContent
 }) => {
   const [isExtracting, setIsExtracting] = useState(false);
-  const [uploadMode, setUploadMode] = useState<'upload' | 'paste' | 'url'>('upload');
+  const [uploadMode, setUploadMode] = useState<'upload' | 'paste' | 'url' | 'notebooklm'>('upload');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showPasteRecommendation, setShowPasteRecommendation] = useState(false);
   const [extractionResult, setExtractionResult] = useState<PDFExtractionResult | null>(null);
@@ -136,11 +137,11 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
         uploadMode={uploadMode} 
         onModeChange={(mode) => {
           setUploadMode(mode);
-          if (mode === 'paste' || mode === 'url') {
+          if (mode === 'paste' || mode === 'url' || mode === 'notebooklm') {
             setShowPasteRecommendation(false);
             setExtractionResult(null);
           }
-        }} 
+        }}
       />
 
       {showPasteRecommendation && uploadMode === 'upload' && (
@@ -197,6 +198,12 @@ export const ResumeUploader: React.FC<ResumeUploaderProps> = ({
         <TextPasteArea 
           resumeContent={resumeContent}
           onResumeContentChange={onResumeContentChange}
+        />
+      )}
+
+      {uploadMode === 'notebooklm' && (
+        <NotebookLMIntegration 
+          onAudioGenerated={onResumeContentChange}
         />
       )}
 
