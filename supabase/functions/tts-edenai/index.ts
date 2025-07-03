@@ -11,7 +11,10 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice = 'en-US-AriaNeural' } = await req.json();
+    const requestBody = await req.json();
+    console.log('Eden AI TTS request body:', requestBody);
+    
+    const { text, voice = 'en-US-AriaNeural' } = requestBody;
 
     if (!text) {
       throw new Error('Text is required');
