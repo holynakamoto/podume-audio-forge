@@ -2,16 +2,17 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Play, Square, Loader2, Share, Download } from 'lucide-react';
+import { Play, Square, Loader2, Download, Twitter, Linkedin, Facebook, Copy } from 'lucide-react';
 import { voiceOptions } from './constants/voices';
 import { useTTSGeneration } from './hooks/useTTSGeneration';
 import { useSocialSharing } from './hooks/useSocialSharing';
 
 interface TTSComparisonProps {
   transcript: string;
+  onAudioGenerated?: (audioUrl: string) => void;
 }
 
-export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
+export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript, onAudioGenerated }) => {
   const {
     selectedVoice,
     setSelectedVoice,
@@ -20,6 +21,13 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
     playAudio,
     downloadAudio
   } = useTTSGeneration();
+
+  // Notify parent when audio is generated
+  React.useEffect(() => {
+    if (audioState.audio && onAudioGenerated) {
+      onAudioGenerated(audioState.audio);
+    }
+  }, [audioState.audio, onAudioGenerated]);
   
   const { shareToSocial } = useSocialSharing();
 
@@ -114,34 +122,36 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript }) => {
                     onClick={() => shareToSocial('twitter', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
-                    className="bg-blue-50 hover:bg-blue-100"
+                    className="bg-blue-50 hover:bg-blue-100 text-blue-700"
                   >
-                    <Share className="w-4 h-4 mr-2" />
+                    <Twitter className="w-4 h-4 mr-2" />
                     Twitter
                   </Button>
                   <Button 
                     onClick={() => shareToSocial('linkedin', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
-                    className="bg-blue-50 hover:bg-blue-100"
+                    className="bg-blue-50 hover:bg-blue-100 text-blue-700"
                   >
-                    <Share className="w-4 h-4 mr-2" />
+                    <Linkedin className="w-4 h-4 mr-2" />
                     LinkedIn
                   </Button>
                   <Button 
                     onClick={() => shareToSocial('facebook', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
-                    className="bg-blue-50 hover:bg-blue-100"
+                    className="bg-blue-50 hover:bg-blue-100 text-blue-700"
                   >
-                    <Share className="w-4 h-4 mr-2" />
+                    <Facebook className="w-4 h-4 mr-2" />
                     Facebook
                   </Button>
                   <Button 
                     onClick={() => shareToSocial('copy', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
+                    className="text-muted-foreground"
                   >
+                    <Copy className="w-4 h-4 mr-2" />
                     Copy Link
                   </Button>
                 </div>

@@ -196,11 +196,13 @@ const PodcastPage = () => {
           </CardContent>
         </Card>
 
-        <PodcastDistribution 
-          podcastId={podcast.id}
-          podcastTitle={sanitizedTitle}
-          audioUrl={podcast.audio_url}
-        />
+        {podcast.audio_url && (
+          <PodcastDistribution 
+            podcastId={podcast.id}
+            podcastTitle={sanitizedTitle}
+            audioUrl={podcast.audio_url}
+          />
+        )}
         
         <div className="text-center mt-6">
           <Link to="/create">

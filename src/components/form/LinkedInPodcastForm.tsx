@@ -83,7 +83,10 @@ export const LinkedInPodcastForm: React.FC = () => {
           />
           
           {generatedTranscript && (
-            <TTSComparison transcript={generatedTranscript} />
+            <TTSComparison 
+              transcript={generatedTranscript} 
+              onAudioGenerated={setGeneratedAudioUrl}
+            />
           )}
           
           {generatedAudioUrl && generatedTranscript && (
