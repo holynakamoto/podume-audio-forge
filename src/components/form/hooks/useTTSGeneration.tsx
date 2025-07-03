@@ -13,49 +13,34 @@ export const useTTSGeneration = () => {
   const [audio] = useState(new Audio());
 
   const generateTTS = async (transcript: string) => {
-    if (!selectedVoice) {
-      toast.error('Please select a voice first');
-      return;
-    }
-    
     setAudioState(prev => ({ ...prev, isLoading: true }));
     
     try {
-      console.log(`Generating ${selectedVoice.provider} TTS with voice ${selectedVoice.voiceId}...`);
-      
-      // Use first 1000 characters for testing
-      const testText = transcript.substring(0, 1000) + "...";
-      
-      const requestBody = selectedVoice.provider === 'elevenlabs' 
-        ? { text: testText, voice_id: selectedVoice.voiceId }
-        : selectedVoice.provider === 'deepgram'
-        ? { text: testText, model: selectedVoice.voiceId }
-        : selectedVoice.provider === 'cartesia'
-        ? { text: testText, voice: selectedVoice.voiceId }
-        : selectedVoice.provider === 'huggingface'
-        ? { text: testText, model: selectedVoice.voiceId }
-        : selectedVoice.provider === 'edenai'
-        ? { text: testText, voice: selectedVoice.voiceId }
-        : selectedVoice.provider === 'golpoai'
-        ? { text: testText, voice: selectedVoice.voiceId }
-        : { text: testText, voice: selectedVoice.voiceId }; // PlayHT
-      
-      const { data, error } = await supabase.functions.invoke(`tts-${selectedVoice.provider}`, {
-        body: requestBody
+      console.log('Generating dual-voice TTS with ElevenLabs...');
+      toast.info('Creating exciting two-host podcast audio...');
+
+      const { data, error } = await supabase.functions.invoke('generate-dual-voice-podcast', {
+        body: { transcript }
       });
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'TTS generation failed');
+      if (error) {
+        console.error('Dual-voice TTS error:', error);
+        throw new Error(error.message || 'Failed to generate dual-voice audio');
+      }
 
-      const audioUrl = `data:audio/${data.format};base64,${data.audio}`;
+      if (!data?.audioContent) {
+        throw new Error('No audio content returned from dual-voice service');
+      }
+
+      const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
       
       setAudioState(prev => ({ ...prev, audio: audioUrl, isLoading: false }));
-      toast.success(`${selectedVoice.name} TTS generated successfully!`);
+      toast.success(`Dual-voice podcast with ${data.segments} segments generated successfully!`);
       
     } catch (error: any) {
-      console.error(`${selectedVoice.provider} TTS error:`, error);
+      console.error('Dual-voice TTS error:', error);
       setAudioState(prev => ({ ...prev, isLoading: false }));
-      toast.error(`${selectedVoice.name} TTS failed: ${error.message}`);
+      toast.error(`Dual-voice TTS failed: ${error.message}`);
     }
   };
 

@@ -66,25 +66,25 @@ export const OneClickDistribution: React.FC<OneClickDistributionProps> = ({
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Individual Distribution Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Individual Distribution Buttons - Mobile optimized */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* RSS Generation Button */}
           <div className="text-center">
             <Button
               onClick={generateRSSFeed}
               disabled={isGeneratingRSS || !audioUrl}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 text-lg mb-2"
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 sm:py-4 text-base sm:text-lg mb-2"
               size="lg"
             >
               {isGeneratingRSS ? (
                 <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Generating RSS...
+                  <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                  <span className="text-sm sm:text-base">Generating...</span>
                 </>
               ) : (
                 <>
-                  <Rss className="mr-2 h-5 w-5" />
-                  Generate RSS Feed
+                  <Rss className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="text-sm sm:text-base">Generate RSS</span>
                 </>
               )}
             </Button>
@@ -96,11 +96,11 @@ export const OneClickDistribution: React.FC<OneClickDistributionProps> = ({
             <Button
               onClick={openApplePodcasts}
               disabled={!rssUrl}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 text-lg mb-2"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 sm:py-4 text-base sm:text-lg mb-2"
               size="lg"
             >
-              <Podcast className="mr-2 h-5 w-5" />
-              Submit to Apple
+              <Podcast className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-sm sm:text-base">Submit to Apple</span>
             </Button>
             <p className="text-xs text-muted-foreground">Step 2: Submit to Apple Podcasts</p>
           </div>
@@ -110,11 +110,11 @@ export const OneClickDistribution: React.FC<OneClickDistributionProps> = ({
             <Button
               onClick={openSpotifyCreators}
               disabled={!rssUrl}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 text-lg mb-2"
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 sm:py-4 text-base sm:text-lg mb-2"
               size="lg"
             >
-              <Music className="mr-2 h-5 w-5" />
-              Submit to Spotify
+              <Music className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-sm sm:text-base">Submit to Spotify</span>
             </Button>
             <p className="text-xs text-muted-foreground">Step 3: Submit to Spotify for Creators</p>
           </div>
