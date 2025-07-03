@@ -68,8 +68,11 @@ export const LinkedInPodcastForm: React.FC = () => {
         </p>
       </div>
 
-      <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-        <CardContent className="p-6 sm:p-8">
+      <Card className="shadow-2xl border-0 bg-white/40 backdrop-blur-xl rounded-2xl overflow-hidden relative">
+        {/* Glass shine effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-white/10 rounded-2xl" />
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+        <CardContent className="p-6 sm:p-8 relative z-10">
           <LinkedInOIDCSection 
             isProcessingProfile={isProcessingProfile}
             linkedInContent={linkedInContent}

@@ -36,18 +36,11 @@ export const PodcastDistributor: React.FC<PodcastDistributorProps> = ({
       color: 'bg-gray-100 hover:bg-gray-200'
     },
     {
-      name: 'Spotify',
+      name: 'Spotify for Creators',
       icon: <Music className="w-5 h-5" />,
-      description: 'Submit via Spotify for Podcasters',
+      description: 'Submit via Spotify for Creators',
       url: 'https://podcasters.spotify.com/',
       color: 'bg-green-100 hover:bg-green-200'
-    },
-    {
-      name: 'Anchor',
-      icon: <Headphones className="w-5 h-5" />,
-      description: 'Upload to Anchor for auto-distribution',
-      url: 'https://anchor.fm/',
-      color: 'bg-orange-100 hover:bg-orange-200'
     },
     {
       name: 'RSS Feed',

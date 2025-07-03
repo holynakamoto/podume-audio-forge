@@ -24,9 +24,8 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
   const [generatedRssUrl, setGeneratedRssUrl] = useState('');
 
   const platforms = [
-    { name: 'Spotify', icon: Music, color: 'bg-green-500', url: 'https://podcasters.spotify.com/' },
+    { name: 'Spotify for Creators', icon: Music, color: 'bg-green-500', url: 'https://podcasters.spotify.com/' },
     { name: 'Apple Podcasts', icon: Podcast, color: 'bg-purple-500', url: 'https://podcastsconnect.apple.com/' },
-    { name: 'Anchor', icon: Headphones, color: 'bg-orange-500', url: 'https://anchor.fm/' },
   ];
 
   useEffect(() => {

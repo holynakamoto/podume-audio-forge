@@ -44,19 +44,14 @@ export const OneClickDistribution: React.FC<OneClickDistributionProps> = ({
       // Platform URLs for direct submission
       const platforms = [
         {
-          name: 'Spotify for Podcasters',
+          name: 'Spotify for Creators',
           url: 'https://podcasters.spotify.com/',
-          description: 'Submit to Spotify'
+          description: 'Submit to Spotify for Creators'
         },
         {
           name: 'Apple Podcasts',
           url: 'https://podcastsconnect.apple.com/',
           description: 'Submit to Apple Podcasts'
-        },
-        {
-          name: 'Anchor',
-          url: 'https://anchor.fm/',
-          description: 'Upload to Anchor for auto-distribution'
         }
       ];
 

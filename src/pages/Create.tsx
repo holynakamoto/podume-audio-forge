@@ -11,24 +11,59 @@ const Create = () => {
     
     try {
         return (
-            <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
-                <div className="absolute top-8 left-8">
-                    <Link to="/">
-                        <Logo />
-                    </Link>
-                </div>
-                <div className="w-full max-w-4xl">
-                    <LinkedInPodcastForm />
+            <div className="min-h-screen relative overflow-hidden">
+                {/* Apple-style gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100" />
+                
+                {/* Floating glass orbs for depth */}
+                <div className="absolute top-20 left-20 w-96 h-96 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse" />
+                <div className="absolute bottom-20 right-20 w-80 h-80 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000" />
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-r from-indigo-400/10 to-cyan-400/10 rounded-full blur-3xl animate-pulse delay-500" />
+                
+                {/* Glass morphism overlay */}
+                <div className="absolute inset-0 backdrop-blur-sm bg-white/10" />
+                
+                {/* Content container with liquid glass effect */}
+                <div className="relative z-10 min-h-screen flex flex-col items-center justify-start p-4 sm:p-6 lg:p-8">
+                    {/* Logo with glass background */}
+                    <div className="absolute top-8 left-8 z-20">
+                        <div className="backdrop-blur-xl bg-white/20 rounded-2xl p-4 border border-white/30 shadow-2xl">
+                            <Link to="/">
+                                <Logo />
+                            </Link>
+                        </div>
+                    </div>
+                    
+                    {/* Main content with liquid glass card */}
+                    <div className="w-full max-w-4xl mt-24">
+                        <div className="backdrop-blur-2xl bg-white/30 rounded-3xl border border-white/40 shadow-2xl p-8 relative overflow-hidden">
+                            {/* Inner glow effect */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 rounded-3xl" />
+                            
+                            {/* Shimmer effect */}
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-pulse" />
+                            
+                            {/* Content */}
+                            <div className="relative z-10">
+                                <LinkedInPodcastForm />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Floating elements for visual interest */}
+                    <div className="absolute top-32 right-32 w-4 h-4 bg-white/40 rounded-full blur-sm animate-bounce" />
+                    <div className="absolute bottom-32 left-32 w-3 h-3 bg-blue-300/40 rounded-full blur-sm animate-bounce delay-300" />
+                    <div className="absolute top-1/3 right-1/4 w-2 h-2 bg-purple-300/40 rounded-full blur-sm animate-bounce delay-700" />
                 </div>
             </div>
         );
     } catch (error) {
         console.error('[Create] Error rendering page:', error);
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-white text-center">
-                    <h1 className="text-2xl mb-4">Something went wrong</h1>
-                    <p className="text-gray-300">Please check the console for errors.</p>
+            <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+                <div className="backdrop-blur-xl bg-white/20 rounded-2xl p-8 border border-white/30 shadow-2xl text-center">
+                    <h1 className="text-2xl mb-4 text-red-800">Something went wrong</h1>
+                    <p className="text-red-600">Please check the console for errors.</p>
                 </div>
             </div>
         );
