@@ -121,20 +121,20 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
           <h3 className="font-medium">Submit to Platforms</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {platforms.map((platform) => (
-              <div key={platform.name} className="flex items-center justify-between p-3 border rounded-lg">
+              <div key={platform.name} className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${platform.color}`}>
-                    <platform.icon className="h-4 w-4 text-white" />
+                  <div className={`p-3 rounded-full ${platform.color}`}>
+                    <platform.icon className="h-5 w-5 text-white" />
                   </div>
-                  <span className="font-medium">{platform.name}</span>
+                  <span className="font-semibold text-lg">{platform.name}</span>
                 </div>
                 <Button
-                  variant="outline"
-                  size="sm"
+                  size="lg"
                   onClick={() => window.open(platform.url, '_blank')}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 font-semibold"
                 >
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  Submit
+                  <ExternalLink className="h-5 w-5 mr-2" />
+                  Submit Now
                 </Button>
               </div>
             ))}

@@ -166,17 +166,24 @@ export const PodcastDistributor: React.FC<PodcastDistributorProps> = ({
             <h4 className="font-medium">Distribution Platforms</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {distributors.map((distributor) => (
-                <Card key={distributor.name} className={`cursor-pointer transition-colors ${distributor.color}`}>
-                  <CardContent className="p-4">
+                <Card key={distributor.name} className={`cursor-pointer transition-all hover:shadow-lg border-2 ${distributor.color} hover:scale-105`}>
+                  <CardContent className="p-6">
                     <div 
-                      className="flex items-center space-x-3"
+                      className="flex items-center justify-between"
                       onClick={() => handleDistribution(distributor)}
                     >
-                      {distributor.icon}
-                      <div className="flex-1">
-                        <h5 className="font-medium">{distributor.name}</h5>
-                        <p className="text-xs text-muted-foreground">{distributor.description}</p>
+                      <div className="flex items-center space-x-4">
+                        <div className="p-3 rounded-full bg-primary text-primary-foreground">
+                          {distributor.icon}
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="font-bold text-lg">{distributor.name}</h5>
+                          <p className="text-sm text-muted-foreground">{distributor.description}</p>
+                        </div>
                       </div>
+                      <Button size="sm" className="bg-primary hover:bg-primary/90">
+                        {distributor.name === 'RSS Feed' ? 'Download' : 'Submit'}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

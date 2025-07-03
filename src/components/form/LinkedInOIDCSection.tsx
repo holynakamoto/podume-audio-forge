@@ -13,9 +13,9 @@ export const LinkedInOIDCSection: React.FC<LinkedInOIDCSectionProps> = ({
 }) => {
   return (
     <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-      <h3 className="font-semibold text-blue-900 mb-2">Option 1: Connect with LinkedIn OIDC</h3>
+      <h3 className="font-semibold text-blue-900 mb-2">🚀 Quick Start with LinkedIn</h3>
       <p className="text-blue-700 text-sm mb-3">
-        Sign in with LinkedIn to automatically import your profile data
+        Connect your LinkedIn account to instantly create your podcast
       </p>
       {isProcessingProfile ? (
         <div className="w-full p-4 bg-blue-50 border border-blue-200 rounded-lg">

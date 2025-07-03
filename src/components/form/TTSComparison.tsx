@@ -122,7 +122,7 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript, onAudi
                     onClick={() => shareToSocial('twitter', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
-                    className="bg-blue-50 hover:bg-blue-100 text-blue-700"
+                    className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600 hover:border-blue-700"
                   >
                     <Twitter className="w-4 h-4 mr-2" />
                     Twitter
@@ -131,7 +131,7 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript, onAudi
                     onClick={() => shareToSocial('linkedin', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
-                    className="bg-blue-50 hover:bg-blue-100 text-blue-700"
+                    className="bg-blue-800 hover:bg-blue-900 text-white border-blue-800 hover:border-blue-900"
                   >
                     <Linkedin className="w-4 h-4 mr-2" />
                     LinkedIn
@@ -140,7 +140,7 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript, onAudi
                     onClick={() => shareToSocial('facebook', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
-                    className="bg-blue-50 hover:bg-blue-100 text-blue-700"
+                    className="bg-blue-700 hover:bg-blue-800 text-white border-blue-700 hover:border-blue-800"
                   >
                     <Facebook className="w-4 h-4 mr-2" />
                     Facebook
@@ -149,7 +149,7 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript, onAudi
                     onClick={() => shareToSocial('copy', !!audioState.audio)} 
                     variant="outline" 
                     size="sm"
-                    className="text-muted-foreground"
+                    className="bg-gray-600 hover:bg-gray-700 text-white border-gray-600 hover:border-gray-700"
                   >
                     <Copy className="w-4 h-4 mr-2" />
                     Copy Link
