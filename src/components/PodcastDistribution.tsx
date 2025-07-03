@@ -51,24 +51,20 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
     setIsDistributing(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('auto-distribute', {
-        body: {
-          podcastId,
-          platforms: platforms.map(p => p.name.toLowerCase()),
-          userEmail: '',
-          authorName: 'AI Podcast Generator'
-        }
-      });
-
-      if (error) throw error;
-
-      toast.success('🚀 One-click distribution prepared! Your RSS feed is ready and platform links are opened.');
+      // Generate RSS URL directly without edge function
+      const baseUrl = 'https://pudwgzutzoidxbvozhnk.supabase.co';
+      const rssUrl = `${baseUrl}/functions/v1/generate-rss?podcast_id=${podcastId}`;
+      
+      // Copy RSS URL to clipboard
+      await navigator.clipboard.writeText(rssUrl);
+      
+      toast.success('🚀 RSS feed URL copied to clipboard! Opening platform submission pages...');
       
       // Open platform submission pages
-      platforms.forEach(platform => {
+      platforms.forEach((platform, index) => {
         setTimeout(() => {
           window.open(platform.url, '_blank');
-        }, 500);
+        }, index * 800); // 800ms delay between each
       });
       
     } catch (error) {

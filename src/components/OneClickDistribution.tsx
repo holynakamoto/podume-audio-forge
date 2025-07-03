@@ -36,36 +36,47 @@ export const OneClickDistribution: React.FC<OneClickDistributionProps> = ({
     setIsDistributing(true);
     
     try {
-      // Call auto-distribute function
-      const { data, error } = await supabase.functions.invoke('auto-distribute', {
-        body: {
-          podcastId,
-          platforms: ['spotify', 'apple', 'anchor'],
-          userEmail: '',
-          authorName: 'AI Podcast Generator'
+      // Generate RSS URL directly
+      const baseUrl = 'https://pudwgzutzoidxbvozhnk.supabase.co';
+      const generatedRssUrl = `${baseUrl}/functions/v1/generate-rss?podcast_id=${podcastId}`;
+      setRssUrl(generatedRssUrl);
+
+      // Platform URLs for direct submission
+      const platforms = [
+        {
+          name: 'Spotify for Podcasters',
+          url: 'https://podcasters.spotify.com/',
+          description: 'Submit to Spotify'
+        },
+        {
+          name: 'Apple Podcasts',
+          url: 'https://podcastsconnect.apple.com/',
+          description: 'Submit to Apple Podcasts'
+        },
+        {
+          name: 'Anchor',
+          url: 'https://anchor.fm/',
+          description: 'Upload to Anchor for auto-distribution'
         }
-      });
+      ];
 
-      if (error) throw error;
-
-      setRssUrl(data.rssUrl);
-      setDistributionResults(data.distributions.map((dist: any) => ({
-        platform: dist.platform,
+      setDistributionResults(platforms.map(platform => ({
+        platform: platform.name,
         status: 'pending',
-        url: dist.submissionUrl,
-        message: dist.message
+        url: platform.url,
+        message: `RSS Feed: ${generatedRssUrl}\n\nPaste this URL when submitting to ${platform.name}`
       })));
 
       // Show success message
-      toast.success('🚀 Distribution prepared! Opening platform submission pages...');
+      toast.success('🚀 RSS feed generated! Opening platform submission pages...');
 
       // Open platform pages with delays
-      data.distributions.forEach((dist: any, index: number) => {
+      platforms.forEach((platform, index) => {
         setTimeout(() => {
-          window.open(dist.submissionUrl, '_blank');
+          window.open(platform.url, '_blank');
           setDistributionResults(prev => 
             prev.map(result => 
-              result.platform === dist.platform 
+              result.platform === platform.name 
                 ? { ...result, status: 'opened' }
                 : result
             )
