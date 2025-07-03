@@ -12,15 +12,15 @@ export const useTTSGeneration = () => {
   });
   const [audio] = useState(new Audio());
 
-  const generateTTS = async (transcript: string) => {
+  const generateTTS = async (transcript: string, voice1 = 'nova', voice2 = 'alloy') => {
     setAudioState(prev => ({ ...prev, isLoading: true }));
     
     try {
-      console.log('Generating dual-voice TTS with ElevenLabs...');
+      console.log('Generating dual-voice TTS with voices:', voice1, voice2);
       toast.info('Creating exciting two-host podcast audio...');
 
       const { data, error } = await supabase.functions.invoke('generate-dual-voice-podcast', {
-        body: { transcript }
+        body: { transcript, voice1, voice2 }
       });
 
       if (error) {

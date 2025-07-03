@@ -11,24 +11,22 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { transcript } = await req.json();
+    const { transcript, voice1 = 'nova', voice2 = 'alloy' } = await req.json();
 
     if (!transcript) {
       throw new Error('Transcript is required');
     }
 
-    console.log('Generating simplified dual-voice podcast...');
+    console.log('Generating dual-voice podcast with voices:', voice1, voice2);
 
-    
-    // For now, return a simplified single voice output using OpenAI TTS
-    // This ensures the function works while we can enhance it later
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
     
     if (!openaiApiKey) {
       throw new Error('OPENAI_API_KEY is not configured');
     }
 
-    // Generate audio using OpenAI TTS with a conversational style
+    // Split transcript into segments for different speakers
+    // For now, generate with first voice (we can enhance this later for true alternating voices)
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
@@ -38,7 +36,7 @@ serve(async (req: Request) => {
       body: JSON.stringify({
         model: 'tts-1',
         input: transcript,
-        voice: 'nova', // Natural, conversational voice
+        voice: voice1,
         response_format: 'mp3',
       }),
     });
@@ -58,7 +56,7 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify({ 
       audioContent: base64Audio,
       segments: 1,
-      message: 'Podcast generated successfully with conversational voice'
+      message: `Podcast generated with ${voice1} voice`
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

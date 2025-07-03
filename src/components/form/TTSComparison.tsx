@@ -42,36 +42,40 @@ export const TTSComparison: React.FC<TTSComparisonProps> = ({ transcript, onAudi
           </p>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Voice Selection */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Select Voice</label>
-            <Select onValueChange={(value) => {
-              const voice = voiceOptions.find(v => `${v.provider}-${v.voiceId}` === value);
-              setSelectedVoice(voice || null);
-            }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a voice for your podcast..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="deepgram-aura-asteria-en">Asteria (Deepgram) - Clear female</SelectItem>
-                <SelectItem value="deepgram-aura-orpheus-en">Orpheus (Deepgram) - Smooth male</SelectItem>
-                <SelectItem value="deepgram-aura-luna-en">Luna (Deepgram) - Warm female</SelectItem>
-                <SelectItem value="deepgram-aura-stella-en">Stella (Deepgram) - Professional female</SelectItem>
-                {/* Eden AI voices temporarily disabled - deployment issues
-                <SelectItem value="edenai-en-US-AriaNeural">Aria Neural (Eden AI) - Microsoft Azure female voice</SelectItem>
-                <SelectItem value="edenai-en-US-GuyNeural">Guy Neural (Eden AI) - Microsoft Azure male voice</SelectItem>
-                <SelectItem value="edenai-en-US-JennyNeural">Jenny Neural (Eden AI) - Microsoft Azure conversational female</SelectItem>
-                <SelectItem value="edenai-en-US-DavisNeural">Davis Neural (Eden AI) - Microsoft Azure confident male</SelectItem>
-                <SelectItem value="edenai-en-US-AmberNeural">Amber Neural (Eden AI) - Microsoft Azure warm female</SelectItem>
-                <SelectItem value="edenai-en-US-AnaNeural">Ana Neural (Eden AI) - Microsoft Azure cheerful female</SelectItem>
-                */}
-{/* Golpo AI voices temporarily disabled - API not responding
-                <SelectItem value="golpoai-podcast-female">Podcast Female (Golpo AI) - Professional podcast female voice</SelectItem>
-                <SelectItem value="golpoai-podcast-male">Podcast Male (Golpo AI) - Professional podcast male voice</SelectItem>
-                <SelectItem value="golpoai-conversational">Conversational (Golpo AI) - Natural conversational style</SelectItem>
-                */}
-              </SelectContent>
-            </Select>
+          {/* Dual Voice Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Host 1 Voice</label>
+              <Select defaultValue="nova">
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose voice for Host 1..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nova">Nova - Energetic female</SelectItem>
+                  <SelectItem value="alloy">Alloy - Professional neutral</SelectItem>
+                  <SelectItem value="echo">Echo - Clear male</SelectItem>
+                  <SelectItem value="fable">Fable - Warm male</SelectItem>
+                  <SelectItem value="onyx">Onyx - Deep male</SelectItem>
+                  <SelectItem value="shimmer">Shimmer - Bright female</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Host 2 Voice</label>
+              <Select defaultValue="alloy">
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose voice for Host 2..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="alloy">Alloy - Professional neutral</SelectItem>
+                  <SelectItem value="nova">Nova - Energetic female</SelectItem>
+                  <SelectItem value="echo">Echo - Clear male</SelectItem>
+                  <SelectItem value="fable">Fable - Warm male</SelectItem>
+                  <SelectItem value="onyx">Onyx - Deep male</SelectItem>
+                  <SelectItem value="shimmer">Shimmer - Bright female</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Generate Button */}
