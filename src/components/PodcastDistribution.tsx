@@ -5,8 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { Loader2, Podcast, Music, Radio, Headphones, Copy, ExternalLink } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Rss, Podcast, Music, Copy, ExternalLink } from 'lucide-react';
 
 interface PodcastDistributionProps {
   podcastId: string;
@@ -78,7 +77,7 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
     <Card className="mt-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Radio className="h-5 w-5" />
+          <Rss className="h-5 w-5" />
           Distribute to Streaming Platforms
         </CardTitle>
         <CardDescription>
@@ -151,36 +150,58 @@ const PodcastDistribution: React.FC<PodcastDistributionProps> = ({
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-200">
-          <h4 className="font-bold text-blue-900 mb-3 text-lg">🚀 One-Click Distribution</h4>
-          <p className="text-blue-800 text-sm mb-4">
-            Your RSS feed will be automatically generated and platform submission pages will open. 
-            Simply paste your RSS feed URL on each platform.
-          </p>
-          <Button 
-            onClick={handleAutoDistribute} 
-            disabled={isDistributing || !audioUrl}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 text-lg"
-            size="lg"
-          >
-            {isDistributing ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Preparing Distribution...
-              </>
-            ) : (
-              '🚀 Distribute to All Platforms'
-            )}
-          </Button>
-        </div>
+        {/* Individual Distribution Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* RSS Generation Button */}
+          <div className="text-center">
+            <Button
+              onClick={() => {
+                const baseUrl = 'https://pudwgzutzoidxbvozhnk.supabase.co';
+                const rssUrl = `${baseUrl}/functions/v1/generate-rss?podcast_id=${podcastId}`;
+                navigator.clipboard.writeText(rssUrl);
+                toast.success('📡 RSS feed URL copied to clipboard!');
+              }}
+              disabled={!audioUrl}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 mb-2"
+              size="lg"
+            >
+              <Rss className="mr-2 h-4 w-4" />
+              Generate RSS Feed
+            </Button>
+            <p className="text-xs text-muted-foreground">Step 1: Copy RSS feed URL</p>
+          </div>
 
-        <Separator />
+          {/* Apple Podcasts Button */}
+          <div className="text-center">
+            <Button
+              onClick={() => {
+                window.open('https://podcastsconnect.apple.com/', '_blank');
+                toast.info('🍎 Opening Apple Podcasts Connect - paste your RSS feed URL');
+              }}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 mb-2"
+              size="lg"
+            >
+              <Podcast className="mr-2 h-4 w-4" />
+              Submit to Apple
+            </Button>
+            <p className="text-xs text-muted-foreground">Step 2: Submit to Apple Podcasts</p>
+          </div>
 
-        <div className="space-y-4">
-          <h3 className="font-medium">Manual Platform Submission</h3>
-          <p className="text-sm text-muted-foreground">
-            Or submit to platforms individually using your RSS feed URL above.
-          </p>
+          {/* Spotify Button */}
+          <div className="text-center">
+            <Button
+              onClick={() => {
+                window.open('https://podcasters.spotify.com/', '_blank');
+                toast.info('🎵 Opening Spotify for Creators - paste your RSS feed URL');
+              }}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 mb-2"
+              size="lg"
+            >
+              <Music className="mr-2 h-4 w-4" />
+              Submit to Spotify
+            </Button>
+            <p className="text-xs text-muted-foreground">Step 3: Submit to Spotify for Creators</p>
+          </div>
         </div>
       </CardContent>
     </Card>

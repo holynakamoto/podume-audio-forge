@@ -23,25 +23,63 @@ export const usePodcastGeneration = () => {
       const name = resumeContent?.match(/# (.+)/)?.[1] || 'LinkedIn Professional';
       
       const mockTranscript = `
-Hey, welcome back to Career Deep Dive! So I've been diving into ${name}'s professional journey, and honestly, there's some really impressive stuff here.
+Hey, welcome back to Career Deep Dive! I'm your host Sarah, and today we're exploring the fascinating professional journey of ${name}. Let's dive right in!
 
-Oh absolutely! What caught my eye right away is how they've built this authentic professional presence. You know what I mean? It's not just another generic LinkedIn profile - there's real substance behind their career progression.
+So, ${name}, tell us about your background. What got you started in your career?
 
-Exactly! And speaking of progression, let's talk about their networking approach. It's clear they understand that career growth isn't just about what you know, but who you're connected with and how you add value to those relationships.
+Well, my journey has been quite interesting. I've always been passionate about continuous learning and building meaningful professional relationships. Early on, I realized that success isn't just about technical skills - it's about understanding people, markets, and how to create real value.
 
-That's such a good point. I was looking at their skill development, and it's fascinating how they've balanced technical expertise with those softer leadership qualities. You don't see that combination very often.
+That's fascinating! Can you walk us through some of the key milestones in your career progression?
 
-Right? And here's what I find really interesting - their approach to professional branding feels genuine. It's not just buzzwords and fluff. There's real depth in how they present their experience and growth trajectory.
+Absolutely. One of the biggest lessons I learned was the importance of strategic career moves. Each position I've taken has built upon the previous one, creating this cohesive narrative of growth and expertise. I've focused on roles that challenged me to develop both my technical abilities and leadership skills.
 
-I totally agree. You can tell they've been strategic about their career moves. Each step seems intentional, building on the previous experience rather than just jumping around randomly.
+What advice would you give to professionals who are just starting out or looking to make a career transition?
 
-And that consistency shows up in everything - from their professional communication style to how they engage with their industry. It's the kind of authenticity that employers are really looking for right now.
+Great question! First, authenticity is everything. Don't try to be someone you're not - instead, focus on becoming the best version of yourself. Second, networking isn't about collecting contacts; it's about building genuine relationships where you can add value to others.
 
-Absolutely. In today's market, candidates like ${name} who can demonstrate both competence and genuine professional growth are exactly what forward-thinking organizations need to invest in.
+I love that perspective. Let's talk about skills development. How do you stay current in your field?
 
-Couldn't have said it better myself. For anyone listening who wants to build a similar trajectory, the key takeaway here is that authentic professional development really does make all the difference.
+I'm a big believer in lifelong learning. Whether it's taking courses, attending conferences, or simply staying curious about industry trends, I make sure to dedicate time each week to learning something new. But here's the key - I don't just consume information, I actively apply what I learn in my daily work.
 
-Thanks for diving deep with us today! If you found this conversation valuable, definitely share it with someone who might benefit from these insights. Until next time, keep building those meaningful professional connections!
+That's such valuable insight. What role has LinkedIn played in your professional growth?
+
+LinkedIn has been instrumental! It's not just a platform for job searching - it's become my go-to space for thought leadership, industry discussions, and connecting with like-minded professionals. I regularly share insights about my field and engage meaningfully with others' content.
+
+Speaking of thought leadership, what topics are you most passionate about right now?
+
+I'm really excited about the intersection of technology and human potential. We're living in this incredible time where digital tools can amplify our capabilities, but the human element - creativity, empathy, strategic thinking - that's what still sets great professionals apart.
+
+What challenges have you faced in your career, and how did you overcome them?
+
+One of the biggest challenges was learning to navigate ambiguity. Early in my career, I wanted everything to be clearly defined, but I've learned that the most rewarding opportunities often come from uncertain situations. The key is developing confidence in your problem-solving abilities.
+
+That's such an important skill. How do you approach building and maintaining professional relationships?
+
+I focus on giving first. Before I think about what someone can do for me, I ask what value I can provide to them. This might be sharing a relevant article, making an introduction, or offering insights from my experience. When you lead with generosity, meaningful relationships naturally follow.
+
+What trends are you seeing in your industry that excite you?
+
+There's this incredible shift toward more collaborative, purpose-driven work environments. Companies are recognizing that their people are their greatest asset, and they're investing in creating cultures where everyone can thrive. It's exciting to be part of this transformation.
+
+For our listeners who want to build a strong professional brand like yours, what are the essential elements?
+
+Consistency is crucial. Whether it's your LinkedIn profile, your communication style, or how you show up in meetings, there should be a coherent narrative about who you are and what you stand for. But remember, branding isn't about creating a facade - it's about authentically communicating your value.
+
+That's brilliant advice. Looking ahead, what are your goals for the next phase of your career?
+
+I'm focused on expanding my impact. Whether that's through mentoring emerging professionals, leading larger initiatives, or exploring new areas of expertise, I want to continue growing while helping others succeed too.
+
+Before we wrap up, what's one piece of advice you'd give to someone listening right now?
+
+Don't underestimate the power of small, consistent actions. Whether it's updating your LinkedIn profile, reaching out to one new connection each week, or sharing one thoughtful post per month - these seemingly small steps compound over time into significant career momentum.
+
+${name}, this has been incredibly insightful. Thank you for sharing your journey with us!
+
+Thank you so much for having me! This was a great conversation.
+
+And to our listeners, remember that everyone's career path is unique. Take inspiration from stories like ${name}'s, but forge your own authentic professional journey. 
+
+Don't forget to subscribe to Career Deep Dive, and if you found value in today's episode, please share it with someone who might benefit from these insights. Until next time, keep building those meaningful professional connections!
       `.trim();
 
       console.log('=== Mock Transcript Generated ===');
