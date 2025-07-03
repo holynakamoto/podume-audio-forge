@@ -24,8 +24,8 @@ serve(async (req) => {
       throw new Error('Golpo AI API key not configured');
     }
 
-    // Call Golpo AI TTS API
-    const response = await fetch('https://api.golpoai.com/v1/tts', {
+    // Call Golpo AI TTS API - Updated endpoint and parameters
+    const response = await fetch('https://api.golpoai.com/tts', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -33,9 +33,8 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         text: text,
-        voice: voice,
-        format: 'mp3',
-        style: 'podcast'
+        voice_id: voice,
+        output_format: 'mp3'
       }),
     });
 
