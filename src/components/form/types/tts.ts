@@ -1,5 +1,5 @@
 export interface VoiceOption {
-  provider: 'elevenlabs' | 'deepgram' | 'cartesia' | 'playht' | 'huggingface' | 'edenai';
+  provider: 'elevenlabs' | 'deepgram' | 'cartesia' | 'playht' | 'huggingface' | 'edenai' | 'golpoai';
   voiceId: string;
   name: string;
   description: string;
