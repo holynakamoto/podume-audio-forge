@@ -6,17 +6,21 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('Eden AI function started, method:', req.method);
+  
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
+    console.log('Parsing request body...');
     const requestBody = await req.json();
     console.log('Eden AI TTS request body:', requestBody);
     
     const { text, voice = 'en-US-AriaNeural' } = requestBody;
 
     if (!text) {
+      console.error('No text provided');
       throw new Error('Text is required');
     }
 
@@ -24,9 +28,12 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get('EDEN_AI_API_KEY');
     if (!apiKey) {
+      console.error('Eden AI API key not found');
       throw new Error('Eden AI API key not configured');
     }
 
+    console.log('Making request to Eden AI API...');
+    
     // Call Eden AI TTS API
     const response = await fetch('https://api.edenai.run/v2/audio/text_to_speech', {
       method: 'POST',
@@ -44,22 +51,26 @@ serve(async (req) => {
       }),
     });
 
+    console.log('Eden AI response status:', response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Eden AI API error:', response.status, errorText);
-      throw new Error(`Eden AI API error: ${response.status}`);
+      throw new Error(`Eden AI API error: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
+    console.log('Eden AI result keys:', Object.keys(result));
     
     if (!result.microsoft || !result.microsoft.audio) {
+      console.error('No audio data in result:', result);
       throw new Error('No audio data received from Eden AI');
     }
 
     // Eden AI returns base64 encoded audio
     const base64Audio = result.microsoft.audio;
 
-    console.log('Eden AI TTS successful, audio received');
+    console.log('Eden AI TTS successful, audio length:', base64Audio.length);
 
     return new Response(
       JSON.stringify({ 
@@ -74,7 +85,7 @@ serve(async (req) => {
       }
     );
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Eden AI TTS error:', error);
     return new Response(
       JSON.stringify({ 
