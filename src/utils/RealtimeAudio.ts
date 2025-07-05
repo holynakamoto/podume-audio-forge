@@ -118,14 +118,30 @@ export class RealtimeChat {
       this.dc = this.pc.createDataChannel("oai-events");
       this.dc.addEventListener("message", (e) => {
         const event = JSON.parse(e.data);
-        console.log("Received event:", event);
+        console.log("🎤 Voice Event:", event.type, event);
         this.onMessage(event);
         
-        // Check for workflow trigger
-        if (event.type === 'response.function_call_arguments.done' && 
-            event.name === 'trigger_podcast_workflow') {
-          console.log('Triggering podcast workflow...');
-          this.onWorkflowTrigger();
+        // Check for function calls
+        if (event.type === 'response.function_call_arguments.done') {
+          console.log('🔧 Function call detected:', event);
+          if (event.name === 'trigger_podcast_workflow') {
+            console.log('✅ Triggering podcast workflow from function call!');
+            this.onWorkflowTrigger();
+          }
+        }
+        
+        // Check transcription for magic word
+        if (event.type === 'conversation.item.input_audio_transcription.completed') {
+          const transcript = event.transcript?.toLowerCase() || '';
+          console.log('🎯 Transcription:', transcript);
+          
+          const magicWords = ['podumé', 'pah du may', 'podume', 'po doom ay', 'pa du may'];
+          const detected = magicWords.some(word => transcript.includes(word));
+          
+          if (detected) {
+            console.log('🚀 Magic word detected in transcript! Triggering workflow...');
+            this.onWorkflowTrigger();
+          }
         }
       });
 

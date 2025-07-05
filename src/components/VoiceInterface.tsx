@@ -115,7 +115,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ onPodcastWorkflowTrigge
       {isConnected && (
         <div className="bg-background/80 backdrop-blur-sm border rounded-lg p-3 shadow-lg max-w-xs text-center">
           <p className="text-sm text-muted-foreground">
-            Say: <span className="font-medium text-foreground">"Podumé"</span>
+            Say: <span className="font-medium text-foreground">"Pah-du-may"</span>
           </p>
         </div>
       )}

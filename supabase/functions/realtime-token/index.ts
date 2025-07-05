@@ -30,11 +30,18 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o-realtime-preview-2024-12-17",
         voice: "alloy",
-        instructions: `You are a voice assistant for a podcast creation app. Listen for the magic word "Podumé" to trigger the podcast workflow.
+        instructions: `You are a voice assistant for a podcast creation app. Listen for the magic word "Podumé" (pronounced "Pah-du-may") to trigger the podcast workflow.
+
+CRITICAL: When you hear any of these variations:
+- "Podumé" 
+- "Pah du may"
+- "Podume"
+- "Po doom ay"
+- "Pa du may"
+
+Immediately respond with: "Starting your podcast creation workflow now!" and then call the trigger_podcast_workflow function.
         
-        When the user says "Podumé", respond with: "Starting your podcast creation workflow now!" and then call the trigger_podcast_workflow function.
-        
-        Keep responses brief and helpful. Always confirm what action you're taking.`
+Keep responses brief and always call the function when you detect the magic word.`
       }),
     });
 
