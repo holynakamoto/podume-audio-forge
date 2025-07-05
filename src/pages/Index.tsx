@@ -12,8 +12,17 @@ import { SmartContentPrioritizer } from '@/components/intent/SmartContentPriorit
 import { ProgressiveDisclosure } from '@/components/intent/ProgressiveDisclosure';
 import { ContextProvider } from '@/components/ai/ContextProvider';
 import { ContextAwareAssistant } from '@/components/ai/ContextAwareAssistant';
+import VoiceInterface from '@/components/VoiceInterface';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
+  const navigate = useNavigate();
+
+  const handlePodcastWorkflowTrigger = () => {
+    // Navigate to the create page where users can upload PDFs and manage workflow
+    navigate('/create');
+  };
+
   return (
     <IntentProvider>
       <ContextProvider>
@@ -84,6 +93,9 @@ const Index = () => {
 
           {/* Context-Aware AI Assistant */}
           <ContextAwareAssistant />
+          
+          {/* Voice Interface */}
+          <VoiceInterface onPodcastWorkflowTrigger={handlePodcastWorkflowTrigger} />
         </div>
       </ContextProvider>
     </IntentProvider>
