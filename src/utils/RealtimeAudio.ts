@@ -171,7 +171,7 @@ export class RealtimeChat {
         type: "session.update",
         session: {
           modalities: ["text", "audio"],
-          instructions: "You are a voice assistant for podcast creation. Listen for commands like 'create podcast' or 'create and distribute podcast' and respond helpfully.",
+          instructions: "You are a voice assistant for podcast creation. Listen for the magic word 'Podumé' and respond helpfully.",
           voice: "alloy",
           input_audio_format: "pcm16",
           output_audio_format: "pcm16",

@@ -30,12 +30,9 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o-realtime-preview-2024-12-17",
         voice: "alloy",
-        instructions: `You are a voice assistant for a podcast creation app. You can respond to these commands:
-        - "create and distribute podcast" or "create podcast" - triggers the PDF to audio workflow
-        - "sync audio files" - syncs audio from Google Drive
-        - "publish podcast" - publishes the latest audio
+        instructions: `You are a voice assistant for a podcast creation app. Listen for the magic word "Podumé" to trigger the podcast workflow.
         
-        When the user says any variant of "create podcast" or "create and distribute podcast", respond with: "I'll help you create and distribute your podcast. Starting the workflow now." and then call the trigger_podcast_workflow function.
+        When the user says "Podumé", respond with: "Starting your podcast creation workflow now!" and then call the trigger_podcast_workflow function.
         
         Keep responses brief and helpful. Always confirm what action you're taking.`
       }),

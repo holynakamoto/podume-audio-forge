@@ -44,7 +44,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ onPodcastWorkflowTrigge
       await chatRef.current.init();
       setIsConnected(true);
       
-      toast.success('Voice assistant is ready! Say "create and distribute podcast" to start.');
+      toast.success('Voice assistant is ready! Say "Podumé" to start.');
     } catch (error) {
       console.error('Error starting conversation:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to start voice assistant');
@@ -115,7 +115,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ onPodcastWorkflowTrigge
       {isConnected && (
         <div className="bg-background/80 backdrop-blur-sm border rounded-lg p-3 shadow-lg max-w-xs text-center">
           <p className="text-sm text-muted-foreground">
-            Say: <span className="font-medium text-foreground">"Create and distribute podcast"</span>
+            Say: <span className="font-medium text-foreground">"Podumé"</span>
           </p>
         </div>
       )}
