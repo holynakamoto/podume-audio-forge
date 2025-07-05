@@ -118,25 +118,14 @@ export class RealtimeChat {
       this.dc = this.pc.createDataChannel("oai-events");
       this.dc.addEventListener("message", (e) => {
         const event = JSON.parse(e.data);
-        console.log("🎤 Received event:", event.type, event);
+        console.log("Received event:", event);
         this.onMessage(event);
         
-        // Check for workflow trigger - multiple possible event types
-        if (event.type === 'response.function_call_arguments.done') {
-          console.log('🔧 Function call done:', event);
-          if (event.name === 'trigger_podcast_workflow') {
-            console.log('✅ Triggering podcast workflow...');
-            this.onWorkflowTrigger();
-          }
-        }
-        
-        // Also check for transcript events that might contain "Podumé"
-        if (event.type === 'conversation.item.input_audio_transcription.completed') {
-          console.log('🎯 Audio transcription:', event.transcript);
-          if (event.transcript && event.transcript.toLowerCase().includes('podumé')) {
-            console.log('🚀 Detected Podumé in transcript, triggering workflow...');
-            this.onWorkflowTrigger();
-          }
+        // Check for workflow trigger
+        if (event.type === 'response.function_call_arguments.done' && 
+            event.name === 'trigger_podcast_workflow') {
+          console.log('Triggering podcast workflow...');
+          this.onWorkflowTrigger();
         }
       });
 
@@ -182,7 +171,7 @@ export class RealtimeChat {
         type: "session.update",
         session: {
           modalities: ["text", "audio"],
-          instructions: "You are a voice assistant for podcast creation. Listen for the magic word 'Podumé' (pronounced poh-DOO-may) and immediately call the trigger_podcast_workflow function when you hear it.",
+          instructions: "You are a voice assistant for podcast creation. Listen for the magic word 'Podumé' and respond helpfully.",
           voice: "alloy",
           input_audio_format: "pcm16",
           output_audio_format: "pcm16",
