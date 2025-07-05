@@ -76,15 +76,18 @@ export class RealtimeChat {
 
   async init() {
     try {
-      console.log('Initializing Realtime Chat...');
+      console.log('🔧 Initializing Realtime Chat...');
       
       // Get ephemeral token from our Supabase Edge Function
+      console.log('🎫 Requesting ephemeral token...');
       const { data, error } = await supabase.functions.invoke("realtime-token");
       
       if (error) {
-        console.error('Error getting token:', error);
+        console.error('❌ Error getting token:', error);
         throw error;
       }
+      
+      console.log('🎫 Token response:', data);
       
       if (!data?.client_secret?.value) {
         throw new Error("Failed to get ephemeral token");

@@ -37,16 +37,23 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ onPodcastWorkflowTrigge
 
   const startConversation = async () => {
     try {
+      console.log('🚀 Starting voice conversation...');
+      
       // Request microphone permission first
       await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('🎤 Microphone access granted');
       
       chatRef.current = new RealtimeChat(handleMessage, handleWorkflowTrigger);
+      console.log('💬 RealtimeChat instance created');
+      
       await chatRef.current.init();
+      console.log('✅ RealtimeChat initialized successfully');
+      
       setIsConnected(true);
       
-      toast.success('Voice assistant is ready! Say "Podumé" to start.');
+      toast.success('Voice assistant is ready! Say "Pah-du-may" to start.');
     } catch (error) {
-      console.error('Error starting conversation:', error);
+      console.error('❌ Error starting conversation:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to start voice assistant');
     }
   };
